@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-min.js"></script>
+    <script src="lib/knockout.mapping-latest.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+    var socket = io();
+    var vm;
+    socket.on('state', function (data) {
+        if (!vm) {
+            vm = ko.mapping.fromJS(data);
+            ko.applyBindings(vm);
+        } else {
+            ko.mapping.fromJS(data, vm);
+        }
+        console.log(data);
+    })
+    </script>
+</head>
+<body>
+    <div data-bind="{text: turn.state}">
+    </div>
+</body>
+</html>
