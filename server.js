@@ -1,7 +1,5 @@
 'use strict';
 
-var Promise = require('es6-promise').Promise;
-
 var express = require('express');
 var app = express();
 app.use(express.static('web'));
@@ -12,16 +10,14 @@ var io = require('socket.io')(server);
 var createGame = require('./game');
 
 var pending = [];
-var active = [];
 
 io.on('connection', function (socket) {
+    var game;
     if (pending.length) {
-        var game = pending.pop();
-        active.push(game);
-        game.playerJoined(socket);
+        game = pending.pop();
     } else {
-        var game = createGame();
+        game = createGame();
         pending.push(game);
-        game.playerJoined(socket);
     }
+    game.playerJoined(socket);
 });

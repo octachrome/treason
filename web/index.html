@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-min.js"></script>
     <script src="lib/knockout.mapping-latest.js"></script>
@@ -16,11 +17,34 @@
             ko.mapping.fromJS(data, vm);
         }
         console.log(data);
-    })
+    });
+    socket.on('error', function (data) {
+        alert(data);
+    });
     </script>
 </head>
 <body>
-    <div data-bind="{text: turn.state}">
+    <div class="container">
+        <div class="row">
+            <!-- Players -->
+            <div class="col-xs-4" data-bind="foreach: players">
+                <div class="row">
+                    <div class="col-xs-4">
+                        <span data-bind="text: name"></span>
+                        <span data-bind="visible: me">(me)</span>
+                    </div>
+                    <div class="col-xs-8" data-bind="foreach: influence">
+                        <div class="row">
+                            <div class="col-xs-12" data-bind="text: role"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Activity -->
+            <div class="col-xs-8">
+                <div data-bind="visible: turn.state == 'waiting'">Waiting for players</div>
+            </div>
+        </div>
     </div>
 </body>
 </html>
