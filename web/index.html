@@ -22,11 +22,11 @@
         alert(data);
     });
 
-    function isWaitingForOurTurn() {
-        return vm.state.name() == 'start-of-turn' && vm.state.playerIdx() == vm.playerIdx();
+    function weAreInState(stateName) {
+        return vm.state.name() == stateName && vm.state.playerIdx() == vm.playerIdx();
     }
-    function isWaitingForTheirTurn() {
-        return vm.state.name() == 'start-of-turn' && vm.state.playerIdx() != vm.playerIdx();
+    function theyAreInState(stateName) {
+        return vm.state.name() == stateName && vm.state.playerIdx() != vm.playerIdx();
     }
     function currentPlayerName() {
         if (vm.state.playerIdx() == null) {
@@ -66,9 +66,15 @@
             <!-- Activity -->
             <div class="col-xs-8">
                 <div data-bind="visible: state.name() == 'waiting-for-players'">Waiting for players</div>
-                <div data-bind="visible: isWaitingForOurTurn()">Your turn</div>
-                <div data-bind="visible: isWaitingForTheirTurn()">
+                <div data-bind="visible: weAreInState('start-of-turn')">Your turn</div>
+                <div data-bind="visible: theyAreInState('start-of-turn')">
                     Waiting for <span data-bind="text: currentPlayerName()"></span> to play
+                </div>
+                <div data-bind="visible: weAreInState('game-won')">
+                    You have won!
+                </div>
+                <div data-bind="visible: theyAreInState('game-won')">
+                    <span data-bind="text: currentPlayerName()"></span> has won!
                 </div>
             </div>
         </div>

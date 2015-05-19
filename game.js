@@ -61,10 +61,57 @@ module.exports = function createGame() {
         emitState();
     }
 
+    function playerLeft(socket) {
+        for (var i = 0; i < state.players.length; i++) {
+            if (sockets[i] == socket) {
+                sockets[i] = null;
+                // Reveal all the player's influence.
+                var influence = state.players[i].influence;
+                for (var j = 0; j < influence.length; j++) {
+                    influence[j].revealed = true;
+                }
+                break;
+            }
+        }
+        checkForGameEnd();
+    }
+
+    function checkForGameEnd() {
+        var winnerIdx = null;
+        for (var i = 0; i < state.players.length; i++) {
+            if (hasInfluence(state.players[i])) {
+                if (winnerIdx == null) {
+                    winnerIdx = i;
+                } else {
+                    winnerIdx = null;
+                    break;
+                }
+            }
+        }
+        if (winnerIdx != null) {
+            state.state = {
+                name: 'game-won',
+                playerIdx: winnerIdx
+            }
+            emitState();
+        }
+    }
+
+    function hasInfluence(player) {
+        for (var i = 0; i < player.influence.length; i++) {
+            if (!player.influence[i].revealed) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function emitState() {
         for (var i = 0; i < state.players.length; i++) {
             var masked = maskState(i);
-            sockets[i].emit('state', masked);
+            if (sockets[i] != null) {
+                sockets[i].emit('state', masked);
+            }
         }
     }
 
@@ -94,6 +141,7 @@ module.exports = function createGame() {
 
     return {
         playerJoined: playerJoined,
+        playerLeft: playerLeft,
         isActive: isActive
     };
 };
