@@ -21,7 +21,26 @@
     socket.on('error', function (data) {
         alert(data);
     });
+
+    function isWaitingForOurTurn() {
+        return vm.state.name() == 'start-of-turn' && vm.state.playerIdx() == vm.playerIdx();
+    }
+    function isWaitingForTheirTurn() {
+        return vm.state.name() == 'start-of-turn' && vm.state.playerIdx() != vm.playerIdx();
+    }
+    function currentPlayerName() {
+        if (vm.state.playerIdx() == null) {
+            return '';
+        } else {
+            return vm.players()[vm.state.playerIdx()].name();
+        }
+    }
     </script>
+    <style>
+    body {
+        padding-top: 15px;
+    }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -33,7 +52,7 @@
                         <div class="row">
                             <div class="col-xs-7">
                                 <span data-bind="text: name"></span>
-                                <span class="badge" data-bind="visible: me">me</span>
+                                <span class="badge" data-bind="text: '$' + cash()"></span>
                             </div>
                             <div class="col-xs-5">
                                 <!-- ko foreach: influence -->
@@ -46,7 +65,11 @@
             </div>
             <!-- Activity -->
             <div class="col-xs-8">
-                <div data-bind="visible: turn.state == 'waiting'">Waiting for players</div>
+                <div data-bind="visible: state.name() == 'waiting-for-players'">Waiting for players</div>
+                <div data-bind="visible: isWaitingForOurTurn()">Your turn</div>
+                <div data-bind="visible: isWaitingForTheirTurn()">
+                    Waiting for <span data-bind="text: currentPlayerName()"></span> to play
+                </div>
             </div>
         </div>
     </div>

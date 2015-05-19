@@ -1,5 +1,10 @@
 'use strict';
 
+var stateNames = {
+    WAITING_FOR_PLAYERS: 'waiting-for-players',
+    START_OF_TURN: 'start-of-turn'
+};
+
 var deepcopy = require('deepcopy');
 
 var nextGameId = 1;
@@ -13,8 +18,9 @@ module.exports = function createGame() {
         gameId: gameId,
         players: [],
         numPlayers: numPlayers,
-        turn: {
-            state: 'waiting'
+        state: {
+            name: stateNames.WAITING_FOR_PLAYERS,
+            playerIdx: null
         }
     };
 
@@ -23,7 +29,7 @@ module.exports = function createGame() {
     function playerJoined(socket) {
         var playerId = nextPlayerId++;
 
-        if (state.players.length >= state.numPlayers) {
+        if (state.players.length >= numPlayers) {
             socket.emit('error', 'Cannot join game ' + gameId + ': it is full.');
             return;
         }
@@ -31,6 +37,7 @@ module.exports = function createGame() {
         state.players.push({
             playerId: playerId,
             name: 'Player ' + playerId,
+            cash: 2,
             influence: [
                 {
                     role: 'Duke',
@@ -45,8 +52,10 @@ module.exports = function createGame() {
         sockets.push(socket);
 
         if (isActive()) {
-            state.turn.state = 'playing';
-            state.turn.player = 0;
+            state.state = {
+                name: stateNames.START_OF_TURN,
+                playerIdx: 0
+            }
         }
 
         emitState();
@@ -60,7 +69,7 @@ module.exports = function createGame() {
     }
 
     /**
-     * Mask hidden influences.
+     * Mask hidden influences, add player-specific data.
      */
     function maskState(playerIdx) {
         var masked = deepcopy(state);
@@ -73,8 +82,9 @@ module.exports = function createGame() {
                     }
                 }
             }
-            masked.players[i].me = (i == playerIdx);
         }
+        masked.playerIdx = playerIdx;
+        masked.playerId = masked.players[playerIdx].playerId;
         return masked;
     }
 
