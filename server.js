@@ -20,6 +20,9 @@ io.on('connection', function (socket) {
         pending.push(game);
     }
     game.playerJoined(socket);
+    socket.on('command', function (data) {
+        game.command(socket, data);
+    })
     socket.on('disconnect', function () {
         game.playerLeft(socket);
     });

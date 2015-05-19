@@ -35,6 +35,14 @@
             return vm.players()[vm.state.playerIdx()].name();
         }
     }
+    function playAction(action) {
+        if (weAreInState('start-of-turn')) {
+            socket.emit('command', {
+                command: 'play-action',
+                action: action
+            });
+        }
+    }
     </script>
     <style>
     body {
@@ -66,7 +74,11 @@
             <!-- Activity -->
             <div class="col-xs-8">
                 <div data-bind="visible: state.name() == 'waiting-for-players'">Waiting for players</div>
-                <div data-bind="visible: weAreInState('start-of-turn')">Your turn</div>
+                <div data-bind="visible: weAreInState('start-of-turn')">
+                    Your turn:
+                    <button class="btn btn-default" onclick="playAction('tax')">Tax</button>
+                    <button class="btn btn-default" onclick="playAction('coup')">Coup</button>
+                </div>
                 <div data-bind="visible: theyAreInState('start-of-turn')">
                     Waiting for <span data-bind="text: currentPlayerName()"></span> to play
                 </div>

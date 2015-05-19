@@ -62,18 +62,26 @@ module.exports = function createGame() {
     }
 
     function playerLeft(socket) {
-        for (var i = 0; i < state.players.length; i++) {
-            if (sockets[i] == socket) {
-                sockets[i] = null;
-                // Reveal all the player's influence.
-                var influence = state.players[i].influence;
-                for (var j = 0; j < influence.length; j++) {
-                    influence[j].revealed = true;
-                }
-                break;
+        var playerIdx = playerIdxBySocket(socket);
+        if (playerIdx != null) {
+            sockets[playerIdx] = null;
+
+            // Reveal all the player's influence.
+            var influence = state.players[playerIdx].influence;
+            for (var j = 0; j < influence.length; j++) {
+                influence[j].revealed = true;
             }
         }
         checkForGameEnd();
+    }
+
+    function playerIdxBySocket(socket) {
+        for (var i = 0; i < state.players.length; i++) {
+            if (sockets[i] == socket) {
+                return i;
+            }
+        }
+        return null;
     }
 
     function checkForGameEnd() {
@@ -107,6 +115,7 @@ module.exports = function createGame() {
     }
 
     function emitState() {
+        debug(state);
         for (var i = 0; i < state.players.length; i++) {
             var masked = maskState(i);
             if (sockets[i] != null) {
@@ -139,9 +148,29 @@ module.exports = function createGame() {
         return state.players.length == numPlayers;
     }
 
+    function command(socket, command) {
+        debug(command);
+        if (command.command == 'play-action') {
+            var playerIdx = playerIdxBySocket(socket);
+            var player = state.players[playerIdx];
+
+            if (state.state.name == stateNames.START_OF_TURN && state.state.playerIdx == playerIdx) {
+                if (command.action == 'tax') {
+                    player.cash += 3;
+                }
+            }
+        }
+        emitState();
+    }
+
+    function debug(obj) {
+        console.log(obj);
+    }
+
     return {
         playerJoined: playerJoined,
         playerLeft: playerLeft,
-        isActive: isActive
+        isActive: isActive,
+        command: command
     };
 };
