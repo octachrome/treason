@@ -6,6 +6,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-min.js"></script>
     <script src="lib/knockout.mapping-latest.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="shared.js"></script>
     <script>
     var socket = io();
     var vm;
@@ -35,11 +36,16 @@
             return vm.players()[vm.state.playerIdx()].name();
         }
     }
-    function playAction(action) {
+    function canPlayAction(actionName) {
+        var action = actions[actionName];
+        var cash = vm.players()[vm.playerIdx()].cash();
+        return cash >= action.cost;
+    }
+    function playAction(actionName) {
         if (weAreInState('start-of-turn')) {
             socket.emit('command', {
                 command: 'play-action',
-                action: action
+                action: actionName
             });
         }
     }
@@ -76,8 +82,9 @@
                 <div data-bind="visible: state.name() == 'waiting-for-players'">Waiting for players</div>
                 <div data-bind="visible: weAreInState('start-of-turn')">
                     Your turn:
-                    <button class="btn btn-default" onclick="playAction('tax')">Tax</button>
-                    <button class="btn btn-default" onclick="playAction('coup')">Coup</button>
+                    <!-- ko foreach: Object.keys(actions).sort() -->
+                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction($data)"></button>
+                    <!-- /ko -->
                 </div>
                 <div data-bind="visible: theyAreInState('start-of-turn')">
                     Waiting for <span data-bind="text: currentPlayerName()"></span> to play

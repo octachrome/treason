@@ -1,5 +1,8 @@
 'use strict';
 
+var shared = require('./web/shared.js');
+var actions = shared.actions;
+
 var stateNames = {
     WAITING_FOR_PLAYERS: 'waiting-for-players',
     START_OF_TURN: 'start-of-turn'
@@ -155,8 +158,22 @@ module.exports = function createGame() {
             var player = state.players[playerIdx];
 
             if (state.state.name == stateNames.START_OF_TURN && state.state.playerIdx == playerIdx) {
-                if (command.action == 'tax') {
-                    player.cash += 3;
+                var action = actions[command.action];
+                if (!action) {
+                    debug('unknown action');
+                    return;
+                }
+                if (player.cash < action.cost) {
+                    debug('not enough cash');
+                    return;
+                }
+                if (!action.role && !action.blockedBy) {
+                    debug('playing action');
+                    player.cash -= action.cost;
+                    state.state = {
+                        name: stateNames.START_OF_TURN,
+                        playerIdx: (playerIdx + 1) % numPlayers
+                    }
                 }
             }
         }
