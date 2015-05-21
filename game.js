@@ -63,15 +63,26 @@ module.exports = function createGame() {
 
     function playerLeft(socket) {
         var playerIdx = playerIdxBySocket(socket);
-        if (playerIdx != null) {
-            sockets[playerIdx] = null;
-
-            // Reveal all the player's influence.
-            var influence = state.players[playerIdx].influence;
-            for (var j = 0; j < influence.length; j++) {
-                influence[j].revealed = true;
-            }
+        if (playerIdx == null) {
+            debug('unknown player disconnected');
+            return;
         }
+        sockets[playerIdx] = null;
+        killPlayer(playerIdx);
+        emitState();
+    }
+
+    function killPlayer(playerIdx) {
+        // Reveal all the player's influence.
+        var influence = state.players[playerIdx].influence;
+        for (var j = 0; j < influence.length; j++) {
+            influence[j].revealed = true;
+        }
+
+        if (state.state.playerIdx == playerIdx) {
+            nextTurn();
+        }
+
         checkForGameEnd();
     }
 
@@ -87,7 +98,7 @@ module.exports = function createGame() {
     function checkForGameEnd() {
         var winnerIdx = null;
         for (var i = 0; i < state.players.length; i++) {
-            if (hasInfluence(state.players[i])) {
+            if (countInfluence(state.players[i])) {
                 if (winnerIdx == null) {
                     winnerIdx = i;
                 } else {
@@ -98,17 +109,17 @@ module.exports = function createGame() {
         }
         if (winnerIdx != null) {
             state.state = createState('game-won', winnerIdx);
-            emitState();
         }
     }
 
-    function hasInfluence(player) {
+    function countInfluence(player) {
+        var count = 0;
         for (var i = 0; i < player.influence.length; i++) {
             if (!player.influence[i].revealed) {
-                return true;
+                count++;
             }
         }
-        return false;
+        return count;
     }
 
     function emitState() {
@@ -153,9 +164,14 @@ module.exports = function createGame() {
             debug('unknown player');
             return;
         }
+        debug('from: ' + playerIdx);
         var player = state.players[playerIdx];
         if (player == null) {
             debug('unknown player');
+            return;
+        }
+        if (command.stateId != state.stateId) {
+            debug('stale state');
             return;
         }
 
@@ -186,28 +202,21 @@ module.exports = function createGame() {
                     debug('invalid target specified');
                     return;
                 }
-                if (!hasInfluence(state.players[command.target])) {
+                if (!countInfluence(state.players[command.target])) {
                     debug('cannot target dead player');
                     return;
                 }
             }
             if (action.role == null && action.blockedBy == null) {
-                debug('playing action');
-                player.cash -= action.cost;
+                playPendingAction();
                 nextTurn();
             } else {
                 debug('checking for blocks/challenges');
                 state.state = createState(stateNames.BLOCK_CHALLENGE, playerIdx, command.action, command.target);
             }
-            emitState();
-        }
-        if (command.command == 'challenge') {
+        } else if (command.command == 'challenge') {
             if (state.state.name != stateNames.BLOCK_CHALLENGE) {
                 debug('incorrect state');
-            }
-            if (command.stateId != state.stateId) {
-                debug('stale state');
-                return;
             }
             var action = actions[state.state.action];
             if (!action) {
@@ -215,7 +224,7 @@ module.exports = function createGame() {
                 return;
             }
             if (!action.role) {
-                debug('action cannot be blocked');
+                debug('action cannot be challenged');
                 return;
             }
             var challengedPlayerIdx = state.state.playerIdx;
@@ -226,13 +235,63 @@ module.exports = function createGame() {
             }
             if (playerHasRole(challengedPlayer, action.role)) {
                 // Challenge lost.
-                state.state = createState(stateNames.REVEAL_INFLUENCE, challengedPlayerIdx, null, playerIdx);
+                var influenceCount = countInfluence(player);
+                if (influenceCount <= 1 || (influenceCount <= 2 && state.state.action == 'assassination')) {
+                    // The player is dead (challenging an assassination and failing loses two influnece)
+                    killPlayer(playerIdx);
+                    checkForGameEnd();
+                } else {
+                    playPendingAction();
+                    state.state = createState(stateNames.REVEAL_INFLUENCE, challengedPlayerIdx, null, playerIdx, 'failed challenge');
+                }
             } else {
                 // Challenge won.
-                state.state = createState(stateNames.REVEAL_INFLUENCE, challengedPlayerIdx, null, challengedPlayerIdx);
+                var influenceCount = countInfluence(challengedPlayer);
+                if (influenceCount <= 1) {
+                    // The player is dead
+                    killPlayer(challengedPlayerIdx);
+                    checkForGameEnd();
+                } else {
+                    state.state = createState(stateNames.REVEAL_INFLUENCE, challengedPlayerIdx, null, challengedPlayerIdx, 'successfully challenged');
+                }
             }
-            emitState();
+        } else if (command.command == 'reveal') {
+            if (state.state.name != stateNames.REVEAL_INFLUENCE) {
+                debug('incorrect state');
+                return;
+            }
+            if (state.state.target != playerIdx) {
+                debug('not your turn to reveal an influence');
+                return;
+            }
+            for (var i = 0; i < player.influence.length; i++) {
+                var influence = player.influence[i];
+                if (influence.role == command.role && !influence.revealed) {
+                    influence.revealed = true;
+                    // todo: is it always next turn?
+                    nextTurn();
+                    checkForGameEnd();
+                    emitState();
+                    return;
+                }
+            }
+            debug('could not reveal role');
+            return;
+        } else if (command.command == 'allow') {
+            playPendingAction();
+            nextTurn();
+        } else {
+            debug('unknown command');
+            return;
         }
+        emitState();
+    }
+
+    function playPendingAction() {
+        debug('playing action');
+        var player = state.players[state.state.playerIdx];
+        var action = actions[state.state.action];
+        player.cash -= action.cost;
     }
 
     function nextTurn() {
@@ -249,10 +308,10 @@ module.exports = function createGame() {
     }
 
     function nextPlayerIdx() {
-        var playerIdx = state.playerIdx;
+        var playerIdx = state.state.playerIdx;
         for (var i = 1; i < numPlayers; i++) {
             var candidateIdx = (playerIdx + i) % numPlayers;
-            if (hasInfluence(players[candidateIdx])) {
+            if (countInfluence(state.players[candidateIdx])) {
                 return candidateIdx;
             }
         }
@@ -260,12 +319,13 @@ module.exports = function createGame() {
         return null;
     }
 
-    function createState(stateName, playerIdx, action, target) {
+    function createState(stateName, playerIdx, action, target, message) {
         return {
             name: stateName,
             playerIdx: typeof playerIdx != 'undefined' ? playerIdx : null,
             action: action || null,
-            target: typeof target != 'undefined' ? target : null
+            target: typeof target != 'undefined' ? target : null,
+            message: message || null
         };
     }
 

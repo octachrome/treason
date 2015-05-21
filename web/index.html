@@ -30,16 +30,18 @@
         return vm.state.name() == stateName && vm.state.playerIdx() != vm.playerIdx();
     }
     function currentPlayerName() {
-        if (vm.state.playerIdx() == null) {
-            return '';
-        } else {
-            return vm.players()[vm.state.playerIdx()].name();
+        if (vm.state.playerIdx() != null) {
+            var player = vm.players()[vm.state.playerIdx()];
+            if (player) {
+                return player.name();
+            }
         }
+        return '';
     }
     function canPlayAction(actionName) {
         var action = actions[actionName];
-        var cash = vm.players()[vm.playerIdx()].cash();
-        return cash >= action.cost;
+        var player = ourPlayer();
+        return player && player.cash() >= action.cost;
     }
     function playAction(actionName) {
         if (weAreInState('start-of-turn')) {
@@ -48,12 +50,18 @@
             if (action.targetted) {
                 target = (vm.state.playerIdx() + 1) % vm.numPlayers();
             }
-            socket.emit('command', {
-                command: 'play-action',
+            command('play-action', {
                 action: actionName,
                 target: target
             });
         }
+    }
+    function command(command, options) {
+        var data = $.extend({
+            command: command,
+            stateId: vm.stateId()
+        }, options);
+        socket.emit('command', data);
     }
     function weCanBlock() {
         if (vm.state.name() != 'block-challenge') {
@@ -74,20 +82,41 @@
         }
         return vm.state.target() == vm.playerIdx();
     }
+    function weCanChallenge() {
+        if (vm.state.name() != 'block-challenge') {
+            return false;
+        }
+        var action = actions[vm.state.action()];
+        if (!action) {
+            console.log('action not found');
+            return false;
+        }
+        // Only role-based actions can be challenged.
+        return !!action.role;
+    }
     function block() {
-        socket.emit('command', {
-            command: 'block',
-            stateId: vm.stateId()
-        });
+        command('block');
     }
     function challenge() {
-        socket.emit('command', {
-            command: 'challenge',
-            stateId: vm.stateId()
-        });
+        command('challenge');
+    }
+    function allow() {
+        command('allow');
     }
     function weRevealInfluence() {
         return vm.state.name() == 'reveal-influence' && vm.state.target() == vm.playerIdx();
+    }
+    function ourPlayer() {
+        return vm.players()[vm.playerIdx()];
+    }
+    function ourInfluence() {
+        var player = ourPlayer();
+        return player && player.influence();
+    }
+    function reveal(influence) {
+        command('reveal', {
+            role: influence.role()
+        });
     }
     </script>
     <style>
@@ -135,8 +164,9 @@
                 <div data-bind="visible: theyAreInState('block-challenge')">
                     <span data-bind="text: currentPlayerName()"></span> is attempting to
                     <span data-bind="text: state.action"></span>
-                    <button data-bind="click: block, visible: weCanBlock()">Block</button>
-                    <button data-bind="click: challenge">Challenge</button>
+                    <button class="btn btn-default" data-bind="click: block, visible: weCanBlock()">Block</button>
+                    <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
+                    <button class="btn btn-default" data-bind="click: allow">Allow</button>
                 </div>
                 <div data-bind="visible: weAreInState('game-won')">
                     You have won!
@@ -145,8 +175,10 @@
                     <span data-bind="text: currentPlayerName()"></span> has won!
                 </div>
                 <div data-bind="visible: weRevealInfluence()">
-                    Must reveal an influence.
-                    (todo: reason)
+                    Must reveal an influence (<span data-bind="text: state.message"></span>)
+                    <!-- ko foreach: ourInfluence() -->
+                    <button class="btn btn-default" data-bind="text: role, visible: !revealed(), click: reveal"></button>
+                    <!-- /ko -->
                 </div>
             </div>
         </div>

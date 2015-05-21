@@ -21,7 +21,11 @@ io.on('connection', function (socket) {
     }
     game.playerJoined(socket);
     socket.on('command', function (data) {
-        game.command(socket, data);
+        try {
+            game.command(socket, data);
+        } catch(e) {
+            console.error(e);
+        }
     })
     socket.on('disconnect', function () {
         game.playerLeft(socket);
