@@ -43,9 +43,15 @@
     }
     function playAction(actionName) {
         if (weAreInState('start-of-turn')) {
+            var action = actions[actionName];
+            var target;
+            if (action.targetted) {
+                target = (vm.state.playerIdx() + 1) % vm.numPlayers();
+            }
             socket.emit('command', {
                 command: 'play-action',
-                action: actionName
+                action: actionName,
+                target: target
             });
         }
     }
@@ -79,6 +85,9 @@
             command: 'challenge',
             stateId: vm.stateId()
         });
+    }
+    function weRevealInfluence() {
+        return vm.state.name() == 'reveal-influence' && vm.state.target() == vm.playerIdx();
     }
     </script>
     <style>
@@ -134,6 +143,10 @@
                 </div>
                 <div data-bind="visible: theyAreInState('game-won')">
                     <span data-bind="text: currentPlayerName()"></span> has won!
+                </div>
+                <div data-bind="visible: weRevealInfluence()">
+                    Must reveal an influence.
+                    (todo: reason)
                 </div>
             </div>
         </div>
