@@ -189,6 +189,10 @@ module.exports = function createGame() {
                 debug('unknown action');
                 return;
             }
+            if (player.cash >= 10 && command.action != 'coup') {
+                debug('you must coup with >= 10 cash');
+                return;
+            }
             if (player.cash < action.cost) {
                 debug('not enough cash');
                 return;

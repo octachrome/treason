@@ -41,7 +41,14 @@
     function canPlayAction(actionName) {
         var action = actions[actionName];
         var player = ourPlayer();
-        return player && player.cash() >= action.cost;
+        if (!player) {
+            return false;
+        }
+        if (player.cash() >= 10 && actionName != 'coup') {
+            return false;
+        } else {
+            return player.cash() >= action.cost;
+        }
     }
     function playAction(actionName) {
         if (weAreInState('start-of-turn')) {
