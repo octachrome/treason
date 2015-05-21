@@ -25,8 +25,9 @@ io.on('connection', function (socket) {
             game.command(socket, data);
         } catch(e) {
             console.error(e);
+            console.error(e.stack);
         }
-    })
+    });
     socket.on('disconnect', function () {
         game.playerLeft(socket);
     });

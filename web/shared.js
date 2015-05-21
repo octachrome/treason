@@ -7,14 +7,17 @@
             targetted: true
         },
         'income': {
-            cost: -1
+            cost: 0,
+            gain: 1
         },
         'foreign-aid': {
-            cost: -2,
+            cost: 0,
+            gain: 2,
             blockedBy: ['duke']
         },
         'tax': {
-            cost: -3,
+            cost: 0,
+            gain: 3,
             role: 'duke'
         },
         'assassinate': {

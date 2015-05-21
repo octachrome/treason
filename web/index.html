@@ -139,7 +139,7 @@
                             </div>
                             <div class="col-xs-5">
                                 <!-- ko foreach: influence -->
-                                    <span class="label label-default" data-bind="text: role"></span>
+                                    <span class="label label-default" data-bind="text: role, css: { 'label-success': !revealed(), 'label-default': revealed() }"></span>
                                 <!-- /ko -->
                             </div>
                         </div>

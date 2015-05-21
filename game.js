@@ -207,9 +207,11 @@ module.exports = function createGame() {
                     return;
                 }
             }
+            player.cash -= action.cost;
             if (action.role == null && action.blockedBy == null) {
-                playPendingAction();
-                nextTurn();
+                if (playAction(playerIdx, command)) {
+                    nextTurn();
+                }
             } else {
                 debug('checking for blocks/challenges');
                 state.state = createState(stateNames.BLOCK_CHALLENGE, playerIdx, command.action, command.target);
@@ -236,17 +238,20 @@ module.exports = function createGame() {
             if (playerHasRole(challengedPlayer, action.role)) {
                 // Challenge lost.
                 var influenceCount = countInfluence(player);
-                if (influenceCount <= 1 || (influenceCount <= 2 && state.state.action == 'assassination')) {
+                if (influenceCount <= 1 || (influenceCount <= 2 && state.state.action == 'assassinate')) {
                     // The player is dead (challenging an assassination and failing loses two influnece)
                     killPlayer(playerIdx);
                     checkForGameEnd();
                 } else {
-                    playPendingAction();
+                    if (state.state.action != 'exchange') {
+                        // If the challenge was for an exchange, the exchange must place after the reveal.
+                        playAction(state.state.playerIdx, state.state);
+                    }
                     state.state = createState(stateNames.REVEAL_INFLUENCE, challengedPlayerIdx, null, playerIdx, 'failed challenge');
                 }
             } else {
                 // Challenge won.
-                var influenceCount = countInfluence(challengedPlayer);
+                influenceCount = countInfluence(challengedPlayer);
                 if (influenceCount <= 1) {
                     // The player is dead
                     killPlayer(challengedPlayerIdx);
@@ -268,8 +273,12 @@ module.exports = function createGame() {
                 var influence = player.influence[i];
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
-                    // todo: is it always next turn?
-                    nextTurn();
+                    if (state.state.action == 'exchange' && state.state.target != state.state.playerIdx) {
+                        // If the challenge was for an exchange, and the challenge was lost, the exchange must place after the reveal.
+                        playAction(state.state.playerIdx, state.state);
+                    } else {
+                        nextTurn();
+                    }
                     checkForGameEnd();
                     emitState();
                     return;
@@ -278,8 +287,9 @@ module.exports = function createGame() {
             debug('could not reveal role');
             return;
         } else if (command.command == 'allow') {
-            playPendingAction();
-            nextTurn();
+            if (playAction(state.state.playerIdx, state.state)) {
+                nextTurn();
+            }
         } else {
             debug('unknown command');
             return;
@@ -287,11 +297,31 @@ module.exports = function createGame() {
         emitState();
     }
 
-    function playPendingAction() {
+    function playAction(playerIdx, actionState) {
         debug('playing action');
-        var player = state.players[state.state.playerIdx];
-        var action = actions[state.state.action];
-        player.cash -= action.cost;
+        var player = state.players[playerIdx];
+        var action = actions[actionState.action];
+        player.cash += action.gain || 0;
+        if (actionState.action == 'assassinate') {
+            state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, null, actionState.target, 'assassinated');
+            return false; // Not yet end of turn
+        } else if (actionState.action == 'coup') {
+            state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, null, actionState.target, 'coup');
+            return false; // Not yet end of turn
+        } else if (actionState.action == 'steal') {
+            var target = state.players[actionState.target];
+            if (target.cash >= 2) {
+                target.cash -= 2;
+                player.cash += 2;
+            } else {
+                player.cash += target.cash;
+                target.cash = 0;
+            }
+        } else if (actionState.action == 'exchange') {
+            // todo
+            return false; // Not yet end of turn
+        }
+        return true; // End of turn
     }
 
     function nextTurn() {
