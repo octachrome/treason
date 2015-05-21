@@ -5,7 +5,8 @@ var actions = shared.actions;
 
 var stateNames = {
     WAITING_FOR_PLAYERS: 'waiting-for-players',
-    START_OF_TURN: 'start-of-turn'
+    START_OF_TURN: 'start-of-turn',
+    BLOCK_CHALLENGE: 'block-challenge'
 };
 
 var deepcopy = require('deepcopy');
@@ -18,13 +19,11 @@ module.exports = function createGame() {
     var numPlayers = 2;
 
     var state = {
+        stateId: 1,
         gameId: gameId,
         players: [],
         numPlayers: numPlayers,
-        state: {
-            name: stateNames.WAITING_FOR_PLAYERS,
-            playerIdx: null
-        }
+        state: createState(stateNames.WAITING_FOR_PLAYERS)
     };
 
     var sockets = [];
@@ -55,10 +54,7 @@ module.exports = function createGame() {
         sockets.push(socket);
 
         if (isActive()) {
-            state.state = {
-                name: stateNames.START_OF_TURN,
-                playerIdx: 0
-            }
+            state.state = createState(stateNames.START_OF_TURN, 0);
         }
 
         emitState();
@@ -100,10 +96,7 @@ module.exports = function createGame() {
             }
         }
         if (winnerIdx != null) {
-            state.state = {
-                name: 'game-won',
-                playerIdx: winnerIdx
-            }
+            state.state = createState('game-won', winnerIdx);
             emitState();
         }
     }
@@ -118,6 +111,7 @@ module.exports = function createGame() {
     }
 
     function emitState() {
+        state.stateId++;
         debug(state);
         for (var i = 0; i < state.players.length; i++) {
             var masked = maskState(i);
@@ -153,13 +147,25 @@ module.exports = function createGame() {
 
     function command(socket, command) {
         debug(command);
-        if (command.command == 'play-action') {
-            var playerIdx = playerIdxBySocket(socket);
-            var player = state.players[playerIdx];
+        var playerIdx = playerIdxBySocket(socket);
+        if (playerIdx == null) {
+            debug('unknown player');
+            return;
+        }
+        var player = state.players[playerIdx];
+        if (player == null) {
+            debug('unknown player');
+            return;
+        }
 
-            if (state.state.name == stateNames.START_OF_TURN && state.state.playerIdx == playerIdx) {
+        if (command.command == 'play-action') {
+            if (state.state.name == stateNames.START_OF_TURN) {
+                if (state.state.playerIdx != playerIdx) {
+                    debug('not your turn');
+                    return;
+                }
                 var action = actions[command.action];
-                if (!action) {
+                if (action == null) {
                     debug('unknown action');
                     return;
                 }
@@ -167,17 +173,52 @@ module.exports = function createGame() {
                     debug('not enough cash');
                     return;
                 }
-                if (!action.role && !action.blockedBy) {
-                    debug('playing action');
-                    player.cash -= action.cost;
-                    state.state = {
-                        name: stateNames.START_OF_TURN,
-                        playerIdx: (playerIdx + 1) % numPlayers
+                if (action.targetted) {
+                    if (command.target == null) {
+                        debug('no target specified');
+                        return;
+                    }
+                    if (command.target < 0 || command.target >= numPlayers) {
+                        debug('invalid target specified');
+                        return;
+                    }
+                    if (!hasInfluence(state.players[command.target])) {
+                        debug('cannot target dead player');
+                        return;
                     }
                 }
+                if (action.role == null && action.blockedBy == null) {
+                    debug('playing action');
+                    player.cash -= action.cost;
+                    state.state = createState(stateNames.START_OF_TURN, nextPlayerIdx());
+                } else {
+                    debug('checking for blocks/challenges');
+                    state.state = createState(stateNames.BLOCK_CHALLENGE, playerIdx, command.action, command.target);
+                }
+                emitState();
             }
         }
-        emitState();
+    }
+
+    function nextPlayerIdx() {
+        var playerIdx = state.playerIdx;
+        for (var i = 1; i < numPlayers; i++) {
+            var candidateIdx = (playerIdx + i) % numPlayers;
+            if (hasInfluence(players[candidateIdx])) {
+                return candidateIdx;
+            }
+        }
+        debug('no more players');
+        return null;
+    }
+
+    function createState(stateName, playerIdx, action, target) {
+        return {
+            name: stateName,
+            playerIdx: typeof playerIdx != 'undefined' ? playerIdx : null,
+            action: action || null,
+            target: target || null
+        };
     }
 
     function debug(obj) {

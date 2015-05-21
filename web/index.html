@@ -3,8 +3,8 @@
 <head>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-min.js"></script>
-    <script src="lib/knockout.mapping-latest.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-debug.js"></script>
+    <script src="lib/knockout.mapping-debug.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="shared.js"></script>
     <script>
@@ -49,6 +49,37 @@
             });
         }
     }
+    function weCanBlock() {
+        if (vm.state.name() != 'block-challenge') {
+            return false;
+        }
+        var action = actions[vm.state.action()];
+        if (!action) {
+            console.log('action not found');
+            return false;
+        }
+        if (!action.blockedBy) {
+            // ACtion cannot be blocked.
+            return false;
+        }
+        if (!action.targetted) {
+            // Untargetted actions foreign aid) can be blocked by anyone.
+            return true;
+        }
+        return vm.state.target() == vm.playerIdx();
+    }
+    function block() {
+        socket.emit('command', {
+            command: 'block',
+            stateId: vm.stateId()
+        });
+    }
+    function challenge() {
+        socket.emit('command', {
+            command: 'challenge',
+            stateId: vm.stateId()
+        });
+    }
     </script>
     <style>
     body {
@@ -83,11 +114,20 @@
                 <div data-bind="visible: weAreInState('start-of-turn')">
                     Your turn:
                     <!-- ko foreach: Object.keys(actions).sort() -->
-                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction($data)"></button>
+                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction"></button>
                     <!-- /ko -->
                 </div>
                 <div data-bind="visible: theyAreInState('start-of-turn')">
                     Waiting for <span data-bind="text: currentPlayerName()"></span> to play
+                </div>
+                <div data-bind="visible: weAreInState('block-challenge')">
+                    Waiting for blocks/challenges
+                </div>
+                <div data-bind="visible: theyAreInState('block-challenge')">
+                    <span data-bind="text: currentPlayerName()"></span> is attempting to
+                    <span data-bind="text: state.action"></span>
+                    <button data-bind="click: block, visible: weCanBlock()">Block</button>
+                    <button data-bind="click: challenge">Challenge</button>
                 </div>
                 <div data-bind="visible: weAreInState('game-won')">
                     You have won!
