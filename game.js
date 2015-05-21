@@ -6,7 +6,8 @@ var actions = shared.actions;
 var stateNames = {
     WAITING_FOR_PLAYERS: 'waiting-for-players',
     START_OF_TURN: 'start-of-turn',
-    BLOCK_CHALLENGE: 'block-challenge',
+    ACTION_RESPONSE: 'action-response',
+    BLOCK_RESPONSE: 'block-response',
     REVEAL_INFLUENCE: 'reveal-influence'
 };
 
@@ -218,11 +219,12 @@ module.exports = function createGame() {
                 }
             } else {
                 debug('checking for blocks/challenges');
-                state.state = createState(stateNames.BLOCK_CHALLENGE, playerIdx, command.action, command.target);
+                state.state = createState(stateNames.ACTION_RESPONSE, playerIdx, command.action, command.target);
             }
         } else if (command.command == 'challenge') {
-            if (state.state.name != stateNames.BLOCK_CHALLENGE) {
+            if (state.state.name != stateNames.ACTION_RESPONSE) {
                 debug('incorrect state');
+                return;
             }
             var action = actions[state.state.action];
             if (!action) {
@@ -290,9 +292,41 @@ module.exports = function createGame() {
             }
             debug('could not reveal role');
             return;
+        } else if (command.command == 'block') {
+            if (state.state.name != stateNames.ACTION_RESPONSE) {
+                debug('incorrect state');
+                return;
+            }
+            var action = actions[state.state.action];
+            if (!action) {
+                debug('unknown action');
+                return;
+            }
+            if (!action.blockedBy) {
+                debug('action cannot be blocked');
+                return;
+            }
+            if (!command.role) {
+                debug('no blocking role specified');
+                return;
+            }
+            if (action.blockedBy.indexOf(command.role) < 0) {
+                debug('action cannot be blocked by that role');
+                return;
+            }
+            // Original player is in the playerIdx field; blocking player is in the target field.
+            state.state = createState(stateNames.BLOCK_RESPONSE, state.state.playerIdx, state.state.action, playerIdx, null, command.role);
+
         } else if (command.command == 'allow') {
-            if (playAction(state.state.playerIdx, state.state)) {
+            if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 nextTurn();
+            } else if (state.state.name != stateNames.ACTION_RESPONSE) {
+                if (playAction(state.state.playerIdx, state.state)) {
+                    nextTurn();
+                }
+            } else {
+                debug('incorrect state');
+                return;
             }
         } else {
             debug('unknown command');
@@ -353,13 +387,14 @@ module.exports = function createGame() {
         return null;
     }
 
-    function createState(stateName, playerIdx, action, target, message) {
+    function createState(stateName, playerIdx, action, target, message, role) {
         return {
             name: stateName,
             playerIdx: typeof playerIdx != 'undefined' ? playerIdx : null,
             action: action || null,
             target: typeof target != 'undefined' ? target : null,
-            message: message || null
+            message: message || null,
+            role: role || null
         };
     }
 

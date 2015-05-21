@@ -38,6 +38,15 @@
         }
         return '';
     }
+    function targetPlayerName() {
+        if (vm.state.target() != null) {
+            var player = vm.players()[vm.state.target()];
+            if (player) {
+                return player.name();
+            }
+        }
+        return '';
+    }
     function canPlayAction(actionName) {
         var action = actions[actionName];
         var player = ourPlayer();
@@ -71,12 +80,11 @@
         socket.emit('command', data);
     }
     function weCanBlock() {
-        if (vm.state.name() != 'block-challenge') {
+        if (vm.state.name() != 'action-response') {
             return false;
         }
         var action = actions[vm.state.action()];
         if (!action) {
-            console.log('action not found');
             return false;
         }
         if (!action.blockedBy) {
@@ -89,20 +97,34 @@
         }
         return vm.state.target() == vm.playerIdx();
     }
-    function weCanChallenge() {
-        if (vm.state.name() != 'block-challenge') {
-            return false;
-        }
+    function blockingRoles() {
         var action = actions[vm.state.action()];
         if (!action) {
-            console.log('action not found');
+            return [];
+        }
+        return action.blockedBy || [];
+    }
+    function theyAreBlocking() {
+        return vm.state.name() == 'block-response' && vm.state.target() != vm.playerIdx();
+    }
+    function weCanChallenge() {
+        var action = actions[vm.state.action()];
+        if (!action) {
             return false;
         }
-        // Only role-based actions can be challenged.
-        return !!action.role;
+        if (vm.state.name() == 'action-response') {
+            // Only role-based actions can be challenged.
+            return !!action.role;
+        } else if (vm.state.name() == 'block-response') {
+            return true;
+        } else {
+            return false;
+        }
     }
-    function block() {
-        command('block');
+    function block(role) {
+        command('block', {
+            role: role
+        });
     }
     function challenge() {
         command('challenge');
@@ -165,13 +187,23 @@
                 <div data-bind="visible: theyAreInState('start-of-turn')">
                     Waiting for <span data-bind="text: currentPlayerName()"></span> to play
                 </div>
-                <div data-bind="visible: weAreInState('block-challenge')">
+                <div data-bind="visible: weAreInState('action-response')">
                     Waiting for blocks/challenges
                 </div>
-                <div data-bind="visible: theyAreInState('block-challenge')">
+                <div data-bind="visible: theyAreInState('action-response')">
                     <span data-bind="text: currentPlayerName()"></span> is attempting to
                     <span data-bind="text: state.action"></span>
-                    <button class="btn btn-default" data-bind="click: block, visible: weCanBlock()">Block</button>
+                    <!-- ko if: weCanBlock() -->
+                        <!-- ko foreach: blockingRoles() -->
+                            <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
+                        <!-- /ko -->
+                    <!-- /ko -->
+                    <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
+                    <button class="btn btn-default" data-bind="click: allow">Allow</button>
+                </div>
+                <div data-bind="visible: theyAreBlocking()">
+                    <span data-bind="text: targetPlayerName()"></span> is attempting to block with
+                    <span data-bind="text: state.role"></span>
                     <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
                     <button class="btn btn-default" data-bind="click: allow">Allow</button>
                 </div>
