@@ -323,8 +323,9 @@ module.exports = function createGame() {
             debug('cannot identify challenged player');
             return;
         }
-        if (playerHasRole(challengedPlayer, challegedRole)) {
-            // Challenge lost.
+        var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole);
+        if (influenceIdx != null) {
+            // Player has role - challenge lost.
             var influenceCount = countInfluence(player);
             if (influenceCount <= 1 ||
                 (influenceCount <= 2 && state.state.name == stateNames.ACTION_RESPONSE && state.state.action == 'assassinate')) {
@@ -339,8 +340,10 @@ module.exports = function createGame() {
                 }
                 state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, null, playerIdx, 'failed challenge');
             }
+            // Deal the challenged player a replacement card.
+            challengedPlayer.influence[influenceIdx].role = swapRole(challengedPlayer.influence[influenceIdx].role);
         } else {
-            // Challenge won.
+            // Player does not have role - challenge won.
             influenceCount = countInfluence(challengedPlayer);
             if (influenceCount <= 1 ||
                 (influenceCount <= 2 && state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate')) {
@@ -383,18 +386,24 @@ module.exports = function createGame() {
         return true; // End of turn
     }
 
+    function swapRole(role) {
+        deck.push(role);
+        deck = shuffle(deck);
+        return deck.pop();
+    }
+
     function nextTurn() {
         debug('next turn');
         state.state = createState(stateNames.START_OF_TURN, nextPlayerIdx());
     }
 
-    function playerHasRole(player, role) {
+    function indexOfInfluence(player, role) {
         for (var i = 0; i < player.influence.length; i++) {
             if (player.influence[i].role == role && !player.influence[i].revealed) {
-                return true;
+                return i;
             }
         }
-        return false;
+        return null;
     }
 
     function nextPlayerIdx() {
