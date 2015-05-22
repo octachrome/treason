@@ -223,20 +223,25 @@ module.exports = function createGame() {
             }
 
         } else if (command.command == 'challenge') {
-            if (state.state.name != stateNames.ACTION_RESPONSE) {
+            if (state.state.name == stateNames.ACTION_RESPONSE) {
+                var action = actions[state.state.action];
+                if (!action) {
+                    debug('unknown action');
+                    return;
+                }
+                if (!action.role) {
+                    debug('action cannot be challenged');
+                    return;
+                }
+                challenge(playerIdx, state.state.playerIdx, action.role);
+
+            } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
+                challenge(playerIdx, state.state.target, state.state.role);
+
+            } else {
                 debug('incorrect state');
                 return;
             }
-            var action = actions[state.state.action];
-            if (!action) {
-                debug('unknown action');
-                return;
-            }
-            if (!action.role) {
-                debug('action cannot be challenged');
-                return;
-            }
-            challenge(playerIdx, state.state.playerIdx, action.role);
 
         } else if (command.command == 'reveal') {
             if (state.state.name != stateNames.REVEAL_INFLUENCE) {
@@ -320,13 +325,16 @@ module.exports = function createGame() {
         if (playerHasRole(challengedPlayer, challegedRole)) {
             // Challenge lost.
             var influenceCount = countInfluence(player);
-            if (influenceCount <= 1 || (influenceCount <= 2 && state.state.action == 'assassinate')) {
-                // The player is dead (challenging an assassination and failing loses two influnece)
+            if (influenceCount <= 1 ||
+                (influenceCount <= 2 && state.state.name == stateNames.ACTION_RESPONSE && state.state.action == 'assassinate')) {
+                // The player is dead (challenging an assassination and failing loses you two influnece)
+                // todo: this is only true if the challenger was the target of the assassination
                 killPlayer(playerIdx);
                 checkForGameEnd();
             } else {
                 if (state.state.action != 'exchange') {
-                    // If the challenge was for an exchange, the exchange must place after the reveal.
+                    // The action was unsuccessfully challenged, so play it.
+                    // If the action was an exchange, the exchange must place after the reveal.
                     playAction(state.state.playerIdx, state.state);
                 }
                 state.state = createState(stateNames.REVEAL_INFLUENCE, challengedPlayerIdx, null, playerIdx, 'failed challenge');
@@ -334,11 +342,14 @@ module.exports = function createGame() {
         } else {
             // Challenge won.
             influenceCount = countInfluence(challengedPlayer);
-            if (influenceCount <= 1) {
-                // The player is dead
+            if (influenceCount <= 1 ||
+                (influenceCount <= 2 && state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate')) {
+                // The player is dead (challenging a contessa block of an assassination and succeeding takes out two influence)
                 killPlayer(challengedPlayerIdx);
                 checkForGameEnd();
             } else {
+                // The block was successfully challenged, so play the original action.
+                playAction(state.state.playerIdx, state.state);
                 state.state = createState(stateNames.REVEAL_INFLUENCE, challengedPlayerIdx, null, challengedPlayerIdx, 'successfully challenged');
             }
         }
