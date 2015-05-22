@@ -30,6 +30,8 @@ module.exports = function createGame() {
 
     var sockets = [];
 
+    var deck = shuffle(buildDeck());
+
     function playerJoined(socket) {
         var playerId = nextPlayerId++;
 
@@ -44,11 +46,11 @@ module.exports = function createGame() {
             cash: 2,
             influence: [
                 {
-                    role: 'duke',
+                    role: deck.pop(),
                     revealed: false
                 },
                 {
-                    role: 'captain',
+                    role: deck.pop(),
                     revealed: false
                 },
             ]
@@ -262,7 +264,6 @@ module.exports = function createGame() {
                     } else {
                         nextTurn();
                     }
-                    checkForGameEnd();
                     emitState();
                     return;
                 }
@@ -330,14 +331,13 @@ module.exports = function createGame() {
                 // The player is dead (challenging an assassination and failing loses you two influnece)
                 // todo: this is only true if the challenger was the target of the assassination
                 killPlayer(playerIdx);
-                checkForGameEnd();
             } else {
-                if (state.state.action != 'exchange') {
+                if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action != 'exchange') {
                     // The action was unsuccessfully challenged, so play it.
                     // If the action was an exchange, the exchange must place after the reveal.
                     playAction(state.state.playerIdx, state.state);
                 }
-                state.state = createState(stateNames.REVEAL_INFLUENCE, challengedPlayerIdx, null, playerIdx, 'failed challenge');
+                state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, null, playerIdx, 'failed challenge');
             }
         } else {
             // Challenge won.
@@ -346,11 +346,12 @@ module.exports = function createGame() {
                 (influenceCount <= 2 && state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate')) {
                 // The player is dead (challenging a contessa block of an assassination and succeeding takes out two influence)
                 killPlayer(challengedPlayerIdx);
-                checkForGameEnd();
             } else {
-                // The block was successfully challenged, so play the original action.
-                playAction(state.state.playerIdx, state.state);
-                state.state = createState(stateNames.REVEAL_INFLUENCE, challengedPlayerIdx, null, challengedPlayerIdx, 'successfully challenged');
+                if (state.state.name == stateNames.BLOCK_RESPONSE) {
+                    // The block was successfully challenged, so play the original action.
+                    playAction(state.state.playerIdx, state.state);
+                }
+                state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, null, challengedPlayerIdx, 'successfully challenged');
             }
         }
     }
@@ -383,6 +384,7 @@ module.exports = function createGame() {
     }
 
     function nextTurn() {
+        debug('next turn');
         state.state = createState(stateNames.START_OF_TURN, nextPlayerIdx());
     }
 
@@ -420,6 +422,36 @@ module.exports = function createGame() {
 
     function debug(obj) {
         console.log(obj);
+    }
+
+    function shuffle(array) {
+        var shuffled = [];
+        while (array.length) {
+            var i = Math.floor(Math.random() * array.length);
+            var e = array.splice(i, 1);
+            shuffled.push(e[0]);
+        }
+        return shuffled;
+    }
+
+    function buildDeck() {
+        var roles = {};
+        for (var actionName in actions) {
+            var action = actions[actionName];
+            if (action.role) {
+                roles[action.role] = true;
+            }
+            if (action.blockedBy) {
+                for (var i = 0; i < action.blockedBy.length; i++) {
+                    roles[action.blockedBy[i]] = true;
+                }
+            }
+        }
+        var deck = [];
+        for (var i = 0; i < 3; i++) {
+            deck = deck.concat(Object.keys(roles));
+        }
+        return deck;
     }
 
     return {
