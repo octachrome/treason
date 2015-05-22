@@ -8,7 +8,8 @@ var stateNames = {
     START_OF_TURN: 'start-of-turn',
     ACTION_RESPONSE: 'action-response',
     BLOCK_RESPONSE: 'block-response',
-    REVEAL_INFLUENCE: 'reveal-influence'
+    REVEAL_INFLUENCE: 'reveal-influence',
+    EXCHANGE: 'exchange'
 };
 
 var deepcopy = require('deepcopy');
@@ -162,6 +163,7 @@ module.exports = function createGame() {
 
     function command(socket, command) {
         debug(command);
+        var i;
         var playerIdx = playerIdxBySocket(socket);
         if (playerIdx == null) {
             debug('unknown player');
@@ -226,6 +228,10 @@ module.exports = function createGame() {
 
         } else if (command.command == 'challenge') {
             if (state.state.name == stateNames.ACTION_RESPONSE) {
+                if (playerIdx == state.state.playerIdx) {
+                    debug('cannot challenge your own action');
+                    return;
+                }
                 var action = actions[state.state.action];
                 if (!action) {
                     debug('unknown action');
@@ -238,6 +244,10 @@ module.exports = function createGame() {
                 challenge(playerIdx, state.state.playerIdx, action.role);
 
             } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
+                if (playerIdx == state.state.target) {
+                    debug('cannot challenge your own block');
+                    return;
+                }
                 challenge(playerIdx, state.state.target, state.state.role);
 
             } else {
@@ -254,10 +264,13 @@ module.exports = function createGame() {
                 debug('not your turn to reveal an influence');
                 return;
             }
-            for (var i = 0; i < player.influence.length; i++) {
+            for (i = 0; i < player.influence.length; i++) {
                 var influence = player.influence[i];
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
+                    console.log(state.state.action);
+                    console.log(state.state.target);
+                    console.log(state.state.playerIdx);
                     if (state.state.action == 'exchange' && state.state.target != state.state.playerIdx) {
                         // If the challenge was for an exchange, and the challenge was lost, the exchange must place after the reveal.
                         playAction(state.state.playerIdx, state.state);
@@ -281,6 +294,10 @@ module.exports = function createGame() {
                 debug('unknown action');
                 return;
             }
+            if (playerIdx == state.state.playerIdx) {
+                debug('cannot block your own action');
+                return;
+            }
             if (!action.blockedBy) {
                 debug('action cannot be blocked');
                 return;
@@ -298,8 +315,16 @@ module.exports = function createGame() {
 
         } else if (command.command == 'allow') {
             if (state.state.name == stateNames.BLOCK_RESPONSE) {
+                if (state.state.target == playerIdx) {
+                    debug('cannot allow your own block');
+                    return;
+                }
                 nextTurn();
             } else if (state.state.name == stateNames.ACTION_RESPONSE) {
+                if (state.state.playerIdx == playerIdx) {
+                    debug('cannot allow your own move');
+                    return;
+                }
                 if (playAction(state.state.playerIdx, state.state)) {
                     nextTurn();
                 }
@@ -307,6 +332,31 @@ module.exports = function createGame() {
                 debug('incorrect state');
                 return;
             }
+
+        } else if (command.command == 'exchange') {
+            if (state.state.name != stateNames.EXCHANGE) {
+                debug('incorrect state');
+                return;
+            }
+            if (state.state.playerIdx != playerIdx) {
+                debug('not your turn');
+                return;
+            }
+            if (!command.roles) {
+                debug('must specify roles to exchange');
+                return;
+            }
+            var influenceCount = countInfluence(player);
+            if (command.roles.length != influenceCount) {
+                debug('wrong number of roles');
+                return;
+            }
+            for (i = 0; i < player.influence.length; i++) {
+                if (!player.influence[i].revealed) {
+                    player.influence[i].role = command.roles.pop()
+                }
+            }
+            nextTurn();
 
         } else {
             debug('unknown command');
@@ -338,7 +388,7 @@ module.exports = function createGame() {
                     // If the action was an exchange, the exchange must place after the reveal.
                     playAction(state.state.playerIdx, state.state);
                 }
-                state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, null, playerIdx, 'failed challenge');
+                state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, state.state.action, playerIdx, 'failed challenge');
             }
             // Deal the challenged player a replacement card.
             challengedPlayer.influence[influenceIdx].role = swapRole(challengedPlayer.influence[influenceIdx].role);
@@ -354,7 +404,7 @@ module.exports = function createGame() {
                     // The block was successfully challenged, so play the original action.
                     playAction(state.state.playerIdx, state.state);
                 }
-                state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, null, challengedPlayerIdx, 'successfully challenged');
+                state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, state.state.action, challengedPlayerIdx, 'successfully challenged');
             }
         }
     }
@@ -365,10 +415,10 @@ module.exports = function createGame() {
         var action = actions[actionState.action];
         player.cash += action.gain || 0;
         if (actionState.action == 'assassinate') {
-            state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, null, actionState.target, 'assassinated');
+            state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'assassinated');
             return false; // Not yet end of turn
         } else if (actionState.action == 'coup') {
-            state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, null, actionState.target, 'coup');
+            state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'coup');
             return false; // Not yet end of turn
         } else if (actionState.action == 'steal') {
             var target = state.players[actionState.target];
@@ -380,7 +430,10 @@ module.exports = function createGame() {
                 target.cash = 0;
             }
         } else if (actionState.action == 'exchange') {
-            // todo
+            sockets[playerIdx].emit('exchange-options', [
+                deck.pop(), deck.pop()
+            ]);
+            state.state = createState(stateNames.EXCHANGE, playerIdx, actionState.action);
             return false; // Not yet end of turn
         }
         return true; // End of turn

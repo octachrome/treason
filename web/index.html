@@ -19,6 +19,22 @@
         }
         console.log(data);
     });
+    var exchangeOptions = ko.observableArray();
+    var exchangeKeep = ko.observable(0);
+    socket.on('exchange-options', function (cards) {
+        var options = cards;
+        var keep = 0;
+        var influences = ourInfluence();
+        for (var i = 0; i < influences.length; i++) {
+            var inf = influences[i];
+            if (!inf.revealed()) {
+                options.push(inf.role);
+                keep++;
+            }
+        }
+        exchangeOptions(options);
+        exchangeKeep(keep);
+    });
     socket.on('error', function (data) {
         alert(data);
     });
@@ -147,6 +163,20 @@
             role: influence.role()
         });
     }
+    function exchange() {
+        var checked = $('input:checked');
+        var roles = [];
+        checked.each(function (index, el) {
+            roles.push($(el).data('role'));
+        });
+        if (roles.length == exchangeKeep()) {
+            command('exchange', {
+                roles: roles
+            });
+        } else {
+            alert('must choose ' + exchangeKeep() + ' roles');
+        }
+    }
     </script>
     <style>
     body {
@@ -186,6 +216,18 @@
                 </div>
                 <div data-bind="visible: theyAreInState('start-of-turn')">
                     Waiting for <span data-bind="text: currentPlayerName()"></span> to play
+                </div>
+                <div data-bind="visible: theyAreInState('exchange')">
+                    Waiting for <span data-bind="text: currentPlayerName()"></span> to exchange roles
+                </div>
+                <div data-bind="visible: weAreInState('exchange')">
+                    Choose <span data-bind="text: exchangeKeep"></span> roles to keep:
+                    <!-- ko foreach: exchangeOptions -->
+                        <span data-bind="text: $data"></span>
+                        <input type="checkbox" data-bind="attr: { 'data-role': $data }"></input>
+                        <br/>
+                    <!-- /ko -->
+                    <button class="btn btn-default" data-bind="click: exchange">Exchange</button>
                 </div>
                 <div data-bind="visible: weAreInState('action-response')">
                     Waiting for blocks/challenges
