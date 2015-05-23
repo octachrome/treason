@@ -120,9 +120,6 @@
         }
         return action.blockedBy || [];
     }
-    function theyAreBlocking() {
-        return vm.state.name() == 'block-response' && vm.state.target() != vm.playerIdx();
-    }
     function weCanChallenge() {
         var action = actions[vm.state.action()];
         if (!action) {
@@ -148,8 +145,11 @@
     function allow() {
         command('allow');
     }
-    function weRevealInfluence() {
-        return vm.state.name() == 'reveal-influence' && vm.state.target() == vm.playerIdx();
+    function weAreTargetted(stateName) {
+        return vm.state.name() == stateName && vm.state.target() == vm.playerIdx();
+    }
+    function theyAreTargetted(stateName) {
+        return vm.state.name() == stateName && vm.state.target() != vm.playerIdx();
     }
     function ourPlayer() {
         return vm.players()[vm.playerIdx()];
@@ -176,6 +176,22 @@
         } else {
             alert('must choose ' + exchangeKeep() + ' roles');
         }
+    }
+    function displayHistory(hist) {
+        var text = '';
+        if (hist.playerIdx() == vm.playerIdx()) {
+            text = 'You';
+        } else {
+            text = vm.players()[hist.playerIdx()].name();
+        }
+        text += ' ' + hist.message();
+        var target = hist.target && hist.target();
+        if (target == vm.playerIdx()) {
+            text += ' you';
+        } else if (target != null) {
+            text += ' ' + vm.players()[target].name();
+        }
+        return text;
     }
     </script>
     <style>
@@ -207,60 +223,69 @@
             </div>
             <!-- Activity -->
             <div class="col-xs-8">
-                <div data-bind="visible: state.name() == 'waiting-for-players'">Waiting for players</div>
-                <div data-bind="visible: weAreInState('start-of-turn')">
-                    Your turn:
-                    <!-- ko foreach: Object.keys(actions).sort() -->
-                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction"></button>
+                <ul class="list-group">
+                    <!-- ko foreach: history -->
+                        <li class="list-group-item" data-bind="text: displayHistory($data)"></li>
                     <!-- /ko -->
-                </div>
-                <div data-bind="visible: theyAreInState('start-of-turn')">
-                    Waiting for <span data-bind="text: currentPlayerName()"></span> to play
-                </div>
-                <div data-bind="visible: theyAreInState('exchange')">
-                    Waiting for <span data-bind="text: currentPlayerName()"></span> to exchange roles
-                </div>
-                <div data-bind="visible: weAreInState('exchange')">
-                    Choose <span data-bind="text: exchangeKeep"></span> roles to keep:
-                    <!-- ko foreach: exchangeOptions -->
-                        <span data-bind="text: $data"></span>
-                        <input type="checkbox" data-bind="attr: { 'data-role': $data }"></input>
-                        <br/>
-                    <!-- /ko -->
-                    <button class="btn btn-default" data-bind="click: exchange">Exchange</button>
-                </div>
-                <div data-bind="visible: weAreInState('action-response')">
-                    Waiting for blocks/challenges
-                </div>
-                <div data-bind="visible: theyAreInState('action-response')">
-                    <span data-bind="text: currentPlayerName()"></span> is attempting to
-                    <span data-bind="text: state.action"></span>
-                    <!-- ko if: weCanBlock() -->
-                        <!-- ko foreach: blockingRoles() -->
-                            <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
-                        <!-- /ko -->
-                    <!-- /ko -->
-                    <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
-                    <button class="btn btn-default" data-bind="click: allow">Allow</button>
-                </div>
-                <div data-bind="visible: theyAreBlocking()">
-                    <span data-bind="text: targetPlayerName()"></span> is attempting to block with
-                    <span data-bind="text: state.role"></span>
-                    <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
-                    <button class="btn btn-default" data-bind="click: allow">Allow</button>
-                </div>
-                <div data-bind="visible: weAreInState('game-won')">
-                    You have won!
-                </div>
-                <div data-bind="visible: theyAreInState('game-won')">
-                    <span data-bind="text: currentPlayerName()"></span> has won!
-                </div>
-                <div data-bind="visible: weRevealInfluence()">
-                    Must reveal an influence (<span data-bind="text: state.message"></span>)
-                    <!-- ko foreach: ourInfluence() -->
-                    <button class="btn btn-default" data-bind="text: role, visible: !revealed(), click: reveal"></button>
-                    <!-- /ko -->
-                </div>
+                    <li class="list-group-item">
+                        <div data-bind="visible: state.name() == 'waiting-for-players'">Waiting for players</div>
+                        <div data-bind="visible: weAreInState('start-of-turn')">
+                            Your turn:
+                            <!-- ko foreach: Object.keys(actions).sort() -->
+                            <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction"></button>
+                            <!-- /ko -->
+                        </div>
+                        <div data-bind="visible: theyAreInState('start-of-turn')">
+                            Waiting for <span data-bind="text: currentPlayerName()"></span> to play
+                        </div>
+                        <div data-bind="visible: theyAreInState('exchange')">
+                            Waiting for <span data-bind="text: currentPlayerName()"></span> to exchange roles
+                        </div>
+                        <div data-bind="visible: weAreInState('exchange')">
+                            Choose <span data-bind="text: exchangeKeep"></span> roles to keep:<br/>
+                            <!-- ko foreach: exchangeOptions -->
+                                <span data-bind="text: $data"></span>
+                                <input type="checkbox" data-bind="attr: { 'data-role': $data }"></input>
+                                <br/>
+                            <!-- /ko -->
+                            <button class="btn btn-default" data-bind="click: exchange">Exchange</button>
+                        </div>
+                        <div data-bind="visible: weAreInState('action-response')">
+                            Waiting for blocks/challenges
+                        </div>
+                        <div data-bind="visible: theyAreInState('action-response')">
+                            <!-- ko if: weCanBlock() -->
+                                <!-- ko foreach: blockingRoles() -->
+                                    <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
+                                <!-- /ko -->
+                            <!-- /ko -->
+                            <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
+                            <button class="btn btn-default" data-bind="click: allow">Allow</button>
+                        </div>
+                        <div data-bind="visible: theyAreTargetted('block-response')">
+                            <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
+                            <button class="btn btn-default" data-bind="click: allow">Allow</button>
+                        </div>
+                        <div data-bind="visible: weAreTargetted('block-response')">
+                            Waiting for challenges
+                        </div>
+                        <div data-bind="visible: weAreInState('game-won')">
+                            You have won!
+                        </div>
+                        <div data-bind="visible: theyAreInState('game-won')">
+                            <span data-bind="text: currentPlayerName()"></span> has won!
+                        </div>
+                        <div data-bind="visible: weAreTargetted('reveal-influence')">
+                            Must reveal an influence
+                            <!-- ko foreach: ourInfluence() -->
+                            <button class="btn btn-default" data-bind="text: role, visible: !revealed(), click: reveal"></button>
+                            <!-- /ko -->
+                        </div>
+                        <div data-bind="visible: theyAreTargetted('reveal-influence')">
+                            Waiting for <span data-bind="text: currentPlayerName()"></span> to reveal an influence
+                        </div>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>

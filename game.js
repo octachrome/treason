@@ -26,7 +26,8 @@ module.exports = function createGame() {
         gameId: gameId,
         players: [],
         numPlayers: numPlayers,
-        state: createState(stateNames.WAITING_FOR_PLAYERS)
+        state: createState(stateNames.WAITING_FOR_PLAYERS),
+        history: []
     };
 
     var sockets = [];
@@ -41,7 +42,7 @@ module.exports = function createGame() {
             return;
         }
 
-        state.players.push({
+        var player = {
             playerId: playerId,
             name: 'Player ' + playerId,
             cash: 2,
@@ -55,13 +56,15 @@ module.exports = function createGame() {
                     revealed: false
                 },
             ]
-        });
+        };
+        state.players.push(player);
         sockets.push(socket);
 
         if (isActive()) {
             state.state = createState(stateNames.START_OF_TURN, 0);
         }
 
+        addHistory(state.players.length - 1, 'joined the game');
         emitState();
     }
 
@@ -73,6 +76,7 @@ module.exports = function createGame() {
         }
         sockets[playerIdx] = null;
         killPlayer(playerIdx);
+        addHistory(playerIdx, 'left the game');
         emitState();
     }
 
@@ -223,6 +227,15 @@ module.exports = function createGame() {
                 }
             } else {
                 debug('checking for blocks/challenges');
+                if (command.action == 'steal') {
+                    addHistory(playerIdx, 'attempted to steal from', command.target);
+                } else if (command.action == 'assassinate') {
+                    addHistory(playerIdx, 'attempted to assassinate', command.target);
+                } else if (command.action == 'exchange') {
+                    addHistory(playerIdx, 'attempted to exchange');
+                } else {
+                    addHistory(playerIdx, 'attempted to draw ' + command.action);
+                }
                 state.state = createState(stateNames.ACTION_RESPONSE, playerIdx, command.action, command.target);
             }
 
@@ -268,9 +281,7 @@ module.exports = function createGame() {
                 var influence = player.influence[i];
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
-                    console.log(state.state.action);
-                    console.log(state.state.target);
-                    console.log(state.state.playerIdx);
+                    addHistory(playerIdx, 'revealed ' + command.role);
                     if (state.state.action == 'exchange' && state.state.target != state.state.playerIdx) {
                         // If the challenge was for an exchange, and the challenge was lost, the exchange must place after the reveal.
                         playAction(state.state.playerIdx, state.state);
@@ -311,6 +322,7 @@ module.exports = function createGame() {
                 return;
             }
             // Original player is in the playerIdx field; blocking player is in the target field.
+            addHistory(playerIdx, 'attempted to block with ' + command.role);
             state.state = createState(stateNames.BLOCK_RESPONSE, state.state.playerIdx, state.state.action, playerIdx, null, command.role);
 
         } else if (command.command == 'allow') {
@@ -319,6 +331,7 @@ module.exports = function createGame() {
                     debug('cannot allow your own block');
                     return;
                 }
+                addHistory(state.state.target, 'blocked with ' + state.state.role);
                 nextTurn();
             } else if (state.state.name == stateNames.ACTION_RESPONSE) {
                 if (state.state.playerIdx == playerIdx) {
@@ -356,6 +369,7 @@ module.exports = function createGame() {
                     player.influence[i].role = command.roles.pop()
                 }
             }
+            addHistory(playerIdx, ' exchanged roles');
             nextTurn();
 
         } else {
@@ -376,6 +390,7 @@ module.exports = function createGame() {
         var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole);
         if (influenceIdx != null) {
             // Player has role - challenge lost.
+            addHistory(playerIdx, 'incorrectly challenged', challengedPlayerIdx);
             var influenceCount = countInfluence(player);
             if (influenceCount <= 1 ||
                 (influenceCount <= 2 && state.state.name == stateNames.ACTION_RESPONSE && state.state.action == 'assassinate')) {
@@ -394,6 +409,7 @@ module.exports = function createGame() {
             challengedPlayer.influence[influenceIdx].role = swapRole(challengedPlayer.influence[influenceIdx].role);
         } else {
             // Player does not have role - challenge won.
+            addHistory(playerIdx, 'successfully challenged', challengedPlayerIdx);
             influenceCount = countInfluence(challengedPlayer);
             if (influenceCount <= 1 ||
                 (influenceCount <= 2 && state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate')) {
@@ -415,13 +431,16 @@ module.exports = function createGame() {
         var action = actions[actionState.action];
         player.cash += action.gain || 0;
         if (actionState.action == 'assassinate') {
+            addHistory(playerIdx, 'assassinated', actionState.target);
             state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'assassinated');
             return false; // Not yet end of turn
         } else if (actionState.action == 'coup') {
+            addHistory(playerIdx, 'staged a coup on', actionState.target);
             state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'coup');
             return false; // Not yet end of turn
         } else if (actionState.action == 'steal') {
             var target = state.players[actionState.target];
+            addHistory(playerIdx, 'stole from', actionState.target);
             if (target.cash >= 2) {
                 target.cash -= 2;
                 player.cash += 2;
@@ -435,6 +454,8 @@ module.exports = function createGame() {
             ]);
             state.state = createState(stateNames.EXCHANGE, playerIdx, actionState.action);
             return false; // Not yet end of turn
+        } else {
+            addHistory(playerIdx, 'drew ' + actionState.action);
         }
         return true; // End of turn
     }
@@ -514,6 +535,14 @@ module.exports = function createGame() {
             deck = deck.concat(Object.keys(roles));
         }
         return deck;
+    }
+
+    function addHistory(playerIdx, message, target) {
+        state.history.push({
+            playerIdx: playerIdx,
+            message: message,
+            target: target
+        });
     }
 
     return {
