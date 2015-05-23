@@ -17,6 +17,7 @@
         } else {
             ko.mapping.fromJS(data, vm);
         }
+        $('.activity').scrollTop(10000);
         console.log(data);
     });
     var exchangeOptions = ko.observableArray();
@@ -193,10 +194,20 @@
         }
         return text;
     }
+    $(window).on('resize', function () {
+        $('.activity').height($(window).height() - 40);
+        $('.activity').scrollTop(10000);
+    });
+    $(function () {
+        $('.activity').height($(window).height() - 40);
+    });
     </script>
     <style>
     body {
         padding-top: 15px;
+    }
+    div.activity {
+        overflow-y: scroll;
     }
     </style>
 </head>
@@ -222,7 +233,7 @@
                 </ul>
             </div>
             <!-- Activity -->
-            <div class="col-xs-8">
+            <div class="col-xs-8 activity">
                 <ul class="list-group">
                     <!-- ko foreach: history -->
                         <li class="list-group-item" data-bind="text: displayHistory($data)"></li>
