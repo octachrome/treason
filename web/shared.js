@@ -38,11 +38,22 @@
         }
     };
 
+    var states = {
+        WAITING_FOR_PLAYERS: 'waiting-for-players',
+        START_OF_TURN: 'start-of-turn',
+        ACTION_RESPONSE: 'action-response',
+        BLOCK_RESPONSE: 'block-response',
+        REVEAL_INFLUENCE: 'reveal-influence',
+        EXCHANGE: 'exchange'
+    };
+
     if (typeof window != 'undefined') {
         window.actions = actions;
+        window.states = states;
     } else {
         module.exports = {
-            actions: actions
+            actions: actions,
+            states: states
         };
     }
 })();

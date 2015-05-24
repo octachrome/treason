@@ -2,15 +2,7 @@
 
 var shared = require('./web/shared.js');
 var actions = shared.actions;
-
-var stateNames = {
-    WAITING_FOR_PLAYERS: 'waiting-for-players',
-    START_OF_TURN: 'start-of-turn',
-    ACTION_RESPONSE: 'action-response',
-    BLOCK_RESPONSE: 'block-response',
-    REVEAL_INFLUENCE: 'reveal-influence',
-    EXCHANGE: 'exchange'
-};
+var stateNames = shared.states;
 
 var deepcopy = require('deepcopy');
 
@@ -57,7 +49,7 @@ module.exports = function createGame(debugging) {
         state.players.push(playerState);
         players.push(player);
 
-        if (isActive()) {
+        if (isFull()) {
             state.state = createState(stateNames.START_OF_TURN, 0);
         }
 
@@ -165,7 +157,7 @@ module.exports = function createGame(debugging) {
         return masked;
     }
 
-    function isActive() {
+    function isFull() {
         return state.players.length == numPlayers;
     }
 
@@ -516,7 +508,7 @@ module.exports = function createGame(debugging) {
     return {
         playerJoined: playerJoined,
         playerLeft: playerLeft,
-        isActive: isActive,
+        isFull: isFull,
         command: command
     };
 };

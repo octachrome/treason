@@ -186,7 +186,8 @@
         if (hist.playerIdx() == vm.playerIdx()) {
             text = 'You';
         } else {
-            text = vm.players()[hist.playerIdx()].name();
+            var player = vm.players()[hist.playerIdx()];
+            text = player ? player.name() : 'Unknown';
         }
         text += ' ' + hist.message();
         var target = hist.target && hist.target();
