@@ -17,7 +17,7 @@ var deepcopy = require('deepcopy');
 var nextGameId = 1;
 var nextPlayerId = 1;
 
-module.exports = function createGame() {
+module.exports = function createGame(debugging) {
     var gameId = nextGameId++;
     var numPlayers = 2;
 
@@ -30,21 +30,17 @@ module.exports = function createGame() {
         history: []
     };
 
-    var sockets = [];
+    var players = [];
 
     var deck = shuffle(buildDeck());
 
-    function playerJoined(socket) {
-        var playerId = nextPlayerId++;
-
+    function playerJoined(player) {
         if (state.players.length >= numPlayers) {
-            socket.emit('error', 'Cannot join game ' + gameId + ': it is full.');
-            return;
+            throw new GameException('Cannot join game ' + gameId + ': it is full');
         }
 
-        var player = {
-            playerId: playerId,
-            name: 'Player ' + playerId,
+        var playerState = {
+            name: player.name || 'Anonymous',
             cash: 2,
             influence: [
                 {
@@ -57,24 +53,36 @@ module.exports = function createGame() {
                 },
             ]
         };
-        state.players.push(player);
-        sockets.push(socket);
+        var playerIdx = state.players.length;
+        state.players.push(playerState);
+        players.push(player);
 
         if (isActive()) {
             state.state = createState(stateNames.START_OF_TURN, 0);
         }
 
-        addHistory(state.players.length - 1, 'joined the game');
+        addHistory(playerIdx, 'joined the game');
         emitState();
+
+        return createGameProxy(playerIdx);
     }
 
-    function playerLeft(socket) {
-        var playerIdx = playerIdxBySocket(socket);
+    function createGameProxy(playerIdx) {
+        return {
+            command: function (data) {
+                command(playerIdx, data);
+            },
+            playerLeft: function () {
+                playerLeft(playerIdx);
+            }
+        };
+    }
+
+    function playerLeft(playerIdx) {
         if (playerIdx == null) {
-            debug('unknown player disconnected');
-            return;
+            throw new GameException('Unknown player disconnected');
         }
-        sockets[playerIdx] = null;
+        players[playerIdx] = null;
         killPlayer(playerIdx);
         addHistory(playerIdx, 'left the game');
         emitState();
@@ -92,15 +100,6 @@ module.exports = function createGame() {
         }
 
         checkForGameEnd();
-    }
-
-    function playerIdxBySocket(socket) {
-        for (var i = 0; i < state.players.length; i++) {
-            if (sockets[i] == socket) {
-                return i;
-            }
-        }
-        return null;
     }
 
     function checkForGameEnd() {
@@ -135,10 +134,16 @@ module.exports = function createGame() {
         debug(state);
         for (var i = 0; i < state.players.length; i++) {
             var masked = maskState(i);
-            if (sockets[i] != null) {
-                sockets[i].emit('state', masked);
-            }
+            emitStateAsync(i, masked);
         }
+    }
+
+    function emitStateAsync(playerIdx, state) {
+        setTimeout(function () {
+            if (players[playerIdx] != null) {
+                players[playerIdx].onStateChange(state);
+            }
+        }, 0);
     }
 
     /**
@@ -157,7 +162,6 @@ module.exports = function createGame() {
             }
         }
         masked.playerIdx = playerIdx;
-        masked.playerId = masked.players[playerIdx].playerId;
         return masked;
     }
 
@@ -165,59 +169,44 @@ module.exports = function createGame() {
         return state.players.length == numPlayers;
     }
 
-    function command(socket, command) {
+    function command(playerIdx, command) {
+        debug('command from player: ' + playerIdx);
         debug(command);
         var i;
-        var playerIdx = playerIdxBySocket(socket);
-        if (playerIdx == null) {
-            debug('unknown player');
-            return;
-        }
-        debug('from: ' + playerIdx);
         var player = state.players[playerIdx];
         if (player == null) {
-            debug('unknown player');
-            return;
+            throw new GameException('Unknown player');
         }
         if (command.stateId != state.stateId) {
-            debug('stale state');
-            return;
+            throw new GameException('Stale state');
         }
 
         if (command.command == 'play-action') {
             if (state.state.name != stateNames.START_OF_TURN) {
-                debug('incorrect state');
-                return;
+                throw new GameException('Incorrect state');
             }
             if (state.state.playerIdx != playerIdx) {
-                debug('not your turn');
-                return;
+                throw new GameException('Not your turn');
             }
             var action = actions[command.action];
             if (action == null) {
-                debug('unknown action');
-                return;
+                throw new GameException('Unknown action');
             }
             if (player.cash >= 10 && command.action != 'coup') {
-                debug('you must coup with >= 10 cash');
-                return;
+                throw new GameException('You must coup with >= 10 cash');
             }
             if (player.cash < action.cost) {
-                debug('not enough cash');
-                return;
+                throw new GameException('Not enough cash');
             }
             if (action.targetted) {
                 if (command.target == null) {
-                    debug('no target specified');
-                    return;
+                    throw new GameException('No target specified');
                 }
                 if (command.target < 0 || command.target >= numPlayers) {
-                    debug('invalid target specified');
-                    return;
+                    throw new GameException('Invalid target specified');
                 }
                 if (!countInfluence(state.players[command.target])) {
-                    debug('cannot target dead player');
-                    return;
+                    throw new GameException('Cannot target dead player');
                 }
             }
             player.cash -= action.cost;
@@ -242,40 +231,33 @@ module.exports = function createGame() {
         } else if (command.command == 'challenge') {
             if (state.state.name == stateNames.ACTION_RESPONSE) {
                 if (playerIdx == state.state.playerIdx) {
-                    debug('cannot challenge your own action');
-                    return;
+                    throw new GameException('Cannot challenge your own action');
                 }
                 var action = actions[state.state.action];
                 if (!action) {
-                    debug('unknown action');
-                    return;
+                    throw new GameException('Unknown action');
                 }
                 if (!action.role) {
-                    debug('action cannot be challenged');
-                    return;
+                    throw new GameException('Action cannot be challenged');
                 }
                 challenge(playerIdx, state.state.playerIdx, action.role);
 
             } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 if (playerIdx == state.state.target) {
-                    debug('cannot challenge your own block');
-                    return;
+                    throw new GameException('Cannot challenge your own block');
                 }
                 challenge(playerIdx, state.state.target, state.state.role);
 
             } else {
-                debug('incorrect state');
-                return;
+                throw new GameException('Incorrect state');
             }
 
         } else if (command.command == 'reveal') {
             if (state.state.name != stateNames.REVEAL_INFLUENCE) {
-                debug('incorrect state');
-                return;
+                throw new GameException('Incorrect state');
             }
             if (state.state.target != playerIdx) {
-                debug('not your turn to reveal an influence');
-                return;
+                throw new GameException('Not your turn to reveal an influence');
             }
             for (i = 0; i < player.influence.length; i++) {
                 var influence = player.influence[i];
@@ -292,34 +274,27 @@ module.exports = function createGame() {
                     return;
                 }
             }
-            debug('could not reveal role');
-            return;
+            throw new GameException('Could not reveal role');
 
         } else if (command.command == 'block') {
             if (state.state.name != stateNames.ACTION_RESPONSE) {
-                debug('incorrect state');
-                return;
+                throw new GameException('Incorrect state');
             }
             var action = actions[state.state.action];
             if (!action) {
-                debug('unknown action');
-                return;
+                throw new GameException('Unknown action');
             }
             if (playerIdx == state.state.playerIdx) {
-                debug('cannot block your own action');
-                return;
+                throw new GameException('Cannot block your own action');
             }
             if (!action.blockedBy) {
-                debug('action cannot be blocked');
-                return;
+                throw new GameException('Action cannot be blocked');
             }
             if (!command.role) {
-                debug('no blocking role specified');
-                return;
+                throw new GameException('No blocking role specified');
             }
             if (action.blockedBy.indexOf(command.role) < 0) {
-                debug('action cannot be blocked by that role');
-                return;
+                throw new GameException('Action cannot be blocked by that role');
             }
             // Original player is in the playerIdx field; blocking player is in the target field.
             addHistory(playerIdx, 'attempted to block with ' + command.role);
@@ -328,41 +303,34 @@ module.exports = function createGame() {
         } else if (command.command == 'allow') {
             if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 if (state.state.target == playerIdx) {
-                    debug('cannot allow your own block');
-                    return;
+                    throw new GameException('Cannot allow your own block');
                 }
                 addHistory(state.state.target, 'blocked with ' + state.state.role);
                 nextTurn();
             } else if (state.state.name == stateNames.ACTION_RESPONSE) {
                 if (state.state.playerIdx == playerIdx) {
-                    debug('cannot allow your own move');
-                    return;
+                    throw new GameException('Cannot allow your own move');
                 }
                 if (playAction(state.state.playerIdx, state.state)) {
                     nextTurn();
                 }
             } else {
-                debug('incorrect state');
-                return;
+                throw new GameException('Incorrect state');
             }
 
         } else if (command.command == 'exchange') {
             if (state.state.name != stateNames.EXCHANGE) {
-                debug('incorrect state');
-                return;
+                throw new GameException('Incorrect state');
             }
             if (state.state.playerIdx != playerIdx) {
-                debug('not your turn');
-                return;
+                throw new GameException('Not your turn');
             }
             if (!command.roles) {
-                debug('must specify roles to exchange');
-                return;
+                throw new GameException('Must specify roles to exchange');
             }
             var influenceCount = countInfluence(player);
             if (command.roles.length != influenceCount) {
-                debug('wrong number of roles');
-                return;
+                throw new GameException('Wrong number of roles');
             }
             for (i = 0; i < player.influence.length; i++) {
                 if (!player.influence[i].revealed) {
@@ -373,8 +341,7 @@ module.exports = function createGame() {
             nextTurn();
 
         } else {
-            debug('unknown command');
-            return;
+            throw new GameException('Unknown command');
         }
 
         emitState();
@@ -384,8 +351,7 @@ module.exports = function createGame() {
         var player = state.players[playerIdx];
         var challengedPlayer = state.players[challengedPlayerIdx];
         if (!challengedPlayer) {
-            debug('cannot identify challenged player');
-            return;
+            throw new GameException('Cannot identify challenged player');
         }
         var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole);
         if (influenceIdx != null) {
@@ -449,7 +415,7 @@ module.exports = function createGame() {
                 target.cash = 0;
             }
         } else if (actionState.action == 'exchange') {
-            sockets[playerIdx].emit('exchange-options', [
+            players[playerIdx].setExchangeOptions([
                 deck.pop(), deck.pop()
             ]);
             state.state = createState(stateNames.EXCHANGE, playerIdx, actionState.action);
@@ -504,7 +470,9 @@ module.exports = function createGame() {
     }
 
     function debug(obj) {
-        console.log(obj);
+        if (debugging) {
+            console.log(obj);
+        }
     }
 
     function shuffle(array) {
@@ -552,3 +520,7 @@ module.exports = function createGame() {
         command: command
     };
 };
+
+function GameException(message) {
+    this.message = message;
+}

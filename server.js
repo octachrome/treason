@@ -8,6 +8,9 @@ var server = app.listen(8080);
 
 var io = require('socket.io')(server);
 var createGame = require('./game');
+var createNetPlayer = require('./net-player');
+
+var debugging = process.argv.indexOf('--debug') >= 0;
 
 var pending = [];
 
@@ -16,19 +19,8 @@ io.on('connection', function (socket) {
     if (pending.length) {
         game = pending.pop();
     } else {
-        game = createGame();
+        game = createGame(debugging);
         pending.push(game);
     }
-    game.playerJoined(socket);
-    socket.on('command', function (data) {
-        try {
-            game.command(socket, data);
-        } catch(e) {
-            console.error(e);
-            console.error(e.stack);
-        }
-    });
-    socket.on('disconnect', function () {
-        game.playerLeft(socket);
-    });
+    createNetPlayer(game, socket);
 });

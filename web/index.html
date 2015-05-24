@@ -39,6 +39,9 @@
     socket.on('error', function (data) {
         alert(data);
     });
+    socket.on('game-error', function (data) {
+        alert(data);
+    });
 
     function weAreInState(stateName) {
         return vm.state.name() == stateName && vm.state.playerIdx() == vm.playerIdx();
