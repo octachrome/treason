@@ -138,6 +138,7 @@
 
 			return result;
 		} catch(e) {
+			console.log(e.stack);
 			mappingNesting = 0;
 			throw e;
 		}

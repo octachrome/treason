@@ -84,7 +84,10 @@ module.exports = function createGame(debugging) {
         // Reveal all the player's influence.
         var influence = state.players[playerIdx].influence;
         for (var j = 0; j < influence.length; j++) {
-            influence[j].revealed = true;
+            if (!influence[j].revealed) {
+                addHistory(playerIdx, 'revealed ' + influence[j].role);
+                influence[j].revealed = true;
+            }
         }
 
         if (state.state.playerIdx == playerIdx) {
@@ -394,7 +397,13 @@ module.exports = function createGame(debugging) {
             return false; // Not yet end of turn
         } else if (actionState.action == 'coup') {
             addHistory(playerIdx, 'staged a coup on', actionState.target);
-            state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'coup');
+            var target = state.players[actionState.target];
+            var influenceCount = countInfluence(target);
+            if (influenceCount <= 1) {
+                killPlayer(actionState.target);
+            } else {
+                state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'coup');
+            }
             return false; // Not yet end of turn
         } else if (actionState.action == 'steal') {
             var target = state.players[actionState.target];

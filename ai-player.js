@@ -21,12 +21,24 @@ function createAiPlayer(game) {
 
     function onStateChange(state) {
         if (state.state.name == stateNames.START_OF_TURN && state.state.playerIdx == state.playerIdx) {
-            // We're the duke, of course.
-            command({
-                stateId: state.stateId,
-                command: 'play-action',
-                action: 'tax'
-            });
+            var player = state.players[state.state.playerIdx];
+            if (player.cash >= 10) {
+                // We must coup
+                var target = (state.state.playerIdx + 1) % state.numPlayers;
+                command({
+                    stateId: state.stateId,
+                    command: 'play-action',
+                    action: 'coup',
+                    target: target
+                });
+            } else {
+                // We're the duke, of course.
+                command({
+                    stateId: state.stateId,
+                    command: 'play-action',
+                    action: 'tax'
+                });
+            }
 
         } else if ((state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.BLOCK_RESPONSE)
             && state.state.playerIdx != state.playerIdx) {
