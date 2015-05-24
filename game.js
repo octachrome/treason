@@ -110,7 +110,7 @@ module.exports = function createGame(debugging) {
             }
         }
         if (winnerIdx != null) {
-            state.state = createState('game-won', winnerIdx);
+            state.state = createState(stateNames.GAME_WON, winnerIdx);
         }
     }
 

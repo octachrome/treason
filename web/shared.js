@@ -44,7 +44,8 @@
         ACTION_RESPONSE: 'action-response',
         BLOCK_RESPONSE: 'block-response',
         REVEAL_INFLUENCE: 'reveal-influence',
-        EXCHANGE: 'exchange'
+        EXCHANGE: 'exchange',
+        GAME_WON: 'game-won'
     };
 
     if (typeof window != 'undefined') {
