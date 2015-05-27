@@ -7,205 +7,7 @@
     <script src="lib/knockout.mapping-debug.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="shared.js"></script>
-    <script>
-    var socket = io();
-    var vm;
-    socket.on('state', function (data) {
-        if (!vm) {
-            vm = ko.mapping.fromJS(data);
-            ko.applyBindings(vm);
-        } else {
-            ko.mapping.fromJS(data, vm);
-        }
-        $('.activity').scrollTop(10000);
-        console.log(data);
-    });
-    var exchangeOptions = ko.observableArray();
-    var exchangeKeep = ko.observable(0);
-    socket.on('exchange-options', function (cards) {
-        var options = cards;
-        var keep = 0;
-        var influences = ourInfluence();
-        for (var i = 0; i < influences.length; i++) {
-            var inf = influences[i];
-            if (!inf.revealed()) {
-                options.push(inf.role);
-                keep++;
-            }
-        }
-        exchangeOptions(options);
-        exchangeKeep(keep);
-    });
-    socket.on('error', function (data) {
-        alert(data);
-    });
-    socket.on('game-error', function (data) {
-        alert(data);
-    });
-
-    function weAreInState(stateName) {
-        return vm.state.name() == stateName && vm.state.playerIdx() == vm.playerIdx();
-    }
-    function theyAreInState(stateName) {
-        return vm.state.name() == stateName && vm.state.playerIdx() != vm.playerIdx();
-    }
-    function currentPlayerName() {
-        if (vm.state.playerIdx() != null) {
-            var player = vm.players()[vm.state.playerIdx()];
-            if (player) {
-                return player.name();
-            }
-        }
-        return '';
-    }
-    function targetPlayerName() {
-        if (vm.state.target() != null) {
-            var player = vm.players()[vm.state.target()];
-            if (player) {
-                return player.name();
-            }
-        }
-        return '';
-    }
-    function canPlayAction(actionName) {
-        var action = actions[actionName];
-        var player = ourPlayer();
-        if (!player) {
-            return false;
-        }
-        if (player.cash() >= 10 && actionName != 'coup') {
-            return false;
-        } else {
-            return player.cash() >= action.cost;
-        }
-    }
-    function playAction(actionName) {
-        if (weAreInState('start-of-turn')) {
-            var action = actions[actionName];
-            var target;
-            if (action.targetted) {
-                target = (vm.state.playerIdx() + 1) % vm.numPlayers();
-            }
-            command('play-action', {
-                action: actionName,
-                target: target
-            });
-        }
-    }
-    function command(command, options) {
-        var data = $.extend({
-            command: command,
-            stateId: vm.stateId()
-        }, options);
-        socket.emit('command', data);
-    }
-    function weCanBlock() {
-        if (vm.state.name() != 'action-response') {
-            return false;
-        }
-        var action = actions[vm.state.action()];
-        if (!action) {
-            return false;
-        }
-        if (!action.blockedBy) {
-            // ACtion cannot be blocked.
-            return false;
-        }
-        if (!action.targetted) {
-            // Untargetted actions foreign aid) can be blocked by anyone.
-            return true;
-        }
-        return vm.state.target() == vm.playerIdx();
-    }
-    function blockingRoles() {
-        var action = actions[vm.state.action()];
-        if (!action) {
-            return [];
-        }
-        return action.blockedBy || [];
-    }
-    function weCanChallenge() {
-        var action = actions[vm.state.action()];
-        if (!action) {
-            return false;
-        }
-        if (vm.state.name() == 'action-response') {
-            // Only role-based actions can be challenged.
-            return !!action.role;
-        } else if (vm.state.name() == 'block-response') {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    function block(role) {
-        command('block', {
-            role: role
-        });
-    }
-    function challenge() {
-        command('challenge');
-    }
-    function allow() {
-        command('allow');
-    }
-    function weAreTargetted(stateName) {
-        return vm.state.name() == stateName && vm.state.target() == vm.playerIdx();
-    }
-    function theyAreTargetted(stateName) {
-        return vm.state.name() == stateName && vm.state.target() != vm.playerIdx();
-    }
-    function ourPlayer() {
-        return vm.players()[vm.playerIdx()];
-    }
-    function ourInfluence() {
-        var player = ourPlayer();
-        return player && player.influence();
-    }
-    function reveal(influence) {
-        command('reveal', {
-            role: influence.role()
-        });
-    }
-    function exchange() {
-        var checked = $('input:checked');
-        var roles = [];
-        checked.each(function (index, el) {
-            roles.push($(el).data('role'));
-        });
-        if (roles.length == exchangeKeep()) {
-            command('exchange', {
-                roles: roles
-            });
-        } else {
-            alert('must choose ' + exchangeKeep() + ' roles');
-        }
-    }
-    function displayHistory(hist) {
-        var text = '';
-        if (hist.playerIdx() == vm.playerIdx()) {
-            text = 'You';
-        } else {
-            var player = vm.players()[hist.playerIdx()];
-            text = player ? player.name() : 'Unknown';
-        }
-        text += ' ' + hist.message();
-        var target = hist.target && hist.target();
-        if (target == vm.playerIdx()) {
-            text += ' you';
-        } else if (target != null) {
-            text += ' ' + vm.players()[target].name();
-        }
-        return text;
-    }
-    $(window).on('resize', function () {
-        $('.activity').height($(window).height() - 40);
-        $('.activity').scrollTop(10000);
-    });
-    $(function () {
-        $('.activity').height($(window).height() - 40);
-    });
-    </script>
+    <script src="client.js"></script>
     <style>
     body {
         padding-top: 15px;
@@ -213,14 +15,35 @@
     div.activity {
         overflow-y: scroll;
     }
+    div.hidden {
+        display: none;
+    }
+    div.welcome {
+        margin: 50px auto;
+        width: 200px;
+    }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" data-bind="visible: !playing()">
+        <div class="row">
+            <!-- Welcome screen -->
+            <div class="col-xs-12">
+                <div class="welcome">
+                    <input type="text" placeholder="Name" data-bind="value: playerName"/>
+                    <br/>
+                    <br/>
+                    <button class="btn btn-default" data-bind="enable: playerName, click: join">Join game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="display: none" data-bind="visible: playing()">
         <div class="row">
             <!-- Players -->
             <div class="col-xs-4">
-                <ul class="list-group" data-bind="foreach: players">
+                <ul class="list-group" data-bind="foreach: state.players">
                     <li class="list-group-item">
                         <div class="row">
                             <div class="col-xs-7">
@@ -239,11 +62,11 @@
             <!-- Activity -->
             <div class="col-xs-8 activity">
                 <ul class="list-group">
-                    <!-- ko foreach: history -->
+                    <!-- ko foreach: state.history -->
                         <li class="list-group-item" data-bind="text: displayHistory($data)"></li>
                     <!-- /ko -->
                     <li class="list-group-item">
-                        <div data-bind="visible: state.name() == 'waiting-for-players'">Waiting for players</div>
+                        <div data-bind="visible: state.state.name() == 'waiting-for-players'">Waiting for players</div>
                         <div data-bind="visible: weAreInState('start-of-turn')">
                             Your turn:
                             <!-- ko foreach: Object.keys(actions).sort() -->

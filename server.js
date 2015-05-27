@@ -17,17 +17,22 @@ var ai = process.argv.indexOf('--ai') >= 0;
 var pending = [];
 
 io.on('connection', function (socket) {
-    var game;
-    if (pending.length) {
-        game = pending.pop();
-    } else {
-        game = createGame(debugging);
-        if (ai) {
-            createAiPlayer(game);
+    socket.on('join', function (playerName) {
+        if (!playerName) {
+            return;
         }
-    }
-    createNetPlayer(game, socket);
-    if (!game.isFull()) {
-        pending.push(game);
-    }
+        var game;
+        if (pending.length) {
+            game = pending.pop();
+        } else {
+            game = createGame(debugging);
+            if (ai) {
+                createAiPlayer(game);
+            }
+        }
+        createNetPlayer(game, socket, playerName);
+        if (!game.isFull()) {
+            pending.push(game);
+        }
+    });
 });

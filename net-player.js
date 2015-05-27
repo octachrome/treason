@@ -2,9 +2,9 @@
 
 var playerId = 1;
 
-function createNetPlayer(game, socket) {
+function createNetPlayer(game, socket, playerName) {
     var player = {
-        name: 'Player ' + playerId++,
+        name: playerName || ('Player ' + playerId++),
         onStateChange: onStateChange,
         setExchangeOptions: setExchangeOptions
     };
