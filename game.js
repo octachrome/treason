@@ -32,7 +32,7 @@ module.exports = function createGame(debugging) {
         }
 
         var playerState = {
-            name: player.name || 'Anonymous',
+            name: playerName(player.name),
             cash: 2,
             influence: [
                 {
@@ -57,6 +57,16 @@ module.exports = function createGame(debugging) {
         emitState();
 
         return createGameProxy(playerIdx);
+    }
+
+    function playerName(name) {
+        name = name || 'Anonymous';
+        for (var i = 0; i < state.players.length; i++) {
+            if (state.players[i].name == name) {
+                return playerName(name + ' (1)');
+            }
+        }
+        return name;
     }
 
     function createGameProxy(playerIdx) {
