@@ -24,16 +24,28 @@ function createNetPlayer(game, socket, playerName) {
         socket.emit('exchange-options', options);
     }
 
-    socket.on('command', function (data) {
+    var onCommand = function(data) {
         try {
-            gameProxy.command(data);
+            if (gameProxy != null) {
+                gameProxy.command(data);
+            }
         } catch(e) {
             handleError(e);
         }
-    });
-    socket.on('disconnect', function () {
-        gameProxy.playerLeft();
-    });
+    }
+
+    var onDisconnect = function () {
+        if (gameProxy != null) {
+            socket.removeListener('command', onCommand);
+            gameProxy.playerLeft();
+            gameProxy = null;
+            game = null;
+        }
+    }
+    socket.on('command', onCommand);
+    socket.on('disconnect', onDisconnect);
+    // If the player joins another game, leave this one.
+    socket.on('join', onDisconnect);
 
     function handleError(e) {
         var message;

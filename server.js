@@ -21,13 +21,19 @@ io.on('connection', function (socket) {
         if (!playerName) {
             return;
         }
-        var game;
-        if (pending.length) {
-            game = pending.pop();
-        } else {
-            game = createGame(debugging);
-            if (ai) {
-                createAiPlayer(game);
+        var game = null;
+        while (!game) {
+            if (pending.length) {
+                game = pending.pop();
+                if (game.allPlayersDisconnected()) {
+                    // Reap dead games.
+                    game = null;
+                }
+            } else {
+                game = createGame(debugging);
+                if (ai) {
+                    createAiPlayer(game);
+                }
             }
         }
         createNetPlayer(game, socket, playerName);
@@ -35,4 +41,9 @@ io.on('connection', function (socket) {
             pending.push(game);
         }
     });
+
+    socket.on('disconnect', function () {
+        socket.removeAllListeners();
+        socket = null;
+    })
 });

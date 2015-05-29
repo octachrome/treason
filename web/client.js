@@ -1,5 +1,6 @@
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
+    welcomeMessage: ko.observable(''),
     exchangeOptions: ko.observableArray(),
     exchangeKeep: ko.observable(0),
 };
@@ -22,36 +23,45 @@ vm.state = ko.mapping.fromJS({
 vm.playerName.subscribe(function (newName) {
     localStorageSet('playerName', newName);
 });
+var socket;
 function join() {
     if (!vm.playerName()) {
         alert('Enter a name');
     }
-    var socket = io();
-    socket.on('state', function (data) {
-        ko.mapping.fromJS(data, vm.state);
-        $('.activity').scrollTop(10000);
-        console.log(data);
-    });
-    socket.on('exchange-options', function (cards) {
-        var options = cards;
-        var keep = 0;
-        var influences = ourInfluence();
-        for (var i = 0; i < influences.length; i++) {
-            var inf = influences[i];
-            if (!inf.revealed()) {
-                options.push(inf.role);
-                keep++;
+    if (socket == null) {
+        // Re-use the same socket. Automatically reconnects if disconnected.
+        socket = io();
+
+        socket.on('disconnect', function () {
+            vm.welcomeMessage('Disconnected');
+            vm.state.state.name(null); // Opens the welcome screen.
+        });
+        socket.on('state', function (data) {
+            ko.mapping.fromJS(data, vm.state);
+            $('.activity').scrollTop(10000);
+            console.log(data);
+        });
+        socket.on('exchange-options', function (cards) {
+            var options = cards;
+            var keep = 0;
+            var influences = ourInfluence();
+            for (var i = 0; i < influences.length; i++) {
+                var inf = influences[i];
+                if (!inf.revealed()) {
+                    options.push(inf.role);
+                    keep++;
+                }
             }
-        }
-        vm.exchangeOptions(options);
-        vm.exchangeKeep(keep);
-    });
-    socket.on('error', function (data) {
-        alert(data);
-    });
-    socket.on('game-error', function (data) {
-        alert(data);
-    });
+            vm.exchangeOptions(options);
+            vm.exchangeKeep(keep);
+        });
+        socket.on('error', function (data) {
+            alert(data);
+        });
+        socket.on('game-error', function (data) {
+            alert(data);
+        });
+    }
     socket.emit('join', vm.playerName());
 }
 function weAreInState(stateName) {
@@ -201,11 +211,14 @@ function displayHistory(hist) {
         text = player ? player.name() : 'Unknown';
     }
     text += ' ' + hist.message();
-    var target = hist.target && hist.target();
-    if (target == vm.state.playerIdx()) {
+    var targetIdx = hist.target && hist.target();
+    if (targetIdx == vm.state.playerIdx()) {
         text += ' you';
-    } else if (target != null) {
-        text += ' ' + vm.state.players()[target].name();
+    } else if (targetIdx != null) {
+        var target = vm.state.players()[target];
+        if (target != null) {
+            text += ' ' + target.name();
+        }
     }
     return text;
 }

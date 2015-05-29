@@ -85,6 +85,9 @@ module.exports = function createGame(debugging) {
             throw new GameException('Unknown player disconnected');
         }
         players[playerIdx] = null;
+        if (state.state.name == stateNames.GAME_WON) {
+            return;
+        }
         killPlayer(playerIdx);
         addHistory(playerIdx, 'left the game');
         emitState();
@@ -524,10 +527,23 @@ module.exports = function createGame(debugging) {
         });
     }
 
+    function allPlayersDisconnected() {
+        if (players.length == 0) {
+            return false;
+        }
+        for (var i = 0; i < players.length; i++) {
+            if (players[i] != null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     return {
         playerJoined: playerJoined,
         playerLeft: playerLeft,
         isFull: isFull,
+        allPlayersDisconnected: allPlayersDisconnected,
         command: command
     };
 };
