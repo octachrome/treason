@@ -7,7 +7,7 @@ var argv = require('optimist')
 
 var express = require('express');
 var app = express();
-app.use(express.static('web'));
+app.use(express.static(__dirname + '/web'));
 
 var version = require('./version');
 app.get('/version.js', version);
