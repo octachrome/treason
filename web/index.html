@@ -19,6 +19,12 @@
     div.hidden {
         display: none;
     }
+    div.chat {
+        height: 200px;
+        overflow-y: scroll;
+        margin-bottom: 10px;
+        word-wrap: break-word;
+    }
     </style>
 </head>
 <body>
@@ -58,14 +64,26 @@
                     </li>
                 </ul>
                 <ul class="list-group">
-                    <li class="list-group-item"><span class="label label-success">ambassador</span> draw two from the deck and optionally exchange your infuences</li>
-                    <li class="list-group-item"><span class="label label-primary">assassin</span> pay $3 to reveal another player's influence; blocked by contessa</li>
-                    <li class="list-group-item"><span class="label label-info">captain</span> steal $2 from another player; blocked by captain and ambassador</li>
-                    <li class="list-group-item"><span class="label label-warning">contessa</span> block assassination</li>
-                    <li class="list-group-item"><span class="label label-danger">duke</span> tax +$3; block foreign aid</li>
-                    <li class="list-group-item">income +$1</li>
-                    <li class="list-group-item">foreign aid +$2; blocked by duke</li>
-                    <li class="list-group-item">coup to reveal another player's influence for $7</li>
+                    <li class="list-group-item">
+                        <a href="javascript: null" data-bind="click: showChat, visible: sidebar() != 'chat'">Chat</a>
+                        <div data-bind="visible: sidebar() == 'chat'">
+                            <div class="chat"></div>
+                            <textarea class="form-control" rows="2" placeholder="Chat message"></textarea>
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="javascript: null" data-bind="click: showCheatSheet, visible: sidebar() != 'cheat'">Cheat sheet</a>
+                        <div data-bind="visible: sidebar() == 'cheat'">
+                            <p><span class="label label-success">ambassador</span> Draw two from the deck and optionally exchange your infuences</p>
+                            <p><span class="label label-primary">assassin</span> Pay $3 to reveal another player's influence; blocked by contessa</p>
+                            <p><span class="label label-info">captain</span> Steal $2 from another player; blocked by captain and ambassador</p>
+                            <p><span class="label label-warning">contessa</span> Block assassination</p>
+                            <p><span class="label label-danger">duke</span> Tax +$3; block foreign aid</p>
+                            <p>Income +$1</p>
+                            <p>Foreign aid +$2; blocked by duke</p>
+                            <p>Coup to reveal another player's influence for $7</p>
+                        </div>
+                    </li>
                 </ul>
                 <a href="rules.html" target="blank">Rules</a>
             </div>

@@ -6,7 +6,8 @@ function createNetPlayer(game, socket, playerName) {
     var player = {
         name: playerName || ('Player ' + playerId++),
         onStateChange: onStateChange,
-        setExchangeOptions: setExchangeOptions
+        setExchangeOptions: setExchangeOptions,
+        onChatMessage: onChatMessage
     };
 
     try {
@@ -24,6 +25,13 @@ function createNetPlayer(game, socket, playerName) {
         socket.emit('exchange-options', options);
     }
 
+    function onChatMessage(playerIdx, message) {
+        socket.emit('chat', {
+            from: playerIdx,
+            message: message
+        });
+    }
+
     var onCommand = function(data) {
         try {
             if (gameProxy != null) {
@@ -34,15 +42,23 @@ function createNetPlayer(game, socket, playerName) {
         }
     }
 
+    var sendChatMessage = function (message) {
+        if (gameProxy != null) {
+            gameProxy.sendChatMessage(message);
+        }
+    }
+
     var onDisconnect = function () {
         if (gameProxy != null) {
             socket.removeListener('command', onCommand);
+            socket.removeListener('chat', sendChatMessage);
             gameProxy.playerLeft();
             gameProxy = null;
             game = null;
         }
     }
     socket.on('command', onCommand);
+    socket.on('chat', sendChatMessage);
     socket.on('disconnect', onDisconnect);
     // If the player joins another game, leave this one.
     socket.on('join', onDisconnect);

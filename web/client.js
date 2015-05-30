@@ -3,6 +3,7 @@ vm = {
     welcomeMessage: ko.observable(''),
     exchangeOptions: ko.observableArray(),
     exchangeKeep: ko.observable(0),
+    sidebar: ko.observable('chat')
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -28,6 +29,7 @@ function join() {
     if (!vm.playerName()) {
         alert('Enter a name');
     }
+    $('.chat').html('');
     if (socket == null) {
         // Re-use the same socket. Automatically reconnects if disconnected.
         socket = io();
@@ -54,6 +56,18 @@ function join() {
             }
             vm.exchangeOptions(options);
             vm.exchangeKeep(keep);
+        });
+        socket.on('chat', function (data) {
+            var from;
+            if (data.from == vm.state.playerIdx()) {
+                from = 'You';
+            } else {
+                var player = vm.state.players()[data.from];
+                from = player ? player.name() : 'Unknown';
+            }
+            var html = '<b>' + from + ':</b> ' + data.message + '<br/>';
+            $('.chat').append(html);
+            $('.chat').scrollTop(10000);
         });
         socket.on('error', function (data) {
             alert(data);
@@ -246,6 +260,12 @@ function roleClassSuffix(role) {
     }
     return 'default';
 }
+function showCheatSheet() {
+    vm.sidebar('cheat');
+}
+function showChat() {
+    vm.sidebar('chat');
+}
 function playing() {
     return vm.state && vm.state.state && vm.state.state.name() != null;
 }
@@ -257,11 +277,23 @@ function localStorageSet(key, value) {
         window.localStorage.setItem(key, value);
     }
 }
+function sendMessage(event) {
+    if (event.which != 13) {
+        return;
+    }
+    event.preventDefault();
+    var message = $('textarea').val();
+    if (message) {
+        socket.emit('chat', message);
+        $('textarea').val('');
+    }
+}
 $(window).on('resize', function () {
     $('.activity').height($(window).height() - 40);
     $('.activity').scrollTop(10000);
 });
 $(function () {
+    $('textarea').on('keydown', sendMessage);
     $('.activity').height($(window).height() - 40);
     $('input').focus();
     ko.applyBindings(vm);

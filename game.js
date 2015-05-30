@@ -76,6 +76,9 @@ module.exports = function createGame(debugging) {
             },
             playerLeft: function () {
                 playerLeft(playerIdx);
+            },
+            sendChatMessage: function (message) {
+                sendChatMessage(playerIdx, message);
             }
         };
     }
@@ -539,12 +542,18 @@ module.exports = function createGame(debugging) {
         return true;
     }
 
+    function sendChatMessage(playerIdx, message) {
+        for (var i = 0; i < players.length; i++) {
+            if (players[i] != null) {
+                players[i].onChatMessage(playerIdx, message);
+            }
+        }
+    }
+
     return {
         playerJoined: playerJoined,
-        playerLeft: playerLeft,
         isFull: isFull,
-        allPlayersDisconnected: allPlayersDisconnected,
-        command: command
+        allPlayersDisconnected: allPlayersDisconnected
     };
 };
 

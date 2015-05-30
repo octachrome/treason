@@ -9,7 +9,8 @@ function createAiPlayer(game) {
     var player = {
         name: 'Computer ' + playerId++,
         onStateChange: onStateChange,
-        setExchangeOptions: setExchangeOptions
+        setExchangeOptions: setExchangeOptions,
+        onChatMessage: function() {}
     };
 
     try {
