@@ -1,0 +1,4 @@
+# Allow nodejs to bind to port 80 when running as non-root user
+sudo setcap cap_net_bind_service=+ep /usr/bin/nodejs
+# Open port 80 in the firewall (also needs to be opened in the AWS security group)
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
