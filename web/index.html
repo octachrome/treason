@@ -8,6 +8,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="shared.js"></script>
     <script src="client.js"></script>
+    <script src="version.js"></script>
     <style>
     body {
         padding-top: 15px;
@@ -22,7 +23,7 @@
         margin: 50px auto;
         width: 200px;
     }
-    span.welcome-message {
+    div.welcome-message {
         color: red;
     }
     </style>
@@ -33,7 +34,9 @@
             <!-- Welcome screen -->
             <div class="col-xs-12">
                 <div class="welcome">
-                    <span class="welcome-message" data-bind="text: welcomeMessage"></span><br/>
+                    <h3>Treason Coup</h3>
+                    <div data-bind="text: version"></div>
+                    <div class="welcome-message" data-bind="text: welcomeMessage"></div>
                     <br/>
                     <input type="text" placeholder="Name" data-bind="value: playerName"/><br/>
                     <br/>

@@ -4,6 +4,9 @@ var express = require('express');
 var app = express();
 app.use(express.static('web'));
 
+var version = require('./version');
+app.get('/version.js', version);
+
 var server = app.listen(8080);
 
 var io = require('socket.io')(server);
