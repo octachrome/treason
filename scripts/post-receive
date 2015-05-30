@@ -1,0 +1,27 @@
+#!/usr/bin/env perl
+# post-receive
+use strict;
+use File::Basename;
+use Cwd 'abs_path';
+
+# 1. Read STDIN (Format: "from_commit to_commit branch_name")
+my $args = <>;
+print "$args*\n";
+my ($from, $to, $branch) = split(/\s+/, $args);
+
+# 2. Only deploy if master branch was pushed
+if ($branch !~ /master$/) {
+    print "Received branch $branch, not deploying.\n";
+    exit;
+}
+
+# 3. Copy files to deploy directory
+my $deploy_to_dir = abs_path('../deploy');
+`GIT_WORK_TREE="$deploy_to_dir" git checkout -f master`;
+print "DEPLOY: master($to) copied to '$deploy_to_dir'\n";
+
+# 4. Deployment Tasks
+`sudo stop treason`;
+`cd $deploy_to_dir; npm install`;
+`sudo start treason`;
+
