@@ -19,13 +19,6 @@
     div.hidden {
         display: none;
     }
-    div.welcome {
-        margin: 50px auto;
-        width: 200px;
-    }
-    div.welcome-message {
-        color: red;
-    }
     </style>
 </head>
 <body>
@@ -33,15 +26,14 @@
         <div class="row">
             <!-- Welcome screen -->
             <div class="col-xs-12">
-                <div class="welcome">
-                    <h3>Treason Coup</h3>
-                    <div data-bind="text: version"></div>
-                    <div class="welcome-message" data-bind="text: welcomeMessage"></div>
-                    <br/>
-                    <input type="text" placeholder="Name" data-bind="value: playerName"/><br/>
-                    <br/>
-                    <button class="btn btn-default" data-bind="enable: playerName, click: join">Join game</button>
-                </div>
+                <div class="alert alert-danger" role="alert" data-bind="text: welcomeMessage, visible: welcomeMessage"></div>
+                <h3>Treason Coup</h3>
+                <p data-bind="text: version"></p>
+                <form data-bind="submit: join">
+                    <p><input type="text" placeholder="Name" data-bind="value: playerName"/></p>
+                    <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join game</button></p>
+                </form>
+                <p><a href="rules.html" target="blank">Rules</a></p>
             </div>
         </div>
     </div>
@@ -75,6 +67,7 @@
                     <li class="list-group-item">foreign aid +$2; blocked by duke</li>
                     <li class="list-group-item">coup to reveal another player's influence for $7</li>
                 </ul>
+                <a href="rules.html" target="blank">Rules</a>
             </div>
             <!-- Activity -->
             <div class="col-xs-8 activity">
