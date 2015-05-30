@@ -59,11 +59,21 @@
                             </div>
                             <div class="col-xs-5">
                                 <!-- ko foreach: influence -->
-                                    <span class="label label-default" data-bind="text: role, css: { 'label-success': !revealed(), 'label-default': revealed() }"></span>
+                                    <span class="label" data-bind="text: role, css: labelClass(role())"></span>
                                 <!-- /ko -->
                             </div>
                         </div>
                     </li>
+                </ul>
+                <ul class="list-group">
+                    <li class="list-group-item"><span class="label label-success">ambassador</span> draw two from the deck and optionally exchange your infuences</li>
+                    <li class="list-group-item"><span class="label label-primary">assassin</span> pay $3 to reveal another player's influence; blocked by contessa</li>
+                    <li class="list-group-item"><span class="label label-info">captain</span> steal $2 from another player; blocked by captain and ambassador</li>
+                    <li class="list-group-item"><span class="label label-warning">contessa</span> block assassination</li>
+                    <li class="list-group-item"><span class="label label-danger">duke</span> tax +$3; block foreign aid</li>
+                    <li class="list-group-item">income +$1</li>
+                    <li class="list-group-item">foreign aid +$2; blocked by duke</li>
+                    <li class="list-group-item">coup to reveal another player's influence for $7</li>
                 </ul>
             </div>
             <!-- Activity -->
@@ -125,7 +135,7 @@
                         <div data-bind="visible: weAreTargetted('reveal-influence')">
                             Must reveal an influence
                             <!-- ko foreach: ourInfluence() -->
-                            <button class="btn btn-default" data-bind="text: role, visible: !revealed(), click: reveal"></button>
+                            <button class="btn btn-xs" data-bind="text: role, css: buttonClass(role()), visible: !revealed(), click: reveal"></button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: theyAreTargetted('reveal-influence')">

@@ -222,6 +222,30 @@ function displayHistory(hist) {
     }
     return text;
 }
+function labelClass(role) {
+    return 'label-' + roleClassSuffix(role);
+}
+function buttonClass(role) {
+    return 'btn-' + roleClassSuffix(role);
+}
+function roleClassSuffix(role) {
+    if (role == 'ambassador') {
+        return 'success';
+    }
+    if (role == 'assassin') {
+        return 'primary'
+    }
+    if (role == 'captain') {
+        return 'info';
+    }
+    if (role == 'contessa') {
+        return 'warning';
+    }
+    if (role == 'duke') {
+        return 'danger';
+    }
+    return 'default';
+}
 function playing() {
     return vm.state && vm.state.state && vm.state.state.name() != null;
 }
