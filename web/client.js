@@ -263,5 +263,6 @@ $(window).on('resize', function () {
 });
 $(function () {
     $('.activity').height($(window).height() - 40);
+    $('input').focus();
     ko.applyBindings(vm);
 });
