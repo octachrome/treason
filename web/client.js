@@ -215,7 +215,7 @@ function displayHistory(hist) {
     if (targetIdx == vm.state.playerIdx()) {
         text += ' you';
     } else if (targetIdx != null) {
-        var target = vm.state.players()[target];
+        var target = vm.state.players()[targetIdx];
         if (target != null) {
             text += ' ' + target.name();
         }
