@@ -5,6 +5,7 @@ var actions = shared.actions;
 var stateNames = shared.states;
 
 var deepcopy = require('deepcopy');
+var escape = require('validator').escape;
 
 var nextGameId = 1;
 var nextPlayerId = 1;
@@ -543,6 +544,7 @@ module.exports = function createGame(debugging) {
     }
 
     function sendChatMessage(playerIdx, message) {
+        message = escape(message).substring(0, 1000);
         for (var i = 0; i < players.length; i++) {
             if (players[i] != null) {
                 players[i].onChatMessage(playerIdx, message);
