@@ -8,7 +8,7 @@ var versionPromise = null;
 module.exports = function (req, res) {
     if (versionPromise == null) {
         versionPromise = new Promise(function (resolve, reject) {
-            exec('git describe --tags --long', function (err, stdout) {
+            exec('git describe --tags --long', {cwd: __dirname}, function (err, stdout) {
                 if (err) {
                     resolve('window.version = "";');
                 } else {
