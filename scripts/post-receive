@@ -16,7 +16,7 @@ if ($branch !~ /master$/) {
 # 3. Copy files to deploy directory
 my $deploy_to_dir = abs_path('../deploy');
 print `GIT_WORK_TREE="$deploy_to_dir" git checkout -f master`;
-my $version = `git version --tags --long`;
+my $version = `git describe --tags --long`;
 chomp $version;
 open VERSION, ">$deploy_to_dir/web/version.js";
 print VERSION "window.version='$version';\n";
