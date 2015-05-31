@@ -26,8 +26,8 @@ vm.playerName.subscribe(function (newName) {
 });
 var socket;
 function join() {
-    if (!vm.playerName()) {
-        alert('Enter a name');
+    if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
+        alert('Enter a valid name');
     }
     $('.chat').html('');
     if (socket == null) {
