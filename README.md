@@ -1,5 +1,5 @@
-Treason
--------
+Treason Coup
+------------
 
 A clone of the card game Coup written in Node.js.
 
@@ -73,7 +73,8 @@ Commands sent to the server look like this:
     {
         command: "",    // The name of the command: play-action, block, challenge, allow, reveal, exchange
         action: "",     // For the play-action command, the action to play
-        target: "",     // When playing an action which targets another player, the player to target
+        target: 0,      // When playing an action which targets another player, the index of the player to target
         role: "",       // For the block and reveal commands, the role to block with or reveal
         roles: [""]     // For the exchange command, the role(s) you wish to keep
+        stateId: 1      // Must match the stateId from the latest game state
     }
