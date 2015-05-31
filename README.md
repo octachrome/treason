@@ -3,7 +3,7 @@ Treason Coup
 
 A clone of the card game Coup written in Node.js.
 
-To run the server a for 2-player game:
+To run the server for a 2-player game:
 
     npm install
     node server.js [--debug]
@@ -43,8 +43,8 @@ The game state object:
                 ...
             }
         ],
-        playerIdx:          // The index of your player
-        numPlayers:         // The number of players in the game
+        playerIdx: 0        // The index of your player
+        numPlayers: 2       // The number of players in the game
         state: {
             playerIdx: 0,   // The index of the player whose turn it is
             name: "",       // The name of the current game state
