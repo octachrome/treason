@@ -95,7 +95,12 @@
                         <li class="list-group-item" data-bind="text: displayHistory($data)"></li>
                     <!-- /ko -->
                     <li class="list-group-item">
-                        <div data-bind="visible: state.state.name() == 'waiting-for-players'">Waiting for players</div>
+                        <div data-bind="visible: state.state.name() == 'waiting-for-players'">
+                            <p>Waiting for players</p>
+                            <p data-bind="visible: state.numPlayers() >= 2">
+                                <button class="btn btn-default" data-bind="click: start">Start</button>
+                            </p>
+                        </div>
                         <div data-bind="visible: weAreInState('start-of-turn')">
                             <!-- ko if: !targettedAction() -->
                                 Your turn:

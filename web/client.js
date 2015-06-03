@@ -82,6 +82,9 @@ function join() {
     }
     socket.emit('join', vm.playerName());
 }
+function start() {
+    command('start');
+}
 function weAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() == vm.state.playerIdx();
 }
@@ -251,13 +254,14 @@ function exchange() {
 }
 function displayHistory(hist) {
     var text = '';
-    if (hist.playerIdx() == vm.state.playerIdx()) {
-        text = 'You';
-    } else {
+    var playerIdx = hist.playerIdx && hist.playerIdx();
+    if (playerIdx  == vm.state.playerIdx()) {
+        text = 'You ';
+    } else if (playerIdx != null) {
         var player = vm.state.players()[hist.playerIdx()];
-        text = player ? player.name() : 'Unknown';
+        text = player ? player.name() : 'Unknown ';
     }
-    text += ' ' + hist.message();
+    text += hist.message();
     var targetIdx = hist.target && hist.target();
     if (targetIdx == vm.state.playerIdx()) {
         text += ' you';

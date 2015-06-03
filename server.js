@@ -30,8 +30,7 @@ io.on('connection', function (socket) {
         while (!game) {
             if (pending.length) {
                 game = pending.pop();
-                if (game.allPlayersDisconnected()) {
-                    // Reap dead games.
+                if (!game.canJoin()) {
                     game = null;
                 }
             } else {
@@ -42,7 +41,7 @@ io.on('connection', function (socket) {
             }
         }
         createNetPlayer(game, socket, playerName);
-        if (!game.isFull()) {
+        if (game.canJoin()) {
             pending.push(game);
         }
     });

@@ -10,26 +10,32 @@ var escape = require('validator').escape;
 var nextGameId = 1;
 var nextPlayerId = 1;
 
+var MIN_PLAYERS = 2;
+var MAX_PLAYERS = 6;
+
 module.exports = function createGame(debugging) {
     var gameId = nextGameId++;
-    var numPlayers = 2;
 
     var state = {
         stateId: 1,
         gameId: gameId,
         players: [],
-        numPlayers: numPlayers,
+        numPlayers: 0,
         state: createState(stateNames.WAITING_FOR_PLAYERS),
         history: []
     };
 
     var players = [];
     var allows = [];
+    var proxies = [];
 
-    var deck = shuffle(buildDeck());
+    var deck = buildDeck();
 
     function playerJoined(player) {
-        if (state.players.length >= numPlayers) {
+        if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
+            throw new GameException('Cannot join game ' + gameId + ': it has started');
+        }
+        if (state.players.length >= MAX_PLAYERS) {
             throw new GameException('Cannot join game ' + gameId + ': it is full');
         }
 
@@ -50,15 +56,18 @@ module.exports = function createGame(debugging) {
         var playerIdx = state.players.length;
         state.players.push(playerState);
         players.push(player);
+        state.numPlayers++;
 
-        if (isFull()) {
-            state.state = createState(stateNames.START_OF_TURN, 0);
+        if (state.numPlayers == MAX_PLAYERS) {
+            start();
         }
 
-        addHistory(playerIdx, 'joined the game');
+        addHistory(null, playerState.name + ' joined the game');
         emitState();
 
-        return createGameProxy(playerIdx);
+        var proxy = createGameProxy(playerIdx);
+        proxies.push(proxy);
+        return proxy;
     }
 
     function playerName(name) {
@@ -71,30 +80,50 @@ module.exports = function createGame(debugging) {
         return name;
     }
 
-    function createGameProxy(playerIdx) {
-        return {
-            command: function (data) {
-                command(playerIdx, data);
-            },
-            playerLeft: function () {
-                playerLeft(playerIdx);
-            },
-            sendChatMessage: function (message) {
-                sendChatMessage(playerIdx, message);
-            }
+    function createGameProxy(playerIdx, oldProxy) {
+        var proxy = oldProxy || {};
+        proxy.command = function (data) {
+            command(playerIdx, data);
         };
+        proxy.playerLeft = function () {
+            playerLeft(playerIdx);
+        };
+        proxy.sendChatMessage = function (message) {
+            sendChatMessage(playerIdx, message);
+        };
+        return proxy;
     }
 
     function playerLeft(playerIdx) {
-        if (playerIdx == null) {
+        if (playerIdx == null || playerIdx < 0 || playerIdx >= state.numPlayers) {
             throw new GameException('Unknown player disconnected');
         }
-        players[playerIdx] = null;
-        if (state.state.name == stateNames.GAME_WON) {
-            return;
+        var player = state.players[playerIdx];
+        if (!player) {
+            throw new GameException('Unknown player disconnected');
         }
-        killPlayer(playerIdx);
-        addHistory(playerIdx, 'left the game');
+        if (state.state.name == stateNames.WAITING_FOR_PLAYERS) {
+            state.players.splice(playerIdx, 1);
+            players.splice(playerIdx, 1);
+            proxies.splice(playerIdx, 1);
+            state.numPlayers--;
+            // Replace the disconnected player's cards.
+            for (var i = 0; i < player.influence.length; i++) {
+                deck.push(player.influence[i].role);
+            }
+            deck = shuffle(deck);
+            // Rewire the player proxies with the new player index
+            for (var i = playerIdx; i < state.numPlayers; i++) {
+                createGameProxy(i, proxies[i]);
+            }
+        } else {
+            players[playerIdx] = null;
+            if (state.state.name == stateNames.GAME_WON) {
+                return;
+            }
+            killPlayer(playerIdx);
+        }
+        addHistory(null, player.name + ' left the game');
         emitState();
     }
 
@@ -178,8 +207,13 @@ module.exports = function createGame(debugging) {
         return masked;
     }
 
-    function isFull() {
-        return state.players.length == numPlayers;
+    function start() {
+        if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
+            throw new GameException('Incorrect state');
+        }
+        if (state.numPlayers >= MIN_PLAYERS) {
+            state.state = createState(stateNames.START_OF_TURN, 0);
+        }
     }
 
     function command(playerIdx, command) {
@@ -194,7 +228,10 @@ module.exports = function createGame(debugging) {
             throw new GameException('Stale state');
         }
 
-        if (command.command == 'play-action') {
+        if (command.command == 'start') {
+            start();
+
+        } else if (command.command == 'play-action') {
             if (state.state.name != stateNames.START_OF_TURN) {
                 throw new GameException('Incorrect state');
             }
@@ -215,7 +252,7 @@ module.exports = function createGame(debugging) {
                 if (command.target == null) {
                     throw new GameException('No target specified');
                 }
-                if (command.target < 0 || command.target >= numPlayers) {
+                if (command.target < 0 || command.target >= state.numPlayers) {
                     throw new GameException('Invalid target specified');
                 }
                 if (!countInfluence(state.players[command.target])) {
@@ -379,7 +416,7 @@ module.exports = function createGame(debugging) {
     }
 
     function everyoneAllows() {
-        for (var i = 0; i < numPlayers; i++) {
+        for (var i = 0; i < state.numPlayers; i++) {
             if (!countInfluence(state.players[i])) {
                 // We don't care whether dead players allowed the action.
                 continue;
@@ -504,8 +541,8 @@ module.exports = function createGame(debugging) {
 
     function nextPlayerIdx() {
         var playerIdx = state.state.playerIdx;
-        for (var i = 1; i < numPlayers; i++) {
-            var candidateIdx = (playerIdx + i) % numPlayers;
+        for (var i = 1; i < state.numPlayers; i++) {
+            var candidateIdx = (playerIdx + i) % state.numPlayers;
             if (countInfluence(state.players[candidateIdx])) {
                 return candidateIdx;
             }
@@ -558,7 +595,7 @@ module.exports = function createGame(debugging) {
         for (var i = 0; i < 3; i++) {
             deck = deck.concat(Object.keys(roles));
         }
-        return deck;
+        return shuffle(deck);
     }
 
     function addHistory(playerIdx, message, target) {
@@ -569,16 +606,8 @@ module.exports = function createGame(debugging) {
         });
     }
 
-    function allPlayersDisconnected() {
-        if (players.length == 0) {
-            return false;
-        }
-        for (var i = 0; i < players.length; i++) {
-            if (players[i] != null) {
-                return false;
-            }
-        }
-        return true;
+    function canJoin() {
+        return state.state.name == stateNames.WAITING_FOR_PLAYERS;
     }
 
     function sendChatMessage(playerIdx, message) {
@@ -591,9 +620,8 @@ module.exports = function createGame(debugging) {
     }
 
     return {
-        playerJoined: playerJoined,
-        isFull: isFull,
-        allPlayersDisconnected: allPlayersDisconnected
+        canJoin: canJoin,
+        playerJoined: playerJoined
     };
 };
 
