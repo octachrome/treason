@@ -138,11 +138,11 @@
                                 <!-- /ko -->
                             <!-- /ko -->
                             <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
-                            <button class="btn btn-default" data-bind="click: allow">Allow</button>
+                            <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
                         </div>
                         <div data-bind="visible: theyAreTargetted('block-response')">
                             <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
-                            <button class="btn btn-default" data-bind="click: allow">Allow</button>
+                            <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
                         </div>
                         <div data-bind="visible: weAreTargetted('block-response')">
                             Waiting for challenges

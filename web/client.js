@@ -2,6 +2,7 @@ vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
     welcomeMessage: ko.observable(''),
     targettedAction: ko.observable(''),
+    weAllowed: ko.observable(false),
     exchangeOptions: ko.observableArray(),
     exchangeKeep: ko.observable(0),
     sidebar: ko.observable('chat')
@@ -42,6 +43,7 @@ function join() {
         socket.on('state', function (data) {
             ko.mapping.fromJS(data, vm.state);
             vm.targettedAction('');
+            vm.weAllowed(false);
             $('.activity').scrollTop(10000);
             console.log(data);
         });
@@ -213,6 +215,7 @@ function challenge() {
 }
 function allow() {
     command('allow');
+    vm.weAllowed(true);
 }
 function weAreTargetted(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.target() == vm.state.playerIdx();
