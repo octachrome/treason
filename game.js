@@ -24,6 +24,7 @@ module.exports = function createGame(debugging) {
     };
 
     var players = [];
+    var allows = [];
 
     var deck = shuffle(buildDeck());
 
@@ -238,6 +239,7 @@ module.exports = function createGame(debugging) {
                     addHistory(playerIdx, 'attempted to draw ' + command.action);
                 }
                 state.state = createState(stateNames.ACTION_RESPONSE, playerIdx, command.action, command.target);
+                resetAllows(playerIdx);
             }
 
         } else if (command.command == 'challenge') {
@@ -311,20 +313,31 @@ module.exports = function createGame(debugging) {
             // Original player is in the playerIdx field; blocking player is in the target field.
             addHistory(playerIdx, 'attempted to block with ' + command.role);
             state.state = createState(stateNames.BLOCK_RESPONSE, state.state.playerIdx, state.state.action, playerIdx, null, command.role);
+            resetAllows(playerIdx);
 
         } else if (command.command == 'allow') {
             if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 if (state.state.target == playerIdx) {
                     throw new GameException('Cannot allow your own block');
                 }
-                addHistory(state.state.target, 'blocked with ' + state.state.role);
-                nextTurn();
+                allows[playerIdx] = true;
+                if (everyoneAllows()) {
+                    addHistory(state.state.target, 'blocked with ' + state.state.role);
+                    nextTurn();
+                } else {
+                    return;
+                }
             } else if (state.state.name == stateNames.ACTION_RESPONSE) {
                 if (state.state.playerIdx == playerIdx) {
                     throw new GameException('Cannot allow your own move');
                 }
-                if (playAction(state.state.playerIdx, state.state)) {
-                    nextTurn();
+                allows[playerIdx] = true;
+                if (everyoneAllows()) {
+                    if (playAction(state.state.playerIdx, state.state)) {
+                        nextTurn();
+                    }
+                } else {
+                    return;
                 }
             } else {
                 throw new GameException('Incorrect state');
@@ -357,6 +370,25 @@ module.exports = function createGame(debugging) {
         }
 
         emitState();
+    }
+
+    function resetAllows(initiatingPlayerIdx) {
+        allows = [];
+        // The player who took the action does not need to allow it.
+        allows[initiatingPlayerIdx] = true;
+    }
+
+    function everyoneAllows() {
+        for (var i = 0; i < numPlayers; i++) {
+            if (!countInfluence(state.players[i])) {
+                // We don't care whether dead players allowed the action.
+                continue;
+            }
+            if (!allows[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     function challenge(playerIdx, challengedPlayerIdx, challegedRole) {
@@ -410,8 +442,14 @@ module.exports = function createGame(debugging) {
         player.cash += action.gain || 0;
         if (actionState.action == 'assassinate') {
             addHistory(playerIdx, 'assassinated', actionState.target);
-            state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'assassinated');
-            return false; // Not yet end of turn
+            var target = state.players[actionState.target];
+            var influenceCount = countInfluence(target);
+            if (influenceCount <= 1) {
+                killPlayer(actionState.target);
+            } else {
+                state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'assassinated');
+                return false; // Not yet end of turn
+            }
         } else if (actionState.action == 'coup') {
             addHistory(playerIdx, 'staged a coup on', actionState.target);
             var target = state.players[actionState.target];
@@ -420,8 +458,8 @@ module.exports = function createGame(debugging) {
                 killPlayer(actionState.target);
             } else {
                 state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'coup');
+                return false; // Not yet end of turn
             }
-            return false; // Not yet end of turn
         } else if (actionState.action == 'steal') {
             var target = state.players[actionState.target];
             addHistory(playerIdx, 'stole from', actionState.target);
