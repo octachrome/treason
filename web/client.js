@@ -266,8 +266,12 @@ function displayHistory(hist) {
     }
     return text;
 }
-function labelClass(role) {
-    return 'label-' + roleClassSuffix(role);
+function labelClass(role, revealed) {
+    if (revealed) {
+        return 'label-default';
+    } else {
+        return 'label-' + roleClassSuffix(role);
+    }
 }
 function buttonClass(role) {
     return 'btn-' + roleClassSuffix(role);
