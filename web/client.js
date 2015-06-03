@@ -259,7 +259,8 @@ function displayHistory(hist) {
         text = 'You ';
     } else if (playerIdx != null) {
         var player = vm.state.players()[hist.playerIdx()];
-        text = player ? player.name() : 'Unknown ';
+        text = player ? player.name() : 'Unknown';
+        text += ' ';
     }
     text += hist.message();
     var targetIdx = hist.target && hist.target();
