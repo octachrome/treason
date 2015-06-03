@@ -97,9 +97,20 @@
                     <li class="list-group-item">
                         <div data-bind="visible: state.state.name() == 'waiting-for-players'">Waiting for players</div>
                         <div data-bind="visible: weAreInState('start-of-turn')">
-                            Your turn:
-                            <!-- ko foreach: Object.keys(actions).sort() -->
-                            <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction"></button>
+                            <!-- ko if: !targettedAction() -->
+                                Your turn:
+                                <!-- ko foreach: Object.keys(actions).sort() -->
+                                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction"></button>
+                                <!-- /ko -->
+                            <!-- /ko -->
+                            <!-- ko if: targettedAction -->
+                                <span data-bind="text: targettedAction"></span>:
+                                <!-- ko foreach: state.players -->
+                                    <!-- ko if: canTarget($index()) -->
+                                        <button class="btn btn-default" data-bind="text: name, click: function () { playTargettedAction($index()); }"></button>
+                                    <!-- /ko -->
+                                <!-- /ko -->
+                                <button class="btn btn-link" data-bind="click: cancelAction">back</button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: theyAreInState('start-of-turn')">

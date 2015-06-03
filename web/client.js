@@ -1,6 +1,7 @@
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
     welcomeMessage: ko.observable(''),
+    targettedAction: ko.observable(''),
     exchangeOptions: ko.observableArray(),
     exchangeKeep: ko.observable(0),
     sidebar: ko.observable('chat')
@@ -40,6 +41,7 @@ function join() {
         });
         socket.on('state', function (data) {
             ko.mapping.fromJS(data, vm.state);
+            vm.targettedAction('');
             $('.activity').scrollTop(10000);
             console.log(data);
         });
@@ -115,17 +117,26 @@ function canPlayAction(actionName) {
     }
 }
 function playAction(actionName) {
-    if (weAreInState('start-of-turn')) {
-        var action = actions[actionName];
-        var target;
-        if (action.targetted) {
-            target = (vm.state.state.playerIdx() + 1) % vm.state.numPlayers();
-        }
+    var action = actions[actionName];
+    if (!action) {
+        return;
+    }
+    if (action.targetted) {
+        vm.targettedAction(actionName);
+    } else {
         command('play-action', {
-            action: actionName,
-            target: target
+            action: actionName
         });
     }
+}
+function cancelAction() {
+    vm.targettedAction('');
+}
+function playTargettedAction(target) {
+    command('play-action', {
+        action: vm.targettedAction(),
+        target: target
+    });
 }
 function command(command, options) {
     var data = $.extend({
@@ -172,6 +183,25 @@ function weCanChallenge() {
     } else {
         return false;
     }
+}
+function canTarget(playerIdx) {
+    if (playerIdx == vm.state.playerIdx()) {
+        // Cannot target ourselves.
+        return false;
+    }
+    var player = vm.state.players()[playerIdx];
+    if (!player) {
+        return false;
+    }
+    var influences = player.influence();
+    for (var i = 0; i < influences.length; i++) {
+        var inf = influences[i];
+        if (!inf.revealed()) {
+            return true;
+        }
+    }
+    // Cannot target dead player.
+    return false;
 }
 function block(role) {
     command('block', {
