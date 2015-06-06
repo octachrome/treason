@@ -454,7 +454,9 @@ module.exports = function createGame(debugging) {
                 state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, state.state.action, playerIdx, 'failed challenge');
             }
             // Deal the challenged player a replacement card.
-            challengedPlayer.influence[influenceIdx].role = swapRole(challengedPlayer.influence[influenceIdx].role);
+            var oldRole = challengedPlayer.influence[influenceIdx].role;
+            challengedPlayer.influence[influenceIdx].role = swapRole(oldRole);
+            addHistory(challengedPlayerIdx, 'exchanged ' + oldRole + ' for a new role');
         } else {
             // Player does not have role - challenge won.
             addHistory(playerIdx, 'successfully challenged', challengedPlayerIdx);
