@@ -212,7 +212,8 @@ module.exports = function createGame(debugging) {
             throw new GameException('Incorrect state');
         }
         if (state.numPlayers >= MIN_PLAYERS) {
-            state.state = createState(stateNames.START_OF_TURN, 0);
+            var firstPlayer = Math.floor(Math.random() * state.numPlayers);
+            state.state = createState(stateNames.START_OF_TURN, firstPlayer);
         }
     }
 
