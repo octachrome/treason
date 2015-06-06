@@ -118,10 +118,9 @@ module.exports = function createGame(debugging) {
             }
         } else {
             players[playerIdx] = null;
-            if (state.state.name == stateNames.GAME_WON) {
-                return;
+            if (!state.state.name == stateNames.GAME_WON) {
+                killPlayer(playerIdx);
             }
-            killPlayer(playerIdx);
         }
         addHistory(null, player.name + ' left the game');
         emitState();
