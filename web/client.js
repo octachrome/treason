@@ -300,7 +300,7 @@ function roleClassSuffix(role) {
     if (role == 'duke') {
         return 'danger';
     }
-    return 'default';
+    return 'plain';
 }
 function showCheatSheet() {
     vm.sidebar('cheat');
