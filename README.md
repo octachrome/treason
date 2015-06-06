@@ -3,7 +3,7 @@ Treason Coup
 
 A clone of the card game Coup written in Node.js.
 
-To run the server for a 2-player game:
+To run the server for a multiplayer game:
 
     npm install
     node server.js [--debug]
