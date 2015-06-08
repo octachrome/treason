@@ -276,31 +276,13 @@ function displayHistory(hist) {
 }
 function labelClass(role, revealed) {
     if (revealed) {
-        return 'label-default';
+        return 'label-revealed';
     } else {
-        return 'label-' + roleClassSuffix(role);
+        return 'label-' + role;
     }
 }
 function buttonClass(role) {
-    return 'btn-' + roleClassSuffix(role);
-}
-function roleClassSuffix(role) {
-    if (role == 'ambassador') {
-        return 'success';
-    }
-    if (role == 'assassin') {
-        return 'primary'
-    }
-    if (role == 'captain') {
-        return 'info';
-    }
-    if (role == 'contessa') {
-        return 'warning';
-    }
-    if (role == 'duke') {
-        return 'danger';
-    }
-    return 'plain';
+    return 'btn-' + role;
 }
 function showCheatSheet() {
     vm.sidebar('cheat');

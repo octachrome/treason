@@ -1,0 +1,63 @@
+body {
+    padding-top: 15px;
+}
+div.activity {
+    overflow-y: scroll;
+}
+div.hidden {
+    display: none;
+}
+div.chat {
+    height: 200px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+}
+.label-revealed {
+    color: #aaa;
+    background: white;
+    border: 1px solid #ccc;
+}
+.label-unknown {
+    background-color: #aaa;
+}
+.label-duke, .btn-duke {
+    color: white;
+    background-color: hsl(280, 60%, 60%);
+}
+.label-assassin, .btn-assassin {
+    color: white;
+    background-color: hsl(0, 0%, 30%);
+}
+.label-contessa, .btn-contessa {
+    color: white;
+    background-color: hsl(359, 60%, 60%);
+}
+.label-ambassador, .btn-ambassador {
+    color: white;
+    background-color: hsl(80, 50%, 50%);
+}
+.label-captain, .btn-captain {
+    color: white;
+    background-color: hsl(195, 60%, 60%);
+}
+.btn-duke:hover {
+    color: white;
+    background-color: hsl(280, 60%, 50%);
+}
+.btn-assassin:hover {
+    color: white;
+    background-color: hsl(0, 0%, 20%);
+}
+.btn-contessa:hover {
+    color: white;
+    background-color: hsl(359, 60%, 50%);
+}
+.btn-ambassador:hover {
+    color: white;
+    background-color: hsl(80, 50%, 45%);
+}
+.btn-captain:hover {
+    color: white;
+    background-color: hsl(195, 60%, 50%);
+}

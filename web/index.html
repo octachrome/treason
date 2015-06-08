@@ -3,6 +3,7 @@
 <head>
     <title>Treason Coup</title>
     <link rel="stylesheet" href="lib/bootstrap.min.css">
+    <link rel="stylesheet" href="client.css">
     <script src="lib/jquery-2.1.4.js"></script>
     <script src="lib/knockout-3.3.0.debug.js"></script>
     <script src="lib/knockout.mapping-debug.js"></script>
@@ -10,28 +11,6 @@
     <script src="shared.js"></script>
     <script src="client.js"></script>
     <script src="version.js"></script>
-    <style>
-    body {
-        padding-top: 15px;
-    }
-    div.activity {
-        overflow-y: scroll;
-    }
-    div.hidden {
-        display: none;
-    }
-    div.chat {
-        height: 200px;
-        overflow-y: scroll;
-        margin-bottom: 10px;
-        word-wrap: break-word;
-    }
-    .label-plain {
-        color: #777;
-        background: white;
-        border: 1px solid #777;
-    }
-    </style>
 </head>
 <body>
     <div class="container" data-bind="visible: !playing()">
@@ -80,11 +59,11 @@
                     <li class="list-group-item">
                         <a href="javascript: null" data-bind="click: showCheatSheet, visible: sidebar() != 'cheat'">Cheat sheet</a>
                         <div data-bind="visible: sidebar() == 'cheat'">
-                            <p><span class="label label-success">ambassador</span> Draw two from the deck and optionally exchange your infuences</p>
-                            <p><span class="label label-primary">assassin</span> Pay $3 to reveal another player's influence; blocked by contessa</p>
-                            <p><span class="label label-info">captain</span> Steal $2 from another player; blocked by captain and ambassador</p>
-                            <p><span class="label label-warning">contessa</span> Block assassination</p>
-                            <p><span class="label label-danger">duke</span> Tax +$3; block foreign aid</p>
+                            <p><span class="label label-ambassador">ambassador</span> Draw two from the deck and optionally exchange your infuences</p>
+                            <p><span class="label label-assassin">assassin</span> Pay $3 to reveal another player's influence; blocked by contessa</p>
+                            <p><span class="label label-captain">captain</span> Steal $2 from another player; blocked by captain and ambassador</p>
+                            <p><span class="label label-contessa">contessa</span> Block assassination</p>
+                            <p><span class="label label-duke">duke</span> Tax +$3; block foreign aid</p>
                             <p>Income +$1</p>
                             <p>Foreign aid +$2; blocked by duke</p>
                             <p>Coup to reveal another player's influence for $7</p>
