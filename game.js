@@ -44,11 +44,11 @@ module.exports = function createGame(debugging) {
             cash: 2,
             influence: [
                 {
-                    role: deck.pop(),
+                    role: 'not dealt',
                     revealed: false
                 },
                 {
-                    role: deck.pop(),
+                    role: 'not dealt',
                     revealed: false
                 },
             ]
@@ -107,11 +107,6 @@ module.exports = function createGame(debugging) {
             players.splice(playerIdx, 1);
             proxies.splice(playerIdx, 1);
             state.numPlayers--;
-            // Replace the disconnected player's cards.
-            for (var i = 0; i < player.influence.length; i++) {
-                deck.push(player.influence[i].role);
-            }
-            deck = shuffle(deck);
             // Rewire the player proxies with the new player index
             for (var i = playerIdx; i < state.numPlayers; i++) {
                 createGameProxy(i, proxies[i]);
@@ -211,6 +206,12 @@ module.exports = function createGame(debugging) {
             throw new GameException('Incorrect state');
         }
         if (state.numPlayers >= MIN_PLAYERS) {
+            for (var i = 0; i < state.numPlayers; i++) {
+                var influence = state.players[i].influence;
+                for (var j = 0; j < influence.length; j++) {
+                    influence[j].role = deck.pop();
+                }
+            }
             var firstPlayer = Math.floor(Math.random() * state.numPlayers);
             state.state = createState(stateNames.START_OF_TURN, firstPlayer);
         }

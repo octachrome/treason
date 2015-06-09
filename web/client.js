@@ -277,6 +277,8 @@ function displayHistory(hist) {
 function labelClass(role, revealed) {
     if (revealed) {
         return 'label-revealed';
+    } else if (role == 'not dealt') {
+        return 'label-unknown';
     } else {
         return 'label-' + role;
     }
