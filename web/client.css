@@ -61,3 +61,6 @@ div.chat {
     color: white;
     background-color: hsl(195, 60%, 50%);
 }
+.current-player {
+    border-left: 5px solid #1e90ff;
+}

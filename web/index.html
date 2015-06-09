@@ -36,9 +36,10 @@
                 <ul class="list-group" data-bind="foreach: state.players">
                     <li class="list-group-item">
                         <div class="row">
-                            <div class="col-xs-7">
+                            <div class="col-xs-7" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
                                 <span data-bind="text: name"></span>
                                 <span class="badge" data-bind="text: '$' + cash()"></span>
+                                <br/><br/>
                             </div>
                             <div class="col-xs-5">
                                 <!-- ko foreach: influence -->
