@@ -198,15 +198,8 @@ function canTarget(playerIdx) {
     if (!player) {
         return false;
     }
-    var influences = player.influence();
-    for (var i = 0; i < influences.length; i++) {
-        var inf = influences[i];
-        if (!inf.revealed()) {
-            return true;
-        }
-    }
     // Cannot target dead player.
-    return false;
+    return !player.dead();
 }
 function block(role) {
     command('block', {

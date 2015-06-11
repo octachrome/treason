@@ -37,8 +37,8 @@
                     <li class="list-group-item">
                         <div class="row">
                             <div class="col-xs-7" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
-                                <span data-bind="text: name"></span>
-                                <span class="badge" data-bind="text: '$' + cash()"></span>
+                                <span data-bind="text: name, css: { 'dead-player' : dead }"></span>
+                                <span class="badge" data-bind="text: '$' + cash(), visible: !dead()"></span>
                                 <br/><br/>
                             </div>
                             <div class="col-xs-5">

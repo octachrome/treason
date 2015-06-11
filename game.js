@@ -42,6 +42,7 @@ module.exports = function createGame(debugging) {
         var playerState = {
             name: playerName(player.name),
             cash: 2,
+            dead: false,
             influence: [
                 {
                     role: 'not dealt',
@@ -50,7 +51,7 @@ module.exports = function createGame(debugging) {
                 {
                     role: 'not dealt',
                     revealed: false
-                },
+                }
             ]
         };
         var playerIdx = state.players.length;
@@ -113,24 +114,28 @@ module.exports = function createGame(debugging) {
             }
         } else {
             players[playerIdx] = null;
-            if (!state.state.name == stateNames.GAME_WON) {
-                killPlayer(playerIdx);
+            if (state.state.name != stateNames.GAME_WON) {
+                killPlayer(playerIdx, true);
             }
         }
         addHistory(null, player.name + ' left the game');
         emitState();
     }
 
-    function killPlayer(playerIdx) {
+    function killPlayer(playerIdx, playerLeft) {
         // Reveal all the player's influence.
-        var influence = state.players[playerIdx].influence;
+        var player = state.players[playerIdx];
+        var influence = player.influence;
         for (var j = 0; j < influence.length; j++) {
             if (!influence[j].revealed) {
                 addHistory(playerIdx, 'revealed ' + influence[j].role);
                 influence[j].revealed = true;
             }
         }
-
+        player.dead = true;
+        if (!playerLeft) {
+            addHistory(playerIdx, ' suffered a humiliating defeat');
+        }
         if (state.state.playerIdx == playerIdx) {
             nextTurn();
         }

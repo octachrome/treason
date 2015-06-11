@@ -64,3 +64,6 @@ div.chat {
 .current-player {
     border-left: 5px solid #1e90ff;
 }
+.dead-player {
+    color: #aaa;
+}
