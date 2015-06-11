@@ -3,8 +3,6 @@ vm = {
     welcomeMessage: ko.observable(''),
     targettedAction: ko.observable(''),
     weAllowed: ko.observable(false),
-    exchangeOptions: ko.observableArray(),
-    exchangeKeep: ko.observable(0),
     sidebar: ko.observable('chat')
 };
 vm.state = ko.mapping.fromJS({
@@ -19,7 +17,8 @@ vm.state = ko.mapping.fromJS({
         role: null,
         action: null,
         target: null,
-        message: null
+        message: null,
+        exchangeOptions: null
     },
     history: []
 });
@@ -46,20 +45,6 @@ function join() {
             vm.weAllowed(false);
             $('.activity').scrollTop(10000);
             console.log(data);
-        });
-        socket.on('exchange-options', function (cards) {
-            var options = cards;
-            var keep = 0;
-            var influences = ourInfluence();
-            for (var i = 0; i < influences.length; i++) {
-                var inf = influences[i];
-                if (!inf.revealed()) {
-                    options.push(inf.role);
-                    keep++;
-                }
-            }
-            vm.exchangeOptions(options);
-            vm.exchangeKeep(keep);
         });
         socket.on('chat', function (data) {
             var from;
@@ -199,7 +184,7 @@ function canTarget(playerIdx) {
         return false;
     }
     // Cannot target dead player.
-    return !player.dead();
+    return player.influenceCount() > 0;
 }
 function block(role) {
     command('block', {
@@ -226,6 +211,10 @@ function ourInfluence() {
     var player = ourPlayer();
     return player && player.influence();
 }
+function ourInfluenceCount() {
+    var player = ourPlayer();
+    return player && player.influenceCount();
+}
 function reveal(influence) {
     command('reveal', {
         role: influence.role()
@@ -237,12 +226,12 @@ function exchange() {
     checked.each(function (index, el) {
         roles.push($(el).data('role'));
     });
-    if (roles.length == vm.exchangeKeep()) {
+    if (roles.length == ourInfluenceCount()) {
         command('exchange', {
             roles: roles
         });
     } else {
-        alert('must choose ' + vm.exchangeKeep() + ' roles');
+        alert('must choose ' + ourInfluenceCount() + ' roles');
     }
 }
 function displayHistory(hist) {

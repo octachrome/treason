@@ -43,14 +43,15 @@ The game state object:
                 ...
             }
         ],
-        playerIdx: 0        // The index of your player
-        numPlayers: 2       // The number of players in the game
+        playerIdx: 0                // The index of your player
+        numPlayers: 2               // The number of players in the game
         state: {
-            playerIdx: 0,   // The index of the player whose turn it is
-            name: "",       // The name of the current game state
-            action: "",     // The action which is being attempted in the current turn, or null
-            target: 1,      // The index of the player who is targetted by the current action, or null
-            role: ""        // The role being used to block the current action, or null
+            playerIdx: 0,           // The index of the player whose turn it is
+            name: "",               // The name of the current game state
+            action: "",             // The action which is being attempted in the current turn, or null
+            target: 1,              // The index of the player who is targetted by the current action, or null
+            role: "",               // The role being used to block the current action, or null
+            exchangeOptions: [],    // When exchanging, the roles you can choose from
         }
     }
 

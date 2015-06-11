@@ -37,8 +37,8 @@
                     <li class="list-group-item">
                         <div class="row">
                             <div class="col-xs-7" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
-                                <span data-bind="text: name, css: { 'dead-player' : dead }"></span>
-                                <span class="badge" data-bind="text: '$' + cash(), visible: !dead()"></span>
+                                <span data-bind="text: name, css: { 'dead-player' : influenceCount() == 0 }"></span>
+                                <span class="badge" data-bind="text: '$' + cash(), visible: influenceCount() != 0"></span>
                                 <br/><br/>
                             </div>
                             <div class="col-xs-5">
@@ -110,8 +110,8 @@
                             Waiting for <span data-bind="text: currentPlayerName()"></span> to exchange roles
                         </div>
                         <div data-bind="visible: weAreInState('exchange')">
-                            Choose <span data-bind="text: exchangeKeep"></span> roles to keep:<br/>
-                            <!-- ko foreach: exchangeOptions -->
+                            Choose <span data-bind="text: ourInfluenceCount()"></span> roles to keep:<br/>
+                            <!-- ko foreach: state.state.exchangeOptions -->
                                 <span data-bind="text: $data"></span>
                                 <input type="checkbox" data-bind="attr: { 'data-role': $data }"></input>
                                 <br/>

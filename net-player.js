@@ -6,7 +6,6 @@ function createNetPlayer(game, socket, playerName) {
     var player = {
         name: playerName || ('Player ' + playerId++),
         onStateChange: onStateChange,
-        setExchangeOptions: setExchangeOptions,
         onChatMessage: onChatMessage
     };
 
@@ -19,10 +18,6 @@ function createNetPlayer(game, socket, playerName) {
 
     function onStateChange(state) {
         socket.emit('state', state);
-    }
-
-    function setExchangeOptions(options) {
-        socket.emit('exchange-options', options);
     }
 
     function onChatMessage(playerIdx, message) {

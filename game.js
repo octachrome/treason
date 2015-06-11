@@ -42,7 +42,7 @@ module.exports = function createGame(debugging) {
         var playerState = {
             name: playerName(player.name),
             cash: 2,
-            dead: false,
+            influenceCount: 2,
             influence: [
                 {
                     role: 'not dealt',
@@ -132,7 +132,7 @@ module.exports = function createGame(debugging) {
                 influence[j].revealed = true;
             }
         }
-        player.dead = true;
+        player.influenceCount = 0;
         if (!playerLeft) {
             addHistory(playerIdx, ' suffered a humiliating defeat');
         }
@@ -146,7 +146,7 @@ module.exports = function createGame(debugging) {
     function checkForGameEnd() {
         var winnerIdx = null;
         for (var i = 0; i < state.players.length; i++) {
-            if (countInfluence(state.players[i])) {
+            if (state.players[i].influenceCount > 0) {
                 if (winnerIdx == null) {
                     winnerIdx = i;
                 } else {
@@ -160,14 +160,14 @@ module.exports = function createGame(debugging) {
         }
     }
 
-    function countInfluence(player) {
-        var count = 0;
+    function getInfluence(player) {
+        var influence = [];
         for (var i = 0; i < player.influence.length; i++) {
             if (!player.influence[i].revealed) {
-                count++;
+                influence.push(player.influence[i].role);
             }
         }
-        return count;
+        return influence;
     }
 
     function emitState() {
@@ -201,6 +201,10 @@ module.exports = function createGame(debugging) {
                     }
                 }
             }
+        }
+        // If a player is exchanging, show the drawn cards to that player alone.
+        if (state.state.playerIdx != playerIdx) {
+            masked.state.exchangeOptions = [];
         }
         masked.playerIdx = playerIdx;
         return masked;
@@ -261,7 +265,7 @@ module.exports = function createGame(debugging) {
                 if (command.target < 0 || command.target >= state.numPlayers) {
                     throw new GameException('Invalid target specified');
                 }
-                if (!countInfluence(state.players[command.target])) {
+                if (state.players[command.target].influenceCount == 0) {
                     throw new GameException('Cannot target dead player');
                 }
             }
@@ -396,9 +400,11 @@ module.exports = function createGame(debugging) {
             if (!command.roles) {
                 throw new GameException('Must specify roles to exchange');
             }
-            var influenceCount = countInfluence(player);
-            if (command.roles.length != influenceCount) {
+            if (command.roles.length != player.influenceCount) {
                 throw new GameException('Wrong number of roles');
+            }
+            if (!containsAll(state.state.exchangeOptions, command.roles)) {
+                throw new GameException('Invalid choice of roles');
             }
             for (i = 0; i < player.influence.length; i++) {
                 if (!player.influence[i].revealed) {
@@ -415,6 +421,18 @@ module.exports = function createGame(debugging) {
         emitState();
     }
 
+    function containsAll(array, subarray) {
+        array = deepcopy(array);
+        for (var i = 0; i < subarray.length; i++) {
+            var idx = array.indexOf(subarray[i]);
+            if (idx == -1) {
+                return false;
+            }
+            array.splice(idx, 1);
+        }
+        return true;
+    }
+
     function resetAllows(initiatingPlayerIdx) {
         allows = [];
         // The player who took the action does not need to allow it.
@@ -423,7 +441,7 @@ module.exports = function createGame(debugging) {
 
     function everyoneAllows() {
         for (var i = 0; i < state.numPlayers; i++) {
-            if (!countInfluence(state.players[i])) {
+            if (state.players[i].influenceCount == 0) {
                 // We don't care whether dead players allowed the action.
                 continue;
             }
@@ -444,9 +462,8 @@ module.exports = function createGame(debugging) {
         if (influenceIdx != null) {
             // Player has role - challenge lost.
             addHistory(playerIdx, 'incorrectly challenged', challengedPlayerIdx);
-            var influenceCount = countInfluence(player);
-            if (influenceCount <= 1 ||
-                (influenceCount <= 2 && state.state.name == stateNames.ACTION_RESPONSE && state.state.action == 'assassinate')) {
+            if (player.influenceCount <= 1 ||
+                (player.influenceCount <= 2 && state.state.name == stateNames.ACTION_RESPONSE && state.state.action == 'assassinate')) {
                 // The player is dead (challenging an assassination and failing loses you two influnece)
                 // todo: this is only true if the challenger was the target of the assassination
                 killPlayer(playerIdx);
@@ -465,9 +482,8 @@ module.exports = function createGame(debugging) {
         } else {
             // Player does not have role - challenge won.
             addHistory(playerIdx, 'successfully challenged', challengedPlayerIdx);
-            influenceCount = countInfluence(challengedPlayer);
-            if (influenceCount <= 1 ||
-                (influenceCount <= 2 && state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate')) {
+            if (challengedPlayer.influenceCount <= 1 ||
+                (challengedPlayer.influenceCount <= 2 && state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate')) {
                 // The player is dead (challenging a contessa block of an assassination and succeeding takes out two influence)
                 killPlayer(challengedPlayerIdx);
             } else {
@@ -488,8 +504,7 @@ module.exports = function createGame(debugging) {
         if (actionState.action == 'assassinate') {
             addHistory(playerIdx, 'assassinated', actionState.target);
             var target = state.players[actionState.target];
-            var influenceCount = countInfluence(target);
-            if (influenceCount <= 1) {
+            if (target.influenceCount <= 1) {
                 killPlayer(actionState.target);
             } else {
                 state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'assassinated');
@@ -498,8 +513,7 @@ module.exports = function createGame(debugging) {
         } else if (actionState.action == 'coup') {
             addHistory(playerIdx, 'staged a coup on', actionState.target);
             var target = state.players[actionState.target];
-            var influenceCount = countInfluence(target);
-            if (influenceCount <= 1) {
+            if (target.influenceCount <= 1) {
                 killPlayer(actionState.target);
             } else {
                 state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'coup');
@@ -516,10 +530,8 @@ module.exports = function createGame(debugging) {
                 target.cash = 0;
             }
         } else if (actionState.action == 'exchange') {
-            players[playerIdx].setExchangeOptions([
-                deck.pop(), deck.pop()
-            ]);
-            state.state = createState(stateNames.EXCHANGE, playerIdx, actionState.action);
+            var exchangeOptions = [deck.pop(), deck.pop()].concat(getInfluence(player));
+            state.state = createState(stateNames.EXCHANGE, playerIdx, actionState.action, null, null, null, exchangeOptions);
             return false; // Not yet end of turn
         } else {
             addHistory(playerIdx, 'drew ' + actionState.action);
@@ -551,7 +563,7 @@ module.exports = function createGame(debugging) {
         var playerIdx = state.state.playerIdx;
         for (var i = 1; i < state.numPlayers; i++) {
             var candidateIdx = (playerIdx + i) % state.numPlayers;
-            if (countInfluence(state.players[candidateIdx])) {
+            if (state.players[candidateIdx].influenceCount > 0) {
                 return candidateIdx;
             }
         }
@@ -559,14 +571,15 @@ module.exports = function createGame(debugging) {
         return null;
     }
 
-    function createState(stateName, playerIdx, action, target, message, role) {
+    function createState(stateName, playerIdx, action, target, message, role, exchangeOptions) {
         return {
             name: stateName,
-            playerIdx: typeof playerIdx != 'undefined' ? playerIdx : null,
-            action: action || null,
-            target: typeof target != 'undefined' ? target : null,
-            message: message || null,
-            role: role || null
+            playerIdx: playerIdx,
+            action: action,
+            target: target,
+            message: message,
+            role: role,
+            exchangeOptions: exchangeOptions
         };
     }
 

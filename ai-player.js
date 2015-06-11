@@ -9,7 +9,6 @@ function createAiPlayer(game) {
     var player = {
         name: 'Computer ' + playerId++,
         onStateChange: onStateChange,
-        setExchangeOptions: setExchangeOptions,
         onChatMessage: function() {}
     };
 
@@ -58,9 +57,6 @@ function createAiPlayer(game) {
                 role: player.influence[0].role
             });
         }
-    }
-
-    function setExchangeOptions(options) {
     }
 
     function command(command) {
