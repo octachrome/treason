@@ -324,6 +324,7 @@ module.exports = function createGame(debugging) {
                 var influence = player.influence[i];
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
+                    player.influenceCount--;
                     addHistory(playerIdx, 'revealed ' + command.role);
                     if (state.state.action == 'exchange' && state.state.target != state.state.playerIdx) {
                         // If the challenge was for an exchange, and the challenge was lost, the exchange must place after the reveal.
@@ -547,7 +548,9 @@ module.exports = function createGame(debugging) {
 
     function nextTurn() {
         debug('next turn');
-        state.state = createState(stateNames.START_OF_TURN, nextPlayerIdx());
+        if (state.state.name != stateNames.GAME_WON) {
+            state.state = createState(stateNames.START_OF_TURN, nextPlayerIdx());
+        }
     }
 
     function indexOfInfluence(player, role) {
