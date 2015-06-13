@@ -4,11 +4,16 @@ var shared = require('./web/shared.js');
 var stateNames = shared.states;
 
 var rankedRoles = ['duke', 'assassin', 'captain', 'contessa', 'ambassador'];
+var actionsToRoles = {
+    'tax': 'duke',
+    'assassinate': 'assassin',
+    'steal': 'captain',
+    'exchange': 'ambassador'
+};
 
 var playerId = 1;
-var dbg = false;
 
-function createAiPlayer(game) {
+function createAiPlayer(game, dbg) {
     var player = {
         name: 'Computer ' + playerId++,
         onStateChange: onStateChange,
@@ -26,6 +31,8 @@ function createAiPlayer(game) {
     var aiPlayer;
     var currentPlayer;
     var targetPlayer;
+    // Array indexed by playerIdx, containing objects whose keys are the roles each player has claimed
+    var claims = [];
 
     function onStateChange(s) {
         state = s;
@@ -38,17 +45,29 @@ function createAiPlayer(game) {
 
         } else if ((state.state.name == stateNames.ACTION_RESPONSE && aiPlayer != currentPlayer) ||
             (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer)) {
+            // Track roles other players have claimed
+            if (state.state.name == stateNames.ACTION_RESPONSE) {
+                trackClaim(state.state.playerIdx, state.state.action);
+            } else {
+                trackClaim(state.state.target, state.state.role);
+            }
             // Allow other players' actions and blocks
             debug('allowing');
             command({
                 command: 'allow'
             });
-
         } else if (state.state.name == stateNames.REVEAL_INFLUENCE && targetPlayer == aiPlayer) {
             revealLowestRanked();
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();
         }
+    }
+
+    function trackClaim(playerIdx, actionOrRole) {
+        var role = actionsToRoles[actionOrRole] || actionOrRole;
+        claims[playerIdx] = claims[playerIdx] || {};
+        claims[playerIdx][role] = true;
+        debug('player ' + playerIdx + ' claimed ' + role);
     }
 
     function playOurTurn() {
