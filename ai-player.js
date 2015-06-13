@@ -2,6 +2,7 @@
 
 var shared = require('./web/shared.js');
 var stateNames = shared.states;
+var actions = shared.actions;
 
 var rankedRoles = ['duke', 'assassin', 'captain', 'contessa', 'ambassador'];
 var actionsToRoles = {
@@ -43,15 +44,12 @@ function createAiPlayer(game, dbg) {
         if (state.state.name == stateNames.START_OF_TURN && currentPlayer == aiPlayer) {
             playOurTurn();
 
-        } else if ((state.state.name == stateNames.ACTION_RESPONSE && aiPlayer != currentPlayer) ||
-            (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer)) {
-            // Track roles other players have claimed
-            if (state.state.name == stateNames.ACTION_RESPONSE) {
-                trackClaim(state.state.playerIdx, state.state.action);
-            } else {
-                trackClaim(state.state.target, state.state.role);
-            }
-            // Allow other players' actions and blocks
+        } else if (state.state.name == stateNames.ACTION_RESPONSE && aiPlayer != currentPlayer) {
+            respondToAction();
+
+        } else if (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer) {
+            trackClaim(state.state.target, state.state.role);
+            // Allow other players' blocks
             debug('allowing');
             command({
                 command: 'allow'
@@ -61,6 +59,36 @@ function createAiPlayer(game, dbg) {
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();
         }
+    }
+
+    function respondToAction() {
+        trackClaim(state.state.playerIdx, state.state.action);
+        var role = getBlockingRole();
+        if (role) {
+            debug('blocking');
+            command({
+                command: 'block',
+                role: role
+            });
+        } else {
+            debug('allowing');
+            command({
+                command: 'allow'
+            });
+        }
+    }
+
+    function getBlockingRole() {
+        var influence = ourInfluence();
+        if (state.state.action == 'foreign-aid' || state.state.target == state.playerIdx) {
+            var blockingRoles = actions[state.state.action].blockedBy || [];
+            for (var i = 0; i < blockingRoles.length; i++) {
+                if (influence.indexOf(blockingRoles[i]) >= 0) {
+                    return blockingRoles[i];
+                }
+            }
+        }
+        return null;
     }
 
     function trackClaim(playerIdx, actionOrRole) {
@@ -196,8 +224,7 @@ function createAiPlayer(game, dbg) {
         }
         debug('chose ' + chosen);
         command({
-            command: 'play-action',
-            action: 'exchange',
+            command: 'exchange',
             roles: chosen
         });
     }
