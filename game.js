@@ -13,7 +13,7 @@ var nextPlayerId = 1;
 var MIN_PLAYERS = 2;
 var MAX_PLAYERS = 6;
 
-module.exports = function createGame(debugging) {
+module.exports = function createGame(options) {
     var gameId = nextGameId++;
 
     var state = {
@@ -28,7 +28,7 @@ module.exports = function createGame(debugging) {
     var allows = [];
     var proxies = [];
 
-    var deck = buildDeck();
+    var deck = buildDeck().concat(options.deal || []);
 
     function playerJoined(player) {
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
@@ -214,10 +214,9 @@ module.exports = function createGame(debugging) {
             throw new GameException('Incorrect state');
         }
         if (state.numPlayers >= MIN_PLAYERS) {
-            for (var i = 0; i < state.numPlayers; i++) {
-                var influence = state.players[i].influence;
-                for (var j = 0; j < influence.length; j++) {
-                    influence[j].role = deck.pop();
+            for (var j = 0; j < state.players[0].influence.length; j++) {
+                for (var i = 0; i < state.numPlayers; i++) {
+                    state.players[i].influence[j].role = deck.pop();
                 }
             }
             var firstPlayer = Math.floor(Math.random() * state.numPlayers);
@@ -586,7 +585,7 @@ module.exports = function createGame(debugging) {
     }
 
     function debug(obj) {
-        if (debugging) {
+        if (options.debug) {
             console.log(obj);
         }
     }

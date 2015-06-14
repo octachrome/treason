@@ -18,7 +18,7 @@ function createAiPlayer(game, dbg) {
     var player = {
         name: 'Computer ' + playerId++,
         onStateChange: onStateChange,
-        onHistoryEvent: function () {},
+        onHistoryEvent: onHistoryEvent,
         onChatMessage: function() {}
     };
 
@@ -33,8 +33,10 @@ function createAiPlayer(game, dbg) {
     var aiPlayer;
     var currentPlayer;
     var targetPlayer;
-    // Array indexed by playerIdx, containing objects whose keys are the roles each player has claimed
+    // Array indexed by playerIdx, containing objects whose keys are the roles each player (including us) has claimed
     var claims = [];
+    // The last role to be claimed. Used when a challenge is issued, to track which role was challenged.
+    var lastRoleClaim;
 
     function onStateChange(s) {
         state = s;
@@ -43,6 +45,20 @@ function createAiPlayer(game, dbg) {
         targetPlayer = state.players[state.state.target];
 
         initClaims();
+
+        if (state.state.name == stateNames.ACTION_RESPONSE) {
+            lastRoleClaim = {
+                role: actionsToRoles[state.state.action],
+                playerIdx: state.state.playerIdx
+            };
+        } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
+            lastRoleClaim = {
+                role: state.state.role,
+                playerIdx: state.state.target
+            };
+        } else {
+            lastRoleClaim = null;
+        }
 
         if (state.state.name == stateNames.START_OF_TURN && currentPlayer == aiPlayer) {
             playOurTurn();
@@ -61,6 +77,20 @@ function createAiPlayer(game, dbg) {
             revealLowestRanked();
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();
+        }
+    }
+
+    function onHistoryEvent(playerIdx, message, target) {
+        if (message.indexOf('revealed ') == 0) {
+            var role = message.substring('revealed '.length);
+            // If the player had previously claimed the role, this claim is no longer valid
+            delete claims[playerIdx][role];
+        } else if (message.indexOf(' challenged') > 0) {
+            // If a player was successfully challenged, any earlier claim was a bluff.
+            // If a player was incorrectly challenged, they swap the role, so an earlier claim is no longer valid.
+            if (lastRoleClaim) {
+                delete claims[lastRoleClaim.playerIdx][lastRoleClaim.role];
+            }
         }
     }
 

@@ -34,7 +34,9 @@ io.on('connection', function (socket) {
                     game = null;
                 }
             } else {
-                game = createGame(argv.debug);
+                game = createGame({
+                    debug: argv.debug
+                });
                 if (argv.ai) {
                     createAiPlayer(game, argv.debug);
                 }
