@@ -14,12 +14,12 @@ div.chat {
     word-wrap: break-word;
 }
 .label-revealed {
-    color: #aaa;
-    background: white;
-    border: 1px solid #ccc;
+    background-color: #aaa;
 }
 .label-unknown {
-    background-color: #aaa;
+    color: #444;
+    background: white;
+    border: 1px solid #444;
 }
 .label-duke, .btn-duke {
     color: white;

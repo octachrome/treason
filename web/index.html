@@ -82,8 +82,9 @@
                     <li class="list-group-item">
                         <div data-bind="visible: state.state.name() == 'waiting-for-players'">
                             <p>Waiting for players</p>
-                            <p data-bind="visible: state.numPlayers() >= 2">
-                                <button class="btn btn-default" data-bind="click: start">Start</button>
+                            <p>
+                                <button class="btn btn-default" data-bind="click: addAi">Add AI</button>
+                                <button class="btn btn-default" data-bind="click: start, visible: state.numPlayers() >= 2">Start</button>
                             </p>
                         </div>
                         <div data-bind="visible: weAreInState('start-of-turn')">

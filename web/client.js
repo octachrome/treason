@@ -74,6 +74,9 @@ function join() {
 function start() {
     command('start');
 }
+function addAi() {
+    command('add-ai');
+}
 function weAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() == vm.state.playerIdx();
 }

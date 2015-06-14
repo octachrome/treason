@@ -1,5 +1,6 @@
 'use strict';
 
+var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared.js');
 var actions = shared.actions;
 var stateNames = shared.states;
@@ -29,6 +30,11 @@ module.exports = function createGame(options) {
     var proxies = [];
 
     var deck = buildDeck().concat(options.deal || []);
+
+    var game = {
+        canJoin: canJoin,
+        playerJoined: playerJoined
+    };
 
     function playerJoined(player) {
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
@@ -238,6 +244,12 @@ module.exports = function createGame(options) {
 
         if (command.command == 'start') {
             start();
+
+        } else if (command.command == 'add-ai') {
+            if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
+                throw new GameException('Incorrect state');
+            }
+            createAiPlayer(game, options.debug);
 
         } else if (command.command == 'play-action') {
             if (state.state.name != stateNames.START_OF_TURN) {
@@ -651,10 +663,7 @@ module.exports = function createGame(options) {
         }
     }
 
-    return {
-        canJoin: canJoin,
-        playerJoined: playerJoined
-    };
+    return game;
 };
 
 function GameException(message) {

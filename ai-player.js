@@ -214,15 +214,10 @@ function createAiPlayer(game, dbg) {
     }
 
     function ourInfluence() {
-        return getInfluence(state.playerIdx);
-    }
-
-    function getInfluence(playerIdx) {
-        var inf = state.players[playerIdx].influence;
         var influence = [];
-        for (var i = 0; i < inf.length; i++) {
-            if (!inf[i].revealed) {
-                influence.push(inf[i].role);
+        for (var i = 0; i < aiPlayer.influence.length; i++) {
+            if (!aiPlayer.influence[i].revealed) {
+                influence.push(aiPlayer.influence[i].role);
             }
         }
         return influence;
@@ -250,6 +245,11 @@ function createAiPlayer(game, dbg) {
                 return;
             }
         }
+        debug('failed to choose a role to reveal');
+        command({
+            command: 'reveal',
+            role: influence[0]
+        });
     }
 
     function assassinTarget() {
@@ -270,15 +270,16 @@ function createAiPlayer(game, dbg) {
 
     // Rank opponents by influence first, and money second
     function playersByStrength() {
+        // Start with live opponents
         var indices = [];
         for (var i = 0; i < state.numPlayers; i++) {
-            if (i != state.playerIdx) {
+            if (i != state.playerIdx && state.players[i].influenceCount > 0) {
                 indices.push(i);
             }
         }
         return indices.sort(function (a, b) {
-            var infa = getInfluence(a).length;
-            var infb = getInfluence(b).length;
+            var infa = state.players[a].influenceCount;
+            var infb = state.players[b].influenceCount;
             if (infa != infb) {
                 return infb - infa;
             } else {
@@ -326,8 +327,8 @@ function createAiPlayer(game, dbg) {
             state.players[state.playerIdx].cash
         ];
         var influenceCount = [
-            getInfluence(opponentIdx).length,
-            getInfluence(state.playerIdx).length
+            state.players[opponentIdx].influenceCount,
+            state.players[state.playerIdx].influenceCount
         ];
         var roles = [
             getClaimedRoles(opponentIdx),
