@@ -6,6 +6,7 @@ function createNetPlayer(game, socket, playerName) {
     var player = {
         name: playerName || ('Player ' + playerId++),
         onStateChange: onStateChange,
+        onHistoryEvent: onHistoryEvent,
         onChatMessage: onChatMessage
     };
 
@@ -24,6 +25,14 @@ function createNetPlayer(game, socket, playerName) {
         socket.emit('chat', {
             from: playerIdx,
             message: message
+        });
+    }
+
+    function onHistoryEvent(playerIdx, message, target) {
+        socket.emit('history', {
+            playerIdx: playerIdx,
+            message: message,
+            target: target
         });
     }
 

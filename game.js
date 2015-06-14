@@ -21,8 +21,7 @@ module.exports = function createGame(debugging) {
         gameId: gameId,
         players: [],
         numPlayers: 0,
-        state: createState(stateNames.WAITING_FOR_PLAYERS),
-        history: []
+        state: createState(stateNames.WAITING_FOR_PLAYERS)
     };
 
     var players = [];
@@ -623,11 +622,17 @@ module.exports = function createGame(debugging) {
     }
 
     function addHistory(playerIdx, message, target) {
-        state.history.push({
-            playerIdx: playerIdx,
-            message: message,
-            target: target
-        });
+        for (var i = 0; i < state.numPlayers; i++) {
+            addHistoryAsync(i, playerIdx, message, target);
+        }
+    }
+
+    function addHistoryAsync(dest, playerIdx, message, target) {
+        setTimeout(function () {
+            if (players[dest] != null) {
+                players[dest].onHistoryEvent(playerIdx, message, target);
+            }
+        }, 0);
     }
 
     function canJoin() {
@@ -637,9 +642,13 @@ module.exports = function createGame(debugging) {
     function sendChatMessage(playerIdx, message) {
         message = escape(message).substring(0, 1000);
         for (var i = 0; i < players.length; i++) {
-            if (players[i] != null) {
-                players[i].onChatMessage(playerIdx, message);
-            }
+            sendChatMessageAsync(i, playerIdx, message);
+        }
+    }
+
+    function sendChatMessageAsync(dest, playerIdx, message) {
+        if (players[dest] != null) {
+            players[dest].onChatMessage(playerIdx, message);
         }
     }
 

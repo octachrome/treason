@@ -18,6 +18,7 @@ function createAiPlayer(game, dbg) {
     var player = {
         name: 'Computer ' + playerId++,
         onStateChange: onStateChange,
+        onHistoryEvent: function () {},
         onChatMessage: function() {}
     };
 

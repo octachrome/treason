@@ -3,7 +3,8 @@ vm = {
     welcomeMessage: ko.observable(''),
     targettedAction: ko.observable(''),
     weAllowed: ko.observable(false),
-    sidebar: ko.observable('chat')
+    sidebar: ko.observable('chat'),
+    history: ko.observableArray()
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -19,8 +20,7 @@ vm.state = ko.mapping.fromJS({
         target: null,
         message: null,
         exchangeOptions: null
-    },
-    history: []
+    }
 });
 vm.playerName.subscribe(function (newName) {
     localStorageSet('playerName', newName);
@@ -30,6 +30,7 @@ function join() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
         alert('Enter a valid name');
     }
+    vm.history([]);
     $('.chat').html('');
     if (socket == null) {
         // Re-use the same socket. Automatically reconnects if disconnected.
@@ -45,6 +46,9 @@ function join() {
             vm.weAllowed(false);
             $('.activity').scrollTop(10000);
             console.log(data);
+        });
+        socket.on('history', function (data) {
+            vm.history.push(data);
         });
         socket.on('chat', function (data) {
             var from;
@@ -236,20 +240,18 @@ function exchange() {
 }
 function displayHistory(hist) {
     var text = '';
-    var playerIdx = hist.playerIdx && hist.playerIdx();
-    if (playerIdx  == vm.state.playerIdx()) {
+    if (hist.playerIdx  == vm.state.playerIdx()) {
         text = 'You ';
-    } else if (playerIdx != null) {
-        var player = vm.state.players()[hist.playerIdx()];
+    } else if (hist.playerIdx != null) {
+        var player = vm.state.players()[hist.playerIdx];
         text = player ? player.name() : 'Unknown';
         text += ' ';
     }
-    text += hist.message();
-    var targetIdx = hist.target && hist.target();
-    if (targetIdx == vm.state.playerIdx()) {
+    text += hist.message;
+    if (hist.target == vm.state.playerIdx()) {
         text += ' you';
-    } else if (targetIdx != null) {
-        var target = vm.state.players()[targetIdx];
+    } else if (hist.target != null) {
+        var target = vm.state.players()[hist.target];
         if (target != null) {
             text += ' ' + target.name();
         }
