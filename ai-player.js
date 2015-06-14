@@ -92,6 +92,9 @@ function createAiPlayer(game, dbg) {
     }
 
     function trackClaim(playerIdx, actionOrRole) {
+        if (actionOrRole == 'foreign-aid' || actionOrRole == 'income') {
+            return;
+        }
         var role = actionsToRoles[actionOrRole] || actionOrRole;
         claims[playerIdx] = claims[playerIdx] || {};
         claims[playerIdx][role] = true;
@@ -102,48 +105,31 @@ function createAiPlayer(game, dbg) {
         var influence = ourInfluence();
         debug('influence: ' + influence);
 
-        if (influence.indexOf('assassin') >= 0 && aiPlayer.cash >= 3) {
-            debug('assassinate');
-            // todo: and if that player does not have a contessa?
-            command({
-                command: 'play-action',
-                action: 'assassinate',
-                target: chooseTarget()
-            });
+        if (influence.indexOf('assassin') >= 0 && aiPlayer.cash >= 3 && assassinTarget() != null) {
+            playAction('assassinate', assassinTarget());
         } else if (aiPlayer.cash >= 7) {
-            debug('coup');
-            command({
-                command: 'play-action',
-                action: 'coup',
-                target: chooseTarget()
-            });
-        } else if (influence.indexOf('captain') >= 0) {
-            debug('steal');
-            command({
-                command: 'play-action',
-                action: 'steal',
-                target: chooseTarget()
-            });
+            playAction('coup', strongestPlayer());
+        } else if (influence.indexOf('captain') >= 0 && captainTarget() != null) {
+            playAction('steal', captainTarget());
         } else if (influence.indexOf('duke') >= 0) {
-            debug('tax');
-            command({
-                command: 'play-action',
-                action: 'tax',
-                target: chooseTarget()
-            });
+            playAction('tax')
         } else if (influence.indexOf('assassin') < 0 ) {
-            debug('exchange');
-            command({
-                command: 'play-action',
-                action: 'exchange'
-            });
+            // If we don't have a captair, duke, or assassin, then exchange
+            playAction('exchange');
         } else {
-            debug('income');
-            command({
-                command: 'play-action',
-                action: 'income'
-            });
+            // We have an assassin, but can't afford to assassinate
+            playAction('income');
         }
+    }
+
+    function playAction(action, target) {
+        debug('playing ' + action);
+        trackClaim(state.playerIdx, action);
+        command({
+            command: 'play-action',
+            action: action,
+            target: target
+        });
     }
 
     function command(command) {
@@ -158,10 +144,15 @@ function createAiPlayer(game, dbg) {
     }
 
     function ourInfluence() {
+        return getInfluence(state.playerIdx);
+    }
+
+    function getInfluence(playerIdx) {
+        var inf = state.players[playerIdx].influence;
         var influence = [];
-        for (var i = 0; i < aiPlayer.influence.length; i++) {
-            if (!aiPlayer.influence[i].revealed) {
-                influence.push(aiPlayer.influence[i].role);
+        for (var i = 0; i < inf.length; i++) {
+            if (!inf[i].revealed) {
+                influence.push(inf[i].role);
             }
         }
         return influence;
@@ -181,25 +172,40 @@ function createAiPlayer(game, dbg) {
         }
     }
 
-    // Choose the player with the most influence first, and the most money second
-    function chooseTarget() {
-        var target = null;
+    function assassinTarget() {
+        return playersByStrength().filter(function (idx) {
+            return !claims[idx] || !claims[idx]['contessa'];
+        })[0];
+    }
+
+    function captainTarget() {
+        return playersByStrength().filter(function (idx) {
+            return !claims[idx] || (!claims[idx]['ambassador'] && !claims[idx]['captain']);
+        })[0];
+    }
+
+    function strongestPlayer() {
+        return playersByStrength()[0];
+    }
+
+    // Rank opponents by influence first, and money second
+    function playersByStrength() {
+        var indices = [];
         for (var i = 0; i < state.numPlayers; i++) {
-            if (i == state.playerIdx) {
-                // Do not target ourselves.
-                continue;
-            }
-            if (target == null) {
-                target = i;
-            } else if (getInfluenceByIdx(i).length > getInfluenceByIdx(target).length) {
-                target = i;
-            } else if (getInfluenceByIdx(i).length == getInfluenceByIdx(target).length &&
-                state.players[i].cash > state.players[target].cash) {
-                target = i;
+            if (i != state.playerIdx) {
+                indices.push(i);
             }
         }
-        debug('targetting ' + target);
-        return target;
+        return indices.sort(function (a, b) {
+            var infa = getInfluence(a).length;
+            var infb = getInfluence(b).length;
+            if (infa != infb) {
+                return infb - infa;
+            } else {
+                return state.players[b].cash - state.players[a].cash;
+            }
+        });
+        return indices;
     }
 
     function exchange() {
@@ -216,6 +222,7 @@ function createAiPlayer(game, dbg) {
                 }
                 if (available.indexOf(candidate) >= 0) {
                     chosen.push(candidate);
+                    break;
                 }
             }
         }
