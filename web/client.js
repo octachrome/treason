@@ -83,6 +83,9 @@ function weAreInState(stateName) {
 function theyAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() != vm.state.playerIdx();
 }
+function weAreAlive() {
+    return ourInfluenceCount() > 0;
+}
 function currentPlayerName() {
     if (vm.state.state.playerIdx() != null) {
         var player = vm.state.players()[vm.state.state.playerIdx()];

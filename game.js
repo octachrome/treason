@@ -241,7 +241,6 @@ module.exports = function createGame(options) {
         if (command.stateId != state.stateId) {
             throw new GameException('Stale state');
         }
-
         if (command.command == 'start') {
             start();
 
@@ -300,6 +299,9 @@ module.exports = function createGame(options) {
             }
 
         } else if (command.command == 'challenge') {
+            if (player.influenceCount == 0) {
+                throw new GameException('Dead players cannot challenge');
+            }
             if (state.state.name == stateNames.ACTION_RESPONSE) {
                 if (playerIdx == state.state.playerIdx) {
                     throw new GameException('Cannot challenge your own action');
@@ -349,6 +351,9 @@ module.exports = function createGame(options) {
             throw new GameException('Could not reveal role');
 
         } else if (command.command == 'block') {
+            if (player.influenceCount == 0) {
+                throw new GameException('Dead players cannot block');
+            }
             if (state.state.name != stateNames.ACTION_RESPONSE) {
                 throw new GameException('Incorrect state');
             }
@@ -374,6 +379,9 @@ module.exports = function createGame(options) {
             resetAllows(playerIdx);
 
         } else if (command.command == 'allow') {
+            if (player.influenceCount == 0) {
+                throw new GameException('Dead players cannot allow actions');
+            }
             if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 if (state.state.target == playerIdx) {
                     throw new GameException('Cannot allow your own block');

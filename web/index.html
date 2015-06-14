@@ -123,20 +123,30 @@
                             Waiting for blocks/challenges
                         </div>
                         <div data-bind="visible: theyAreInState('action-response')">
-                            <!-- ko if: weCanBlock() -->
-                                <!-- ko foreach: blockingRoles() -->
-                                    <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
-                                <!-- /ko -->
+                            <!-- ko if: !weAreAlive() -->
+                                Waiting for blocks/challenges
                             <!-- /ko -->
-                            <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
-                            <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
-                        </div>
-                        <div data-bind="visible: theyAreTargetted('block-response')">
-                            <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
-                            <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
+                            <!-- ko if: weAreAlive() -->
+                                <!-- ko if: weCanBlock() -->
+                                    <!-- ko foreach: blockingRoles() -->
+                                        <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
+                                    <!-- /ko -->
+                                <!-- /ko -->
+                                <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
+                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
+                            <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreTargetted('block-response')">
                             Waiting for challenges
+                        </div>
+                        <div data-bind="visible: theyAreTargetted('block-response') &amp;&amp; weAreAlive()">
+                            <!-- ko if: !weAreAlive() -->
+                                Waiting for challenges
+                            <!-- /ko -->
+                            <!-- ko if: weAreAlive() -->
+                                <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
+                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
+                            <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreInState('game-won')">
                             You have won!<br/>
