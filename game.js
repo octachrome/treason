@@ -121,6 +121,9 @@ module.exports = function createGame(options) {
             players[playerIdx] = null;
             if (state.state.name != stateNames.GAME_WON) {
                 killPlayer(playerIdx, true);
+                if (state.state.playerIdx == playerIdx) {
+                    nextTurn();
+                }
             }
         }
         addHistory(null, player.name + ' left the game');
@@ -141,10 +144,6 @@ module.exports = function createGame(options) {
         if (!playerLeft) {
             addHistory(playerIdx, ' suffered a humiliating defeat');
         }
-        if (state.state.playerIdx == playerIdx) {
-            nextTurn();
-        }
-
         checkForGameEnd();
     }
 
@@ -481,19 +480,26 @@ module.exports = function createGame(options) {
         if (influenceIdx != null) {
             // Player has role - challenge lost.
             addHistory(playerIdx, 'incorrectly challenged', challengedPlayerIdx);
-            if (player.influenceCount <= 1 ||
-                (player.influenceCount <= 2 && state.state.name == stateNames.ACTION_RESPONSE && state.state.action == 'assassinate')) {
-                // The player is dead (challenging an assassination and failing loses you two influnece)
-                // todo: this is only true if the challenger was the target of the assassination
-                killPlayer(playerIdx);
+
+            if (player.influenceCount > 1 && state.state.name == stateNames.ACTION_RESPONSE && state.state.action == 'exchange') {
+                // Special case: the challenger reveals first, then the exchange is played afterwards.
             } else {
-                if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action != 'exchange') {
-                    // The action was unsuccessfully challenged, so play it.
-                    // If the action was an exchange, the exchange must place after the reveal.
-                    playAction(state.state.playerIdx, state.state);
-                }
+                // Play the challenged action now.
+                playAction(state.state.playerIdx, state.state);
+            }
+
+            // If the challenger is losing their last influence,
+            if (player.influenceCount <= 1 ||
+                // Or they are losing two influence because the itself action made the challenger reveal an influence,
+                // (e.g., someone assassinates you, you incorrectly challenge them, you lose two influence: one for the assassination, one for the failed challenge)
+                (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.target == playerIdx)) {
+                // Then the challenger is dead.
+                killPlayer(playerIdx);
+                nextTurn();
+            } else {
                 state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, state.state.action, playerIdx, 'failed challenge');
             }
+
             // Deal the challenged player a replacement card.
             var oldRole = challengedPlayer.influence[influenceIdx].role;
             challengedPlayer.influence[influenceIdx].role = swapRole(oldRole);
@@ -501,15 +507,21 @@ module.exports = function createGame(options) {
         } else {
             // Player does not have role - challenge won.
             addHistory(playerIdx, 'successfully challenged', challengedPlayerIdx);
+
+            if (state.state.name == stateNames.BLOCK_RESPONSE) {
+                // The block was successfully challenged, so play the original action.
+                playAction(state.state.playerIdx, state.state);
+            }
+
+            // If the challenged player is losing their last influence,
             if (challengedPlayer.influenceCount <= 1 ||
-                (challengedPlayer.influenceCount <= 2 && state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate')) {
-                // The player is dead (challenging a contessa block of an assassination and succeeding takes out two influence)
+                // Or they are losing two influence because the action itself which failed to be blocked made the challenger reveal an influence,
+                // (e.g., someone assassinates you, you bluff contessa, they challenge you, you lose two influence: one for the assassination, one for the successful challenge)
+                (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.target == challengedPlayerIdx)) {
+                // Then the challenged player is dead.
                 killPlayer(challengedPlayerIdx);
+                nextTurn();
             } else {
-                if (state.state.name == stateNames.BLOCK_RESPONSE) {
-                    // The block was successfully challenged, so play the original action.
-                    playAction(state.state.playerIdx, state.state);
-                }
                 state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, state.state.action, challengedPlayerIdx, 'successfully challenged');
             }
         }
