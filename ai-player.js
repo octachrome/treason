@@ -41,6 +41,8 @@ function createAiPlayer(game, dbg) {
         currentPlayer = state.players[state.state.playerIdx];
         targetPlayer = state.players[state.state.target];
 
+        initClaims();
+
         if (state.state.name == stateNames.START_OF_TURN && currentPlayer == aiPlayer) {
             playOurTurn();
 
@@ -58,6 +60,14 @@ function createAiPlayer(game, dbg) {
             revealLowestRanked();
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();
+        }
+    }
+
+    function initClaims() {
+        for (var i = 0; i < state.numPlayers; i++) {
+            if (!claims[i]) {
+                claims[i] = {};
+            }
         }
     }
 
@@ -96,7 +106,6 @@ function createAiPlayer(game, dbg) {
             return;
         }
         var role = actionsToRoles[actionOrRole] || actionOrRole;
-        claims[playerIdx] = claims[playerIdx] || {};
         claims[playerIdx][role] = true;
         debug('player ' + playerIdx + ' claimed ' + role);
     }
@@ -174,13 +183,13 @@ function createAiPlayer(game, dbg) {
 
     function assassinTarget() {
         return playersByStrength().filter(function (idx) {
-            return !claims[idx] || !claims[idx]['contessa'];
+            return !claims[idx]['contessa'];
         })[0];
     }
 
     function captainTarget() {
         return playersByStrength().filter(function (idx) {
-            return !claims[idx] || (!claims[idx]['ambassador'] && !claims[idx]['captain']);
+            return !claims[idx]['ambassador'] && !claims[idx]['captain'];
         })[0];
     }
 
