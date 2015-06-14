@@ -62,17 +62,10 @@ function createAiPlayer(game, dbg) {
 
         if (state.state.name == stateNames.START_OF_TURN && currentPlayer == aiPlayer) {
             playOurTurn();
-
         } else if (state.state.name == stateNames.ACTION_RESPONSE && aiPlayer != currentPlayer) {
             respondToAction();
-
         } else if (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer) {
-            trackClaim(state.state.target, state.state.role);
-            // Allow other players' blocks
-            debug('allowing');
-            command({
-                command: 'allow'
-            });
+            respondToBlock();
         } else if (state.state.name == stateNames.REVEAL_INFLUENCE && targetPlayer == aiPlayer) {
             revealLowestRanked();
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
@@ -111,12 +104,49 @@ function createAiPlayer(game, dbg) {
                 command: 'block',
                 role: role
             });
+            return;
+        } else if (shouldChallenge()) {
+            debug('challenging');
+            command({
+                command: 'challenge'
+            });
         } else {
             debug('allowing');
             command({
                 command: 'allow'
             });
         }
+    }
+
+    function respondToBlock() {
+        trackClaim(state.state.target, state.state.role);
+        if (shouldChallenge()) {
+            debug('challenging');
+            command({
+                command: 'challenge'
+            });
+        } else {
+            debug('allowing');
+            command({
+                command: 'allow'
+            });
+        }
+    }
+
+    function shouldChallenge() {
+        if (!isEndGame()) {
+            return false;
+        }
+        if (state.state.action != 'tax' && state.state.action != 'steal' && state.state.action != 'assassinate') {
+            // Only challenge actions that could lead to a victory if not challenged.
+            return false;
+        }
+        return !weWouldWin();
+    }
+
+    function isEndGame() {
+        var opponents = playersByStrength();
+        return opponents.length == 1;
     }
 
     function getBlockingRole() {
@@ -198,6 +228,16 @@ function createAiPlayer(game, dbg) {
         return influence;
     }
 
+    function getClaimedRoles(playerIdx) {
+        var roles = [];
+        for (var k in claims[playerIdx]) {
+            if (claims[playerIdx][k]) {
+                roles.push(k);
+            }
+        }
+        return roles;
+    }
+
     function revealLowestRanked() {
         var influence = ourInfluence();
         var i = rankedRoles.length;
@@ -274,6 +314,109 @@ function createAiPlayer(game, dbg) {
             command: 'exchange',
             roles: chosen
         });
+    }
+
+    // Simulates us and the remaining player playing their best moves to see who would win.
+    // Limitation: if a player loses an influence, it acts as if the player can still play either role.
+    // Limitation: doesn't take foreign aid.
+    function weWouldWin() {
+        var opponentIdx = strongestPlayer();
+        var cash = [
+            state.players[opponentIdx].cash,
+            state.players[state.playerIdx].cash
+        ];
+        var influenceCount = [
+            getInfluence(opponentIdx).length,
+            getInfluence(state.playerIdx).length
+        ];
+        var roles = [
+            getClaimedRoles(opponentIdx),
+            ourInfluence()
+        ];
+        debug('simulating with ' + roles[0] + ' and ' + roles[1]);
+        var i, turn, other;
+        function canSteal() {
+            return roles[turn].indexOf('captain') >= 0 && roles[other].indexOf('captain') < 0 &&
+                roles[other].indexOf('ambassador') < 0;
+        }
+        function steal() {
+            if (cash[other] < 2) {
+                cash[turn] += cash[other];
+                cash[other] = 0;
+            } else {
+                cash[turn] += 2;
+                cash[other] -= 2;
+            }
+        }
+        function canAssassinate() {
+            return roles[turn].indexOf('assassin') >= 0 && roles[other].indexOf('contessa') < 0;
+        }
+        function assassinate() {
+            cash[turn] -= 3;
+            influenceCount[other] -= 1;
+        }
+        function canTax() {
+            return roles[turn].indexOf('duke') >= 0;
+        }
+        function tax() {
+            cash[turn] += 3;
+        }
+        function coup() {
+            cash[turn] -= 7;
+            influenceCount[other] -= 1;
+        }
+        // Apply the pending move
+        if (state.state.name == stateNames.ACTION_RESPONSE) {
+            // The opponent is playing an action; simulate it, then run from our turn
+            i = 0;
+            turn = 0;
+            other = 1
+            switch (state.state.action) {
+                case 'steal':
+                    steal();
+                    break;
+                case 'assassinate':
+                    assassinate();
+                    break;
+                case 'tax':
+                    tax();
+                    break;
+                default:
+                    debug('unexpected initial action: ' + state.state.action);
+            }
+        } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
+            // The opponent is blocking our action; run from the opponent's turn
+            i = 1;
+        }
+        while (i < 50) {
+            i++;
+            turn = i % 2;
+            other = (i + 1) % 2;
+            if (influenceCount[0] == 0) {
+                debug('we win simulation');
+                return true;
+            }
+            if (influenceCount[1] == 0) {
+                debug('they win simulation');
+                return false;
+            }
+            if (canAssassinate() && cash[turn] >= 3) {
+                assassinate();
+            } else if (cash[turn] >= 7) {
+                coup();
+            } else if (canSteal() && cash[other] > 0) {
+                // To do: only steal if cash >= 2, e.g., if they also have the duke?
+                steal();
+            } else if (canTax()) {
+                tax();
+            } else {
+                // Income
+                cash[turn]++;
+            }
+        }
+        debug('ran out of moves simulating endgame')
+        // We don't know if we would win, but don't do anything rash
+        return true;
     }
 
     function debug(msg) {
