@@ -1,6 +1,6 @@
 'use strict';
 
-var shared = require('./web/shared.js');
+var shared = require('./web/shared');
 var stateNames = shared.states;
 var actions = shared.actions;
 

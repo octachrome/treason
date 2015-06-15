@@ -1,7 +1,7 @@
 'use strict';
 
 var createAiPlayer = require('./ai-player');
-var shared = require('./web/shared.js');
+var shared = require('./web/shared');
 var actions = shared.actions;
 var stateNames = shared.states;
 
@@ -15,6 +15,7 @@ var MIN_PLAYERS = 2;
 var MAX_PLAYERS = 6;
 
 module.exports = function createGame(options) {
+    options = options || {};
     var gameId = nextGameId++;
 
     var state = {
@@ -29,11 +30,14 @@ module.exports = function createGame(options) {
     var allows = [];
     var proxies = [];
 
-    var deck = buildDeck().concat(options.deal || []);
+    var deck = buildDeck();
+    var _test_ignoreShuffle = false;
 
     var game = {
         canJoin: canJoin,
-        playerJoined: playerJoined
+        playerJoined: playerJoined,
+        _test_setState: _test_setState,
+        _test_setDeck: _test_setDeck
     };
 
     function playerJoined(player) {
@@ -623,6 +627,9 @@ module.exports = function createGame(options) {
     }
 
     function shuffle(array) {
+        if (_test_ignoreShuffle) {
+            return array;
+        }
         var shuffled = [];
         while (array.length) {
             var i = Math.floor(Math.random() * array.length);
@@ -681,6 +688,15 @@ module.exports = function createGame(options) {
         if (players[dest] != null) {
             players[dest].onChatMessage(playerIdx, message);
         }
+    }
+
+    function _test_setState(s) {
+        state = s;
+    }
+
+    function _test_setDeck(d) {
+        deck = d;
+        _test_ignoreShuffle = true;
     }
 
     return game;
