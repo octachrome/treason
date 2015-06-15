@@ -11,8 +11,10 @@ function createTestPlayer(game) {
     var gameProxy = game.playerJoined(player);
 
     var onNextState;
+    var lastState;
 
     function onStateChange(state) {
+        lastState = state;
         if (onNextState) {
             onNextState(state);
             onNextState = null;
@@ -25,8 +27,14 @@ function createTestPlayer(game) {
         });
     }
 
+    function command(cmd) {
+        cmd.stateId = lastState.stateId;
+        gameProxy.command(cmd);
+    }
+
     return {
-        getNextState: getNextState
+        getNextState: getNextState,
+        command: command
     };
 }
 

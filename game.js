@@ -36,7 +36,8 @@ module.exports = function createGame(options) {
     var game = {
         canJoin: canJoin,
         playerJoined: playerJoined,
-        _test_setState: _test_setState,
+        _test_setTurnState: _test_setTurnState,
+        _test_setInfluence: _test_setInfluence,
         _test_setDeck: _test_setDeck
     };
 
@@ -425,14 +426,18 @@ module.exports = function createGame(options) {
             if (command.roles.length != player.influenceCount) {
                 throw new GameException('Wrong number of roles');
             }
-            if (!containsAll(state.state.exchangeOptions, command.roles)) {
+            var unchosen = arrayDifference(state.state.exchangeOptions, command.roles);
+            if (!unchosen) {
                 throw new GameException('Invalid choice of roles');
             }
+            // Assign the roles the player selected.
             for (i = 0; i < player.influence.length; i++) {
                 if (!player.influence[i].revealed) {
                     player.influence[i].role = command.roles.pop()
                 }
             }
+            // Return the other roles to the deck.
+            deck = shuffle(deck.concat(unchosen));
             addHistory(playerIdx, ' exchanged roles');
             nextTurn();
 
@@ -443,7 +448,7 @@ module.exports = function createGame(options) {
         emitState();
     }
 
-    function containsAll(array, subarray) {
+    function arrayDifference(array, subarray) {
         array = deepcopy(array);
         for (var i = 0; i < subarray.length; i++) {
             var idx = array.indexOf(subarray[i]);
@@ -452,7 +457,7 @@ module.exports = function createGame(options) {
             }
             array.splice(idx, 1);
         }
-        return true;
+        return array;
     }
 
     function resetAllows(initiatingPlayerIdx) {
@@ -484,10 +489,9 @@ module.exports = function createGame(options) {
         if (influenceIdx != null) {
             // Player has role - challenge lost.
             addHistory(playerIdx, 'incorrectly challenged', challengedPlayerIdx);
-
             if (player.influenceCount > 1 && state.state.name == stateNames.ACTION_RESPONSE && state.state.action == 'exchange') {
                 // Special case: the challenger reveals first, then the exchange is played afterwards.
-            } else {
+            } else if (state.state.name == stateNames.ACTION_RESPONSE) {
                 // Play the challenged action now.
                 playAction(state.state.playerIdx, state.state);
             }
@@ -690,8 +694,24 @@ module.exports = function createGame(options) {
         }
     }
 
-    function _test_setState(s) {
-        state = s;
+    function _test_setTurnState(turn) {
+        state.state = turn;
+    }
+
+    function _test_setInfluence(/*playerIdx, role, role*/) {
+        var args = Array.prototype.slice.apply(arguments);
+        var playerIdx = args.shift();
+        var influence = state.players[playerIdx].influence;
+        state.players[playerIdx].influenceCount = args.length;
+        for (var i = 0; i < influence.length; i++) {
+            var role = args.shift();
+            if (role) {
+                influence[i].role = role;
+                influence[i].revealed = false;
+            } else {
+                influence[i].revealed = true;
+            }
+        }
     }
 
     function _test_setDeck(d) {
