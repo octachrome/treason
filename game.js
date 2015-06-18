@@ -520,6 +520,12 @@ module.exports = function createGame(options) {
         if (influenceIdx != null) {
             // Player has role - challenge lost.
             addHistory(playerIdx, 'incorrectly challenged', challengedPlayerIdx);
+
+            // Deal the challenged player a replacement card.
+            var oldRole = challengedPlayer.influence[influenceIdx].role;
+            challengedPlayer.influence[influenceIdx].role = swapRole(oldRole);
+            addHistory(challengedPlayerIdx, 'exchanged ' + oldRole + ' for a new role');
+
             if (player.influenceCount > 1 && state.state.action == 'exchange') {
                 // Special case: the challenger reveals first, then the exchange is played afterwards.
             } else if (state.state.name == stateNames.ACTION_RESPONSE) {
@@ -549,11 +555,6 @@ module.exports = function createGame(options) {
                     playerToReveal: playerIdx
                 };
             }
-
-            // Deal the challenged player a replacement card.
-            var oldRole = challengedPlayer.influence[influenceIdx].role;
-            challengedPlayer.influence[influenceIdx].role = swapRole(oldRole);
-            addHistory(challengedPlayerIdx, 'exchanged ' + oldRole + ' for a new role');
         } else {
             // Player does not have role - challenge won.
             addHistory(playerIdx, 'successfully challenged', challengedPlayerIdx);
