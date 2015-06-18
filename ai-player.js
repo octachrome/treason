@@ -66,7 +66,7 @@ function createAiPlayer(game, dbg) {
             respondToAction();
         } else if (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer) {
             respondToBlock();
-        } else if (state.state.name == stateNames.REVEAL_INFLUENCE && targetPlayer == aiPlayer) {
+        } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == state.playerIdx) {
             revealLowestRanked();
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();

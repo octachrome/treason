@@ -156,14 +156,14 @@
                             <span data-bind="text: currentPlayerName()"></span> has won!
                             <button class="btn btn-default" data-bind="click: join">Play again</button>
                         </div>
-                        <div data-bind="visible: weAreTargetted('reveal-influence')">
+                        <div data-bind="visible: weMustReveal()">
                             Must reveal an influence
                             <!-- ko foreach: ourInfluence() -->
                             <button class="btn btn-xs" data-bind="text: role, css: buttonClass(role()), visible: !revealed(), click: reveal"></button>
                             <!-- /ko -->
                         </div>
-                        <div data-bind="visible: theyAreTargetted('reveal-influence')">
-                            Waiting for <span data-bind="text: targetPlayerName()"></span> to reveal an influence
+                        <div data-bind="visible: theyMustReveal()">
+                            Waiting for <span data-bind="text: toRevealPlayerName()"></span> to reveal an influence
                         </div>
                     </li>
                 </ul>

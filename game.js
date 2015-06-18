@@ -23,7 +23,9 @@ module.exports = function createGame(options) {
         gameId: gameId,
         players: [],
         numPlayers: 0,
-        state: createState(stateNames.WAITING_FOR_PLAYERS)
+        state: {
+            name: stateNames.WAITING_FOR_PLAYERS
+        }
     };
 
     var players = [];
@@ -138,16 +140,18 @@ module.exports = function createGame(options) {
     function killPlayer(playerIdx, playerLeft) {
         // Reveal all the player's influence.
         var player = state.players[playerIdx];
-        var influence = player.influence;
-        for (var j = 0; j < influence.length; j++) {
-            if (!influence[j].revealed) {
-                addHistory(playerIdx, 'revealed ' + influence[j].role);
-                influence[j].revealed = true;
+        if (player.influenceCount > 0) {
+            var influence = player.influence;
+            for (var j = 0; j < influence.length; j++) {
+                if (!influence[j].revealed) {
+                    addHistory(playerIdx, 'revealed ' + influence[j].role);
+                    influence[j].revealed = true;
+                }
             }
-        }
-        player.influenceCount = 0;
-        if (!playerLeft) {
-            addHistory(playerIdx, ' suffered a humiliating defeat');
+            player.influenceCount = 0;
+            if (!playerLeft) {
+                addHistory(playerIdx, ' suffered a humiliating defeat');
+            }
         }
         checkForGameEnd();
     }
@@ -165,7 +169,10 @@ module.exports = function createGame(options) {
             }
         }
         if (winnerIdx != null) {
-            state.state = createState(stateNames.GAME_WON, winnerIdx);
+            state.state = {
+                name: stateNames.GAME_WON,
+                playerIdx: winnerIdx
+            };
         }
     }
 
@@ -230,7 +237,10 @@ module.exports = function createGame(options) {
                 }
             }
             var firstPlayer = Math.floor(Math.random() * state.numPlayers);
-            state.state = createState(stateNames.START_OF_TURN, firstPlayer);
+            state.state = {
+                name: stateNames.START_OF_TURN,
+                playerIdx: firstPlayer
+            };
         }
     }
 
@@ -298,7 +308,12 @@ module.exports = function createGame(options) {
                 } else {
                     addHistory(playerIdx, 'attempted to draw ' + command.action);
                 }
-                state.state = createState(stateNames.ACTION_RESPONSE, playerIdx, command.action, command.target);
+                state.state = {
+                    name: stateNames.ACTION_RESPONSE,
+                    playerIdx: playerIdx,
+                    action: command.action,
+                    target: command.target
+                };
                 resetAllows(playerIdx);
             }
 
@@ -333,7 +348,7 @@ module.exports = function createGame(options) {
             if (state.state.name != stateNames.REVEAL_INFLUENCE) {
                 throw new GameException('Incorrect state');
             }
-            if (state.state.target != playerIdx) {
+            if (state.state.playerToReveal != playerIdx) {
                 throw new GameException('Not your turn to reveal an influence');
             }
             for (i = 0; i < player.influence.length; i++) {
@@ -342,7 +357,7 @@ module.exports = function createGame(options) {
                     influence.revealed = true;
                     player.influenceCount--;
                     addHistory(playerIdx, 'revealed ' + command.role);
-                    if (state.state.action == 'exchange' && state.state.target != state.state.playerIdx) {
+                    if (state.state.action == 'exchange' && state.state.playerToReveal != state.state.playerIdx) {
                         // If the challenge was for an exchange, and the challenge was lost, the exchange must place after the reveal.
                         playAction(state.state.playerIdx, state.state);
                     } else {
@@ -379,7 +394,13 @@ module.exports = function createGame(options) {
             }
             // Original player is in the playerIdx field; blocking player is in the target field.
             addHistory(playerIdx, 'attempted to block with ' + command.blockingRole);
-            state.state = createState(stateNames.BLOCK_RESPONSE, state.state.playerIdx, state.state.action, playerIdx, null, command.blockingRole);
+            state.state = {
+                name: stateNames.BLOCK_RESPONSE,
+                playerIdx: state.state.playerIdx,
+                action: state.state.action,
+                target: playerIdx,
+                blockingRole: command.blockingRole
+            };
             resetAllows(playerIdx);
 
         } else if (command.command == 'allow') {
@@ -500,12 +521,20 @@ module.exports = function createGame(options) {
             if (player.influenceCount <= 1 ||
                 // Or they are losing two influence because the itself action made the challenger reveal an influence,
                 // (e.g., someone assassinates you, you incorrectly challenge them, you lose two influence: one for the assassination, one for the failed challenge)
-                (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.target == playerIdx)) {
+                (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx)) {
                 // Then the challenger is dead.
                 killPlayer(playerIdx);
                 nextTurn();
             } else {
-                state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, state.state.action, playerIdx, 'failed challenge');
+                state.state = {
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: state.state.playerIdx,
+                    action: state.state.action,
+                    target: state.state.target,
+                    blockingRole: state.state.blockingRole,
+                    message: 'failed challenge',
+                    playerToReveal: playerIdx
+                };
             }
 
             // Deal the challenged player a replacement card.
@@ -525,12 +554,20 @@ module.exports = function createGame(options) {
             if (challengedPlayer.influenceCount <= 1 ||
                 // Or they are losing two influence because the action itself which failed to be blocked made the challenger reveal an influence,
                 // (e.g., someone assassinates you, you bluff contessa, they challenge you, you lose two influence: one for the assassination, one for the successful challenge)
-                (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.target == challengedPlayerIdx)) {
+                (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == challengedPlayerIdx)) {
                 // Then the challenged player is dead.
                 killPlayer(challengedPlayerIdx);
                 nextTurn();
             } else {
-                state.state = createState(stateNames.REVEAL_INFLUENCE, state.state.playerIdx, state.state.action, challengedPlayerIdx, 'successfully challenged');
+                state.state = {
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: state.state.playerIdx,
+                    action: state.state.action,
+                    target: state.state.target,
+                    blockingRole: state.state.blockingRole,
+                    message: 'successfully challenged',
+                    playerToReveal: challengedPlayerIdx
+                };
             }
         }
     }
@@ -546,7 +583,15 @@ module.exports = function createGame(options) {
             if (target.influenceCount <= 1) {
                 killPlayer(actionState.target);
             } else {
-                state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'assassinated');
+                state.state = {
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: state.state.playerIdx,
+                    action: actionState.action,
+                    target: actionState.target,
+                    blockingRole: actionState.blockingRole,
+                    message: 'assassinated',
+                    playerToReveal: actionState.target
+                };
                 return false; // Not yet end of turn
             }
         } else if (actionState.action == 'coup') {
@@ -555,7 +600,15 @@ module.exports = function createGame(options) {
             if (target.influenceCount <= 1) {
                 killPlayer(actionState.target);
             } else {
-                state.state = createState(stateNames.REVEAL_INFLUENCE, playerIdx, actionState.action, actionState.target, 'coup');
+                state.state = {
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: state.state.playerIdx,
+                    action: actionState.action,
+                    target: actionState.target,
+                    blockingRole: actionState.blockingRole,
+                    message: 'coup',
+                    playerToReveal: actionState.target
+                };
                 return false; // Not yet end of turn
             }
         } else if (actionState.action == 'steal') {
@@ -570,7 +623,12 @@ module.exports = function createGame(options) {
             }
         } else if (actionState.action == 'exchange') {
             var exchangeOptions = [deck.pop(), deck.pop()].concat(getInfluence(player));
-            state.state = createState(stateNames.EXCHANGE, playerIdx, actionState.action, null, null, null, exchangeOptions);
+            state.state = {
+                name: stateNames.EXCHANGE,
+                playerIdx: state.state.playerIdx,
+                action: actionState.action,
+                exchangeOptions: exchangeOptions
+            };
             return false; // Not yet end of turn
         } else {
             addHistory(playerIdx, 'drew ' + actionState.action);
@@ -587,7 +645,10 @@ module.exports = function createGame(options) {
     function nextTurn() {
         debug('next turn');
         if (state.state.name != stateNames.GAME_WON) {
-            state.state = createState(stateNames.START_OF_TURN, nextPlayerIdx());
+            state.state = {
+                name: stateNames.START_OF_TURN,
+                playerIdx: nextPlayerIdx()
+            };
         }
     }
 
@@ -610,18 +671,6 @@ module.exports = function createGame(options) {
         }
         debug('no more players');
         return null;
-    }
-
-    function createState(stateName, playerIdx, action, target, message, blockingRole, exchangeOptions) {
-        return {
-            name: stateName,
-            playerIdx: playerIdx,
-            action: action,
-            target: target,
-            message: message,
-            blockingRole: blockingRole,
-            exchangeOptions: exchangeOptions
-        };
     }
 
     function debug(obj) {

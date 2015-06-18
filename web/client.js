@@ -19,7 +19,8 @@ vm.state = ko.mapping.fromJS({
         action: null,
         target: null,
         message: null,
-        exchangeOptions: null
+        exchangeOptions: null,
+        playerToReveal: null
     }
 });
 vm.playerName.subscribe(function (newName) {
@@ -98,6 +99,15 @@ function currentPlayerName() {
 function targetPlayerName() {
     if (vm.state.state.target() != null) {
         var player = vm.state.players()[vm.state.state.target()];
+        if (player) {
+            return player.name();
+        }
+    }
+    return '';
+}
+function toRevealPlayerName() {
+    if (vm.state.state.playerToReveal() != null) {
+        var player = vm.state.players()[vm.state.state.playerToReveal()];
         if (player) {
             return player.name();
         }
@@ -213,6 +223,12 @@ function weAreTargetted(stateName) {
 }
 function theyAreTargetted(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.target() != vm.state.playerIdx();
+}
+function weMustReveal() {
+    return vm.state.state.name() == states.REVEAL_INFLUENCE && vm.state.state.playerToReveal() == vm.state.playerIdx();
+}
+function theyMustReveal() {
+    return vm.state.state.name() == states.REVEAL_INFLUENCE && vm.state.state.playerToReveal() != vm.state.playerIdx();
 }
 function ourPlayer() {
     return vm.state.players()[vm.state.playerIdx()];

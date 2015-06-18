@@ -68,6 +68,35 @@ describe('Game', function () {
             });
         });
 
+        describe('Given player0 assassinates player1 with a bluffed assassin', function () {
+            beforeEach(function () {
+                game._test_setInfluence(0, 'duke', 'captain');
+                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setTurnState({
+                    name: stateNames.ACTION_RESPONSE,
+                    playerIdx: 0,
+                    action: 'assassinate',
+                    target: 1
+                });
+            });
+
+            describe('When player1 challenges', function () {
+                beforeEach(function () {
+                    player1.command({
+                        command: 'challenge'
+                    });
+                });
+
+                it('Then player0 should reveal an influence', function () {
+                    return player1.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                        expect(state.state.playerIdx).to.be(0);
+                        expect(state.state.playerToReveal).to.be(0);
+                    });
+                });
+            });
+        });
+
         describe('Given player1 blocks player2\'s assassination with a bluffed contessa', function () {
             beforeEach(function () {
                 game._test_setInfluence(0, 'duke', 'assassin');
@@ -77,7 +106,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'assassinate',
                     target: 1,
-                    role: 'contessa'
+                    blockingRole: 'contessa'
                 });
             });
 
@@ -112,7 +141,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'assassinate',
                     target: 1,
-                    role: 'contessa'
+                    blockingRole: 'contessa'
                 });
             });
 
@@ -123,16 +152,130 @@ describe('Game', function () {
                     });
                 });
 
-                it('Then the player0 should reveal a role', function () {
+                it('Then the player0 should reveal an influence', function () {
                     return player0.getNextState().then(function (state) {
                         expect(state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
-                        expect(state.state.target).to.be(0);
+                        expect(state.state.playerToReveal).to.be(0);
                     });
                 });
 
                 it('Then player1 should not lose any influence', function () {
                     return player0.getNextState().then(function (state) {
                         expect(state.players[1].influenceCount).to.be(2);
+                    });
+                });
+
+                it('Then the assassination should still target player1', function () {
+                    return player0.getNextState().then(function (state) {
+                        expect(state.state.target).to.be(1);
+                    });
+                });
+            });
+        });
+    });
+
+    describe('Reveals', function () {
+        describe('Given a player is revealing an influence due to a failed ambassador challenge', function () {
+            beforeEach(function () {
+                game._test_setInfluence(0, 'ambassador', 'assassin');
+                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setTurnState({
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: 0,
+                    action: 'exchange',
+                    playerToReveal: 1
+                });
+            });
+
+            describe('When player1 reveals a role', function () {
+                beforeEach(function () {
+                    player1.command({
+                        command: 'reveal',
+                        role: 'captain'
+                    });
+                });
+
+                it('Then player0 should be in exchange state', function () {
+                    return player1.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.EXCHANGE);
+                        expect(state.state.playerIdx).to.be(0);
+                    });
+                });
+
+                it('Then player1 should lose an influence', function () {
+                    return player1.getNextState().then(function (state) {
+                        expect(state.players[1].influenceCount).to.be(1);
+                    });
+                });
+            });
+        });
+
+        describe('Given a player is revealing an influence due to a correct ambassador challenge', function () {
+            beforeEach(function () {
+                game._test_setInfluence(0, 'duke', 'captain');
+                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setTurnState({
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: 0,
+                    action: 'exchange',
+                    playerToReveal: 0
+                });
+            });
+
+            describe('When player0 reveals a role', function () {
+                beforeEach(function () {
+                    player0.command({
+                        command: 'reveal',
+                        role: 'duke'
+                    });
+                });
+
+                it('Then player0 should lose an influence', function () {
+                    return player0.getNextState().then(function (state) {
+                        expect(state.players[0].influenceCount).to.be(1);
+                    });
+                });
+
+                it('Then the turn should pass to player1', function () {
+                    return player1.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                        expect(state.state.playerIdx).to.be(1);
+                    });
+                });
+            });
+        });
+
+        describe('Given a player is revealing an influence due to a correct assassin challenge', function () {
+            beforeEach(function () {
+                game._test_setInfluence(0, 'duke', 'captain');
+                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setTurnState({
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: 0,
+                    action: 'assassinate',
+                    target: 1,
+                    playerToReveal: 0
+                });
+            });
+
+            describe('When player0 reveals a role', function () {
+                beforeEach(function () {
+                    player0.command({
+                        command: 'reveal',
+                        role: 'duke'
+                    });
+                });
+
+                it('Then player0 should lose an influence', function () {
+                    return player0.getNextState().then(function (state) {
+                        expect(state.players[0].influenceCount).to.be(1);
+                    });
+                });
+
+                it('Then the turn should pass to player1', function () {
+                    return player1.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                        expect(state.state.playerIdx).to.be(1);
                     });
                 });
             });
