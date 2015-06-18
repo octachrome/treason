@@ -88,17 +88,17 @@
                             </p>
                         </div>
                         <div data-bind="visible: weAreInState('start-of-turn')">
-                            <!-- ko if: !targettedAction() -->
+                            <!-- ko if: !targetedAction() -->
                                 Your turn:
                                 <!-- ko foreach: Object.keys(actions).sort() -->
                                     <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction"></button>
                                 <!-- /ko -->
                             <!-- /ko -->
-                            <!-- ko if: targettedAction -->
-                                <span data-bind="text: targettedAction"></span>:
+                            <!-- ko if: targetedAction -->
+                                <span data-bind="text: targetedAction"></span>:
                                 <!-- ko foreach: state.players -->
                                     <!-- ko if: canTarget($index()) -->
-                                        <button class="btn btn-default" data-bind="text: name, click: function () { playTargettedAction($index()); }"></button>
+                                        <button class="btn btn-default" data-bind="text: name, click: function () { playTargetedAction($index()); }"></button>
                                     <!-- /ko -->
                                 <!-- /ko -->
                                 <button class="btn btn-link" data-bind="click: cancelAction">back</button>
@@ -136,10 +136,24 @@
                                 <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
                             <!-- /ko -->
                         </div>
-                        <div data-bind="visible: weAreTargetted('block-response')">
+                        <div data-bind="visible: weAreInState('final-action-response')">
+                            Waiting for blocks
+                        </div>
+                        <div data-bind="visible: theyAreInState('final-action-response')">
+                            <!-- ko if: !weCanBlock() -->
+                                Waiting for blocks
+                            <!-- /ko -->
+                            <!-- ko if: weCanBlock() -->
+                                <!-- ko foreach: blockingRoles() -->
+                                    <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
+                                <!-- /ko -->
+                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
+                            <!-- /ko -->
+                        </div>
+                        <div data-bind="visible: weAreTargeted('block-response')">
                             Waiting for challenges
                         </div>
-                        <div data-bind="visible: theyAreTargetted('block-response') &amp;&amp; weAreAlive()">
+                        <div data-bind="visible: theyAreTargeted('block-response') &amp;&amp; weAreAlive()">
                             <!-- ko if: !weAreAlive() -->
                                 Waiting for challenges
                             <!-- /ko -->

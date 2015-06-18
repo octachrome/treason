@@ -4,7 +4,7 @@
     var actions = {
         'coup': {
             cost: 7,
-            targetted: true
+            targeted: true
         },
         'income': {
             cost: 0,
@@ -23,13 +23,13 @@
         'assassinate': {
             cost: 3,
             role: 'assassin',
-            targetted: true,
+            targeted: true,
             blockedBy: ['contessa']
         },
         'steal': {
             cost: 0,
             role: 'captain',
-            targetted: true,
+            targeted: true,
             blockedBy: ['captain', 'ambassador']
         },
         'exchange': {
@@ -42,6 +42,7 @@
         WAITING_FOR_PLAYERS: 'waiting-for-players',
         START_OF_TURN: 'start-of-turn',
         ACTION_RESPONSE: 'action-response',
+        FINAL_ACTION_RESPONSE: 'final-action-response',
         BLOCK_RESPONSE: 'block-response',
         REVEAL_INFLUENCE: 'reveal-influence',
         EXCHANGE: 'exchange',

@@ -1,7 +1,7 @@
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
     welcomeMessage: ko.observable(''),
-    targettedAction: ko.observable(''),
+    targetedAction: ko.observable(''),
     weAllowed: ko.observable(false),
     sidebar: ko.observable('chat'),
     history: ko.observableArray()
@@ -43,7 +43,7 @@ function join() {
         });
         socket.on('state', function (data) {
             ko.mapping.fromJS(data, vm.state);
-            vm.targettedAction('');
+            vm.targetedAction('');
             vm.weAllowed(false);
             $('.activity').scrollTop(10000);
             console.log(data);
@@ -131,8 +131,8 @@ function playAction(actionName) {
     if (!action) {
         return;
     }
-    if (action.targetted) {
-        vm.targettedAction(actionName);
+    if (action.targeted) {
+        vm.targetedAction(actionName);
     } else {
         command('play-action', {
             action: actionName
@@ -140,11 +140,11 @@ function playAction(actionName) {
     }
 }
 function cancelAction() {
-    vm.targettedAction('');
+    vm.targetedAction('');
 }
-function playTargettedAction(target) {
+function playTargetedAction(target) {
     command('play-action', {
-        action: vm.targettedAction(),
+        action: vm.targetedAction(),
         target: target
     });
 }
@@ -156,7 +156,10 @@ function command(command, options) {
     socket.emit('command', data);
 }
 function weCanBlock() {
-    if (vm.state.state.name() != 'action-response') {
+    if (!weAreAlive()) {
+        return false;
+    }
+    if (vm.state.state.name() != states.ACTION_RESPONSE && vm.state.state.name() != states.FINAL_ACTION_RESPONSE) {
         return false;
     }
     var action = actions[vm.state.state.action()];
@@ -167,8 +170,8 @@ function weCanBlock() {
         // ACtion cannot be blocked.
         return false;
     }
-    if (!action.targetted) {
-        // Untargetted actions foreign aid) can be blocked by anyone.
+    if (!action.targeted) {
+        // Untargeted actions foreign aid) can be blocked by anyone.
         return true;
     }
     return vm.state.state.target() == vm.state.playerIdx();
@@ -185,10 +188,10 @@ function weCanChallenge() {
     if (!action) {
         return false;
     }
-    if (vm.state.state.name() == 'action-response') {
+    if (vm.state.state.name() == states.ACTION_RESPONSE) {
         // Only role-based actions can be challenged.
         return !!action.role;
-    } else if (vm.state.state.name() == 'block-response') {
+    } else if (vm.state.state.name() == states.BLOCK_RESPONSE) {
         return true;
     } else {
         return false;
@@ -218,10 +221,10 @@ function allow() {
     command('allow');
     vm.weAllowed(true);
 }
-function weAreTargetted(stateName) {
+function weAreTargeted(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.target() == vm.state.playerIdx();
 }
-function theyAreTargetted(stateName) {
+function theyAreTargeted(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.target() != vm.state.playerIdx();
 }
 function weMustReveal() {

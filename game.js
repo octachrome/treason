@@ -247,7 +247,7 @@ module.exports = function createGame(options) {
     function command(playerIdx, command) {
         debug('command from player: ' + playerIdx);
         debug(command);
-        var i;
+        var i, action;
         var player = state.players[playerIdx];
         if (player == null) {
             throw new GameException('Unknown player');
@@ -271,7 +271,7 @@ module.exports = function createGame(options) {
             if (state.state.playerIdx != playerIdx) {
                 throw new GameException('Not your turn');
             }
-            var action = actions[command.action];
+            action = actions[command.action];
             if (action == null) {
                 throw new GameException('Unknown action');
             }
@@ -281,7 +281,7 @@ module.exports = function createGame(options) {
             if (player.cash < action.cost) {
                 throw new GameException('Not enough cash');
             }
-            if (action.targetted) {
+            if (action.targeted) {
                 if (command.target == null) {
                     throw new GameException('No target specified');
                 }
@@ -325,7 +325,7 @@ module.exports = function createGame(options) {
                 if (playerIdx == state.state.playerIdx) {
                     throw new GameException('Cannot challenge your own action');
                 }
-                var action = actions[state.state.action];
+                action = actions[state.state.action];
                 if (!action) {
                     throw new GameException('Unknown action');
                 }
@@ -357,7 +357,17 @@ module.exports = function createGame(options) {
                     influence.revealed = true;
                     player.influenceCount--;
                     addHistory(playerIdx, 'revealed ' + command.role);
-                    if (state.state.action == 'exchange' && state.state.playerToReveal != state.state.playerIdx) {
+                    action = actions[state.state.action];
+                    if (action.blockedBy && !state.state.blockingRole && state.state.message == 'failed challenge') {
+                        // If the action can be blocked but hasn't yet, and if the player revealed because of a failed challenge,
+                        // the targeted player has a final chance to block the action.
+                        state.state = {
+                            name: stateNames.FINAL_ACTION_RESPONSE,
+                            playerIdx: state.state.playerIdx,
+                            action: state.state.action,
+                            target: state.state.target
+                        };
+                    } else if (state.state.action == 'exchange' && state.state.playerToReveal != state.state.playerIdx) {
                         // If the challenge was for an exchange, and the challenge was lost, the exchange must place after the reveal.
                         playAction(state.state.playerIdx, state.state);
                     } else {
@@ -373,10 +383,10 @@ module.exports = function createGame(options) {
             if (player.influenceCount == 0) {
                 throw new GameException('Dead players cannot block');
             }
-            if (state.state.name != stateNames.ACTION_RESPONSE) {
+            if (state.state.name != stateNames.ACTION_RESPONSE && state.state.name != stateNames.FINAL_ACTION_RESPONSE) {
                 throw new GameException('Incorrect state');
             }
-            var action = actions[state.state.action];
+            action = actions[state.state.action];
             if (!action) {
                 throw new GameException('Unknown action');
             }
@@ -510,7 +520,7 @@ module.exports = function createGame(options) {
         if (influenceIdx != null) {
             // Player has role - challenge lost.
             addHistory(playerIdx, 'incorrectly challenged', challengedPlayerIdx);
-            if (player.influenceCount > 1 && state.state.name == stateNames.ACTION_RESPONSE && state.state.action == 'exchange') {
+            if (player.influenceCount > 1 && state.state.action == 'exchange') {
                 // Special case: the challenger reveals first, then the exchange is played afterwards.
             } else if (state.state.name == stateNames.ACTION_RESPONSE) {
                 // Play the challenged action now.
@@ -524,7 +534,10 @@ module.exports = function createGame(options) {
                 (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx)) {
                 // Then the challenger is dead.
                 killPlayer(playerIdx);
-                nextTurn();
+                // With an exchange, the player still gets to exchange roles after the challenger dies.
+                if (state.state.action != 'exchange') {
+                    nextTurn();
+                }
             } else {
                 state.state = {
                     name: stateNames.REVEAL_INFLUENCE,
