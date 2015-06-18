@@ -323,7 +323,7 @@ module.exports = function createGame(options) {
                 if (playerIdx == state.state.target) {
                     throw new GameException('Cannot challenge your own block');
                 }
-                challenge(playerIdx, state.state.target, state.state.role);
+                challenge(playerIdx, state.state.target, state.state.blockingRole);
 
             } else {
                 throw new GameException('Incorrect state');
@@ -371,15 +371,15 @@ module.exports = function createGame(options) {
             if (!action.blockedBy) {
                 throw new GameException('Action cannot be blocked');
             }
-            if (!command.role) {
+            if (!command.blockingRole) {
                 throw new GameException('No blocking role specified');
             }
-            if (action.blockedBy.indexOf(command.role) < 0) {
+            if (action.blockedBy.indexOf(command.blockingRole) < 0) {
                 throw new GameException('Action cannot be blocked by that role');
             }
             // Original player is in the playerIdx field; blocking player is in the target field.
-            addHistory(playerIdx, 'attempted to block with ' + command.role);
-            state.state = createState(stateNames.BLOCK_RESPONSE, state.state.playerIdx, state.state.action, playerIdx, null, command.role);
+            addHistory(playerIdx, 'attempted to block with ' + command.blockingRole);
+            state.state = createState(stateNames.BLOCK_RESPONSE, state.state.playerIdx, state.state.action, playerIdx, null, command.blockingRole);
             resetAllows(playerIdx);
 
         } else if (command.command == 'allow') {
@@ -392,7 +392,7 @@ module.exports = function createGame(options) {
                 }
                 allows[playerIdx] = true;
                 if (everyoneAllows()) {
-                    addHistory(state.state.target, 'blocked with ' + state.state.role);
+                    addHistory(state.state.target, 'blocked with ' + state.state.blockingRole);
                     nextTurn();
                 } else {
                     return;
@@ -612,14 +612,14 @@ module.exports = function createGame(options) {
         return null;
     }
 
-    function createState(stateName, playerIdx, action, target, message, role, exchangeOptions) {
+    function createState(stateName, playerIdx, action, target, message, blockingRole, exchangeOptions) {
         return {
             name: stateName,
             playerIdx: playerIdx,
             action: action,
             target: target,
             message: message,
-            role: role,
+            blockingRole: blockingRole,
             exchangeOptions: exchangeOptions
         };
     }

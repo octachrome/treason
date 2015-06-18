@@ -53,7 +53,7 @@ function createAiPlayer(game, dbg) {
             };
         } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
             lastRoleClaim = {
-                role: state.state.role,
+                role: state.state.blockingRole,
                 playerIdx: state.state.target
             };
         } else {
@@ -97,12 +97,12 @@ function createAiPlayer(game, dbg) {
 
     function respondToAction() {
         trackClaim(state.state.playerIdx, state.state.action);
-        var role = getBlockingRole();
-        if (role) {
+        var blockingRole = getBlockingRole();
+        if (blockingRole) {
             debug('blocking');
             command({
                 command: 'block',
-                role: role
+                blockingRole: blockingRole
             });
             return;
         } else if (shouldChallenge()) {
@@ -119,7 +119,7 @@ function createAiPlayer(game, dbg) {
     }
 
     function respondToBlock() {
-        trackClaim(state.state.target, state.state.role);
+        trackClaim(state.state.target, state.state.blockingRole);
         if (shouldChallenge()) {
             debug('challenging');
             command({

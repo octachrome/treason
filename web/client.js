@@ -15,7 +15,7 @@ vm.state = ko.mapping.fromJS({
     state: {
         name: null,
         playerIdx: null,
-        role: null,
+        blockingRole: null,
         action: null,
         target: null,
         message: null,
@@ -196,9 +196,9 @@ function canTarget(playerIdx) {
     // Cannot target dead player.
     return player.influenceCount() > 0;
 }
-function block(role) {
+function block(blockingRole) {
     command('block', {
-        role: role
+        blockingRole: blockingRole
     });
 }
 function challenge() {
