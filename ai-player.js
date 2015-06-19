@@ -64,6 +64,8 @@ function createAiPlayer(game, dbg) {
             playOurTurn();
         } else if (state.state.name == stateNames.ACTION_RESPONSE && aiPlayer != currentPlayer) {
             respondToAction();
+        } else if (state.state.name == stateNames.FINAL_ACTION_RESPONSE && aiPlayer != currentPlayer) {
+            respondToAction();
         } else if (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer) {
             respondToBlock();
         } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == state.playerIdx) {
@@ -135,6 +137,10 @@ function createAiPlayer(game, dbg) {
 
     function shouldChallenge() {
         if (!isEndGame()) {
+            return false;
+        }
+        if (state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
+            // Cannot challenge after a failed challenge.
             return false;
         }
         if (state.state.action != 'tax' && state.state.action != 'steal' && state.state.action != 'assassinate') {
