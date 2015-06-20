@@ -341,12 +341,15 @@ function createAiPlayer(game, dbg) {
             ourInfluence()
         ];
         debug('simulating with ' + roles[0] + ' and ' + roles[1]);
+        debug('their cash: ' + cash[0]);
+        debug('our cash: ' + cash[1]);
         var i, turn, other;
         function canSteal() {
             return roles[turn].indexOf('captain') >= 0 && roles[other].indexOf('captain') < 0 &&
                 roles[other].indexOf('ambassador') < 0;
         }
         function steal() {
+            debug(turn ? 'we steal' : 'they steal');
             if (cash[other] < 2) {
                 cash[turn] += cash[other];
                 cash[other] = 0;
@@ -359,6 +362,7 @@ function createAiPlayer(game, dbg) {
             return roles[turn].indexOf('assassin') >= 0 && roles[other].indexOf('contessa') < 0;
         }
         function assassinate() {
+            debug(turn ? 'we assassinate' : 'they assassinate');
             cash[turn] -= 3;
             influenceCount[other] -= 1;
         }
@@ -366,15 +370,22 @@ function createAiPlayer(game, dbg) {
             return roles[turn].indexOf('duke') >= 0;
         }
         function tax() {
+            debug(turn ? 'we tax' : 'they tax');
             cash[turn] += 3;
         }
+        function income() {
+            debug(turn ? 'we income' : 'they income');
+            cash[turn]++;
+        }
         function coup() {
+            debug(turn ? 'we coup' : 'they coup');
             cash[turn] -= 7;
             influenceCount[other] -= 1;
         }
         // Apply the pending move
         if (state.state.name == stateNames.ACTION_RESPONSE) {
             // The opponent is playing an action; simulate it, then run from our turn
+            console.log('opponent playing');
             i = 0;
             turn = 0;
             other = 1
@@ -391,6 +402,8 @@ function createAiPlayer(game, dbg) {
                 default:
                     debug('unexpected initial action: ' + state.state.action);
             }
+            debug('their cash: ' + cash[0]);
+            debug('our cash: ' + cash[1]);
         } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
             // The opponent is blocking our action; run from the opponent's turn
             i = 1;
@@ -417,9 +430,10 @@ function createAiPlayer(game, dbg) {
             } else if (canTax()) {
                 tax();
             } else {
-                // Income
-                cash[turn]++;
+                income();
             }
+            debug('their cash: ' + cash[0]);
+            debug('our cash: ' + cash[1]);
         }
         debug('ran out of moves simulating endgame')
         // We don't know if we would win, but don't do anything rash

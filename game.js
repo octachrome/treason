@@ -40,6 +40,7 @@ module.exports = function createGame(options) {
         playerJoined: playerJoined,
         _test_setTurnState: _test_setTurnState,
         _test_setInfluence: _test_setInfluence,
+        _test_setCash: _test_setCash,
         _test_setDeck: _test_setDeck
     };
 
@@ -775,6 +776,10 @@ module.exports = function createGame(options) {
                 influence[i].revealed = true;
             }
         }
+    }
+
+    function _test_setCash(playerIdx, cash) {
+        state.players[playerIdx].cash = cash;
     }
 
     function _test_setDeck(d) {

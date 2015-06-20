@@ -1,10 +1,10 @@
 var Promise = require('es6-promise').Promise;
 
-function createTestPlayer(game) {
+function createTestPlayer(game, logHistory) {
     var player = {
         name: 'Test',
         onStateChange: onStateChange,
-        onHistoryEvent: function() {},
+        onHistoryEvent: onHistoryEvent,
         onChatMessage: function() {}
     };
 
@@ -18,6 +18,12 @@ function createTestPlayer(game) {
         if (onNextState) {
             onNextState(state);
             onNextState = null;
+        }
+    }
+
+    function onHistoryEvent(playerIdx, message) {
+        if (logHistory) {
+            console.log(playerIdx + ' ' + message);
         }
     }
 
