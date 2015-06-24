@@ -1,6 +1,7 @@
 'use strict';
 
 var extend = require('extend');
+var randomGen = require('random-seed');
 
 var shared = require('./web/shared');
 var stateNames = shared.states;
@@ -18,7 +19,8 @@ var playerId = 1;
 
 function createAiPlayer(game, options) {
     options = extend({
-        searchHorizon: 7
+        searchHorizon: 7,
+        chanceToBluff: 0.5
     }, options);
 
     var player = {
@@ -43,6 +45,9 @@ function createAiPlayer(game, options) {
     var claims = [];
     // The last role to be claimed. Used when a challenge is issued, to track which role was challenged.
     var lastRoleClaim;
+
+    var rand = randomGen.create(options.randomSeed);
+    var bluffChoice = rand.random() < options.chanceToBluff;
 
     function onStateChange(s) {
         state = s;
@@ -208,7 +213,7 @@ function createAiPlayer(game, options) {
         }
         if (choice == null) {
             // Randomly choose.
-            choice = Math.floor(Math.random() * blockingRoles.length);
+            choice = rand(blockingRoles.length);
         }
         var blockingRole = blockingRoles[choice];
 
@@ -242,12 +247,57 @@ function createAiPlayer(game, options) {
             playAction('steal', captainTarget());
         } else if (influence.indexOf('duke') >= 0) {
             playAction('tax')
-        } else if (influence.indexOf('assassin') < 0 ) {
-            // If we don't have a captair, duke, or assassin, then exchange
-            playAction('exchange');
         } else {
-            // We have an assassin, but can't afford to assassinate
-            playAction('income');
+            // No good moves - check whether to bluff.
+            var possibleBluffs = [];
+            if (aiPlayer.cash >= 3 && assassinTarget() != null && shouldBluff('assassinate')) {
+                possibleBluffs.push('assassinate');
+            }
+            if (captainTarget() != null && shouldBluff('steal')) {
+                possibleBluffs.push('steal');
+            }
+            if (shouldBluff('tax')) {
+                possibleBluffs.push('tax');
+            }
+            if (possibleBluffs.length) {
+                // Randomly select one.
+                var actionName = possibleBluffs[rand(possibleBluffs.length)];
+                if (actionName == 'tax') {
+                    playAction('tax')
+                } else if (actionName == 'steal') {
+                    playAction('steal', captainTarget());
+                } else if (actionName == 'assassinate') {
+                    playAction('assassinate', assassinTarget());
+                }
+            } else {
+                // No bluffing.
+                if (influence.indexOf('assassin') < 0 ) {
+                    // If we don't have a captain, duke, or assassin, then exchange.
+                    playAction('exchange');
+                } else {
+                    // We have an assassin, but can't afford to assassinate.
+                    playAction('income');
+                }
+            }
+        }
+    }
+
+    function shouldBluff(actionName) {
+        if (!bluffChoice) {
+            // We shall not bluff in this game.
+            return false;
+        }
+        var action = actions[actionName];
+        if (Object.keys(claims[state.playerIdx]).length > 2 && !claims[state.playerIdx][action.role]) {
+            // We have already bluffed a different role: don't bluff any more.
+            return false;
+        }
+        // For now we can only simulate against a single opponent.
+        if (isEndGame() && simulate(action.role) > 0) {
+            // If bluffing would win us the game, we will probably be challenged, so don't bluff.
+            return false;
+        } else {
+            return true;
         }
     }
 
@@ -296,11 +346,14 @@ function createAiPlayer(game, options) {
         var influence = ourInfluence();
         var i = rankedRoles.length;
         while (--i) {
-            if (influence.indexOf(rankedRoles[i]) >= 0) {
+            var role = rankedRoles[i];
+            if (influence.indexOf(role) >= 0) {
                 command({
                     command: 'reveal',
-                    role: rankedRoles[i]
+                    role: role
                 });
+                // Don't claim this role any more.
+                delete claims[state.playerIdx][role];
                 return;
             }
         }
@@ -374,13 +427,15 @@ function createAiPlayer(game, options) {
             command: 'exchange',
             roles: chosen
         });
+        // After exchanging our roles we can claim anything.
+        claims[state.playerIdx] = {};
     }
 
     // Simulates us and the remaining player playing their best moves to see who would win.
     // If we win, return 1; if the opponent wins, -1; if no one wins within the search horizon, 0.
     // Limitation: if a player loses an influence, it acts as if the player can still play either role.
     // Limitation: doesn't take foreign aid.
-    function simulate(blockingRole) {
+    function simulate(bluffedRole) {
         var opponentIdx = strongestPlayer();
         var cash = [
             state.players[opponentIdx].cash,
@@ -392,7 +447,7 @@ function createAiPlayer(game, options) {
         ];
         var roles = [
             getClaimedRoles(opponentIdx),
-            ourInfluence().concat([blockingRole])
+            ourInfluence().concat([bluffedRole])
         ];
         debug('simulating with ' + roles[0] + ' and ' + roles[1]);
         debug('their cash: ' + cash[0]);
@@ -442,7 +497,7 @@ function createAiPlayer(game, options) {
             i = 0;
             turn = 0;
             other = 1
-            if (!blockingRole) {
+            if (!bluffedRole) {
                 console.log('opponent playing');
                 switch (state.state.action) {
                     case 'steal':
@@ -463,6 +518,9 @@ function createAiPlayer(game, options) {
         } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
             // The opponent is blocking our action; run from the opponent's turn
             i = 1;
+        } else if (state.state.name == stateNames.START_OF_TURN) {
+            // It's our turn and we are considering a bluff; run from our turn
+            i = 0;
         }
         while (i < options.searchHorizon) {
             i++;

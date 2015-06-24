@@ -758,8 +758,11 @@ module.exports = function createGame(options) {
         }
     }
 
-    function _test_setTurnState(turn) {
+    function _test_setTurnState(turn, emit) {
         state.state = turn;
+        if (emit) {
+            emitState();
+        }
     }
 
     function _test_setInfluence(/*playerIdx, role, role*/) {
