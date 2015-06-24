@@ -1,5 +1,7 @@
 'use strict';
 
+var extend = require('extend');
+
 var shared = require('./web/shared');
 var stateNames = shared.states;
 var actions = shared.actions;
@@ -14,7 +16,11 @@ var actionsToRoles = {
 
 var playerId = 1;
 
-function createAiPlayer(game, dbg) {
+function createAiPlayer(game, options) {
+    options = extend({
+        searchHorizon: 7
+    }, options);
+
     var player = {
         name: 'Computer ' + playerId++,
         onStateChange: onStateChange,
@@ -107,17 +113,30 @@ function createAiPlayer(game, dbg) {
                 blockingRole: blockingRole
             });
             return;
-        } else if (shouldChallenge()) {
+        }
+
+        if (shouldChallenge()) {
             debug('challenging');
             command({
                 command: 'challenge'
             });
-        } else {
-            debug('allowing');
-            command({
-                command: 'allow'
-            });
+            return;
         }
+
+        blockingRole = getBluffedBlockingRole();
+        if (blockingRole) {
+            debug('blocking (bluff)');
+            command({
+                command: 'block',
+                blockingRole: blockingRole
+            });
+            return;
+        }
+
+        debug('allowing');
+        command({
+            command: 'allow'
+        });
     }
 
     function respondToBlock() {
@@ -147,7 +166,8 @@ function createAiPlayer(game, dbg) {
             // Only challenge actions that could lead to a victory if not challenged.
             return false;
         }
-        return !weWouldWin();
+        // Challenge if the opponent would otherwise win soon.
+        return simulate() < 0;
     }
 
     function isEndGame() {
@@ -166,6 +186,39 @@ function createAiPlayer(game, dbg) {
             }
         }
         return null;
+    }
+
+    function getBluffedBlockingRole() {
+        if (state.state.target != state.playerIdx) {
+            // Don't bluff unless we're being attacked
+            return null;
+        }
+        var blockingRoles = actions[state.state.action].blockedBy || [];
+        if (blockingRoles.length == 0) {
+            // Cannot be blocked.
+            return null;
+        }
+        var choice = null;
+        for (var i = 0; i < blockingRoles.length; i++) {
+            if (claims[state.playerIdx][blockingRoles[i]]) {
+                // We have claimed one of the blocking roles before - continue to claim the same role.
+                choice = i;
+                break;
+            }
+        }
+        if (choice == null) {
+            // Randomly choose.
+            choice = Math.floor(Math.random() * blockingRoles.length);
+        }
+        var blockingRole = blockingRoles[choice];
+
+        // For now we can only simulate against a single opponent.
+        if (isEndGame() && simulate(blockingRole) > 0) {
+            // If bluffing would win us the game, we will probably be challenged, so don't bluff.
+            return null;
+        } else {
+            return blockingRole;
+        }
     }
 
     function trackClaim(playerIdx, actionOrRole) {
@@ -324,9 +377,10 @@ function createAiPlayer(game, dbg) {
     }
 
     // Simulates us and the remaining player playing their best moves to see who would win.
+    // If we win, return 1; if the opponent wins, -1; if no one wins within the search horizon, 0.
     // Limitation: if a player loses an influence, it acts as if the player can still play either role.
     // Limitation: doesn't take foreign aid.
-    function weWouldWin() {
+    function simulate(blockingRole) {
         var opponentIdx = strongestPlayer();
         var cash = [
             state.players[opponentIdx].cash,
@@ -338,7 +392,7 @@ function createAiPlayer(game, dbg) {
         ];
         var roles = [
             getClaimedRoles(opponentIdx),
-            ourInfluence()
+            ourInfluence().concat([blockingRole])
         ];
         debug('simulating with ' + roles[0] + ' and ' + roles[1]);
         debug('their cash: ' + cash[0]);
@@ -384,41 +438,43 @@ function createAiPlayer(game, dbg) {
         }
         // Apply the pending move
         if (state.state.name == stateNames.ACTION_RESPONSE) {
-            // The opponent is playing an action; simulate it, then run from our turn
-            console.log('opponent playing');
+            // The opponent is playing an action; simulate it (unless we are blocking), then run from our turn
             i = 0;
             turn = 0;
             other = 1
-            switch (state.state.action) {
-                case 'steal':
-                    steal();
-                    break;
-                case 'assassinate':
-                    assassinate();
-                    break;
-                case 'tax':
-                    tax();
-                    break;
-                default:
-                    debug('unexpected initial action: ' + state.state.action);
+            if (!blockingRole) {
+                console.log('opponent playing');
+                switch (state.state.action) {
+                    case 'steal':
+                        steal();
+                        break;
+                    case 'assassinate':
+                        assassinate();
+                        break;
+                    case 'tax':
+                        tax();
+                        break;
+                    default:
+                        debug('unexpected initial action: ' + state.state.action);
+                }
+                debug('their cash: ' + cash[0]);
+                debug('our cash: ' + cash[1]);
             }
-            debug('their cash: ' + cash[0]);
-            debug('our cash: ' + cash[1]);
         } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
             // The opponent is blocking our action; run from the opponent's turn
             i = 1;
         }
-        while (i < 50) {
+        while (i < options.searchHorizon) {
             i++;
             turn = i % 2;
             other = (i + 1) % 2;
             if (influenceCount[0] == 0) {
                 debug('we win simulation');
-                return true;
+                return 1;
             }
             if (influenceCount[1] == 0) {
                 debug('they win simulation');
-                return false;
+                return -1;
             }
             if (canAssassinate() && cash[turn] >= 3) {
                 assassinate();
@@ -435,13 +491,13 @@ function createAiPlayer(game, dbg) {
             debug('their cash: ' + cash[0]);
             debug('our cash: ' + cash[1]);
         }
-        debug('ran out of moves simulating endgame')
+        debug('search horizon exceeded while simulating endgame')
         // We don't know if we would win, but don't do anything rash
-        return true;
+        return 0;
     }
 
     function debug(msg) {
-        dbg && console.log(msg);
+        options.debug && console.log(msg);
     }
 }
 

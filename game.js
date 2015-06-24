@@ -263,7 +263,7 @@ module.exports = function createGame(options) {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
                 throw new GameException('Incorrect state');
             }
-            createAiPlayer(game, options.debug);
+            createAiPlayer(game, options);
 
         } else if (command.command == 'play-action') {
             if (state.state.name != stateNames.START_OF_TURN) {
