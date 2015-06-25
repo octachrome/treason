@@ -1,9 +1,20 @@
 'use strict';
 
 var argv = require('optimist')
-    .usage('$0 [--debug] [--port <port>]')
+    .usage('$0 [--debug] [--port <port>] [--log <logfile>]')
     .default('port', 8080)
+    .default('log', 'treason.log')
     .argv;
+
+var winston = require('winston');
+winston.add(winston.transports.File, {
+    filename: argv.log,
+    maxsize: 5*1024*1024,
+    zippedArchive: true,
+    json: false
+});
+winston.remove(winston.transports.Console);
+winston.info('server started');
 
 var express = require('express');
 var app = express();
@@ -34,7 +45,8 @@ io.on('connection', function (socket) {
                 }
             } else {
                 game = createGame({
-                    debug: argv.debug
+                    debug: argv.debug,
+                    logger: winston
                 });
             }
         }

@@ -728,6 +728,16 @@ module.exports = function createGame(options) {
     }
 
     function addHistory(playerIdx, message, target) {
+        if (options.logger) {
+            options.logger.log(
+                'info',
+                'game %d: %s%s%s',
+                gameId,
+                playerIdx == null ? '' : 'player ' + playerIdx + ' ',
+                message,
+                target == null ? '' : ' player ' + target
+            );
+        }
         for (var i = 0; i < state.numPlayers; i++) {
             addHistoryAsync(i, playerIdx, message, target);
         }

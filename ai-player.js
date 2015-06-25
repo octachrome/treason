@@ -498,7 +498,6 @@ function createAiPlayer(game, options) {
             turn = 0;
             other = 1
             if (!bluffedRole) {
-                console.log('opponent playing');
                 switch (state.state.action) {
                     case 'steal':
                         steal();
