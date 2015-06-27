@@ -48,11 +48,11 @@ function join() {
             ko.mapping.fromJS(data, vm.state);
             vm.targetedAction('');
             vm.weAllowed(false);
-            $('.activity').scrollTop(10000);
+            $('.activity').scrollTop(0);
             console.log(data);
         });
         socket.on('history', function (data) {
-            vm.history.push(data);
+            vm.history.unshift(data);
         });
         socket.on('chat', function (data) {
             var from;
@@ -328,7 +328,7 @@ function sendMessage(event) {
 }
 $(window).on('resize', function () {
     $('.activity').height($(window).height() - 40);
-    $('.activity').scrollTop(10000);
+    $('.activity').scrollTop(0);
 });
 $(function () {
     $('textarea').on('keydown', sendMessage);

@@ -75,9 +75,6 @@
             <!-- Activity -->
             <div class="col-xs-8 activity">
                 <ul class="list-group">
-                    <!-- ko foreach: history -->
-                        <li class="list-group-item" data-bind="text: displayHistory($data)"></li>
-                    <!-- /ko -->
                     <li class="list-group-item">
                         <div data-bind="visible: state.state.name() == 'waiting-for-players'">
                             <p>Waiting for players</p>
@@ -179,6 +176,9 @@
                             Waiting for <span data-bind="text: toRevealPlayerName()"></span> to reveal an influence
                         </div>
                     </li>
+                    <!-- ko foreach: history -->
+                        <li class="list-group-item" data-bind="text: displayHistory($data)"></li>
+                    <!-- /ko -->
                 </ul>
             </div>
         </div>
