@@ -31,6 +31,9 @@ function join() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
         alert('Enter a valid name');
     }
+    if (vm.playerName().length > 30) {
+        alert('Enter a shorter name');
+    }
     vm.history([]);
     $('.chat').html('');
     if (socket == null) {

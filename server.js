@@ -33,7 +33,7 @@ var pending = [];
 
 io.on('connection', function (socket) {
     socket.on('join', function (playerName) {
-        if (!playerName || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
+        if (!playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
             return;
         }
         var game = null;
