@@ -286,6 +286,20 @@ function displayHistory(hist) {
     }
     return text;
 }
+function actionText() {
+    if (vm.state.state.name() == states.BLOCK_RESPONSE) {
+        return displayHistory({
+            message: vm.state.state.message(),
+            playerIdx: vm.state.state.target()
+        });
+    } else {
+        return displayHistory({
+            message: vm.state.state.message(),
+            playerIdx: vm.state.state.playerIdx(),
+            target: vm.state.state.target && vm.state.state.target()
+        });
+    }
+}
 function labelClass(role, revealed) {
     if (revealed) {
         return 'label-revealed';

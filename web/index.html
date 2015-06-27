@@ -116,9 +116,11 @@
                             <button class="btn btn-default" data-bind="click: exchange">Exchange</button>
                         </div>
                         <div data-bind="visible: weAreInState('action-response')">
+                            <span data-bind="text: actionText()"></span><br/>
                             Waiting for blocks/challenges
                         </div>
                         <div data-bind="visible: theyAreInState('action-response')">
+                            <span data-bind="text: actionText()"></span><br/>
                             <!-- ko if: !weAreAlive() -->
                                 Waiting for blocks/challenges
                             <!-- /ko -->
@@ -147,9 +149,11 @@
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreTargeted('block-response')">
+                            <span data-bind="text: actionText()"></span><br/>
                             Waiting for challenges
                         </div>
                         <div data-bind="visible: theyAreTargeted('block-response') &amp;&amp; weAreAlive()">
+                            <span data-bind="text: actionText()"></span><br/>
                             <!-- ko if: !weAreAlive() -->
                                 Waiting for challenges
                             <!-- /ko -->
