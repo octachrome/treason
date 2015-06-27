@@ -248,7 +248,7 @@ module.exports = function createGame(options) {
     function command(playerIdx, command) {
         debug('command from player: ' + playerIdx);
         debug(command);
-        var i, action;
+        var i, action, message;
         var player = state.players[playerIdx];
         if (player == null) {
             throw new GameException('Unknown player');
@@ -301,19 +301,20 @@ module.exports = function createGame(options) {
             } else {
                 debug('checking for blocks/challenges');
                 if (command.action == 'steal') {
-                    addHistory(playerIdx, 'attempted to steal from', command.target);
+                    message = 'attempted to steal from';
                 } else if (command.action == 'assassinate') {
-                    addHistory(playerIdx, 'attempted to assassinate', command.target);
+                    message = 'attempted to assassinate';
                 } else if (command.action == 'exchange') {
-                    addHistory(playerIdx, 'attempted to exchange');
+                    message = 'attempted to exchange';
                 } else {
-                    addHistory(playerIdx, 'attempted to draw ' + command.action);
+                    message = 'attempted to draw ' + command.action;
                 }
                 state.state = {
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: playerIdx,
                     action: command.action,
-                    target: command.target
+                    target: command.target,
+                    message: message
                 };
                 resetAllows(playerIdx);
             }
@@ -404,13 +405,14 @@ module.exports = function createGame(options) {
                 throw new GameException('Action cannot be blocked by that role');
             }
             // Original player is in the playerIdx field; blocking player is in the target field.
-            addHistory(playerIdx, 'attempted to block with ' + command.blockingRole);
+            addHistory(state.state.playerIdx, state.state.message, state.state.target);
             state.state = {
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: state.state.playerIdx,
                 action: state.state.action,
                 target: playerIdx,
-                blockingRole: command.blockingRole
+                blockingRole: command.blockingRole,
+                message: 'attempted to block with ' + command.blockingRole
             };
             resetAllows(playerIdx);
 
@@ -517,6 +519,12 @@ module.exports = function createGame(options) {
         if (!challengedPlayer) {
             throw new GameException('Cannot identify challenged player');
         }
+        if (state.state.name == stateNames.ACTION_RESPONSE) {
+            addHistory(state.state.playerIdx, state.state.message, state.state.target);
+        } else {
+            addHistory(state.state.target, state.state.message);
+        }
+
         var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole);
         if (influenceIdx != null) {
             // Player has role - challenge lost.

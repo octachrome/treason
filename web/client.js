@@ -51,6 +51,9 @@ function join() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
         alert('Enter a valid name');
     }
+    if (vm.playerName().length > 30) {
+        alert('Enter a shorter name');
+    }
     vm.history([]);
     $('.chat').html('');
     if (socket == null) {
@@ -65,11 +68,11 @@ function join() {
             ko.mapping.fromJS(data, vm.state);
             vm.targetedAction('');
             vm.weAllowed(false);
-            $('.activity').scrollTop(10000);
+            $('.activity').scrollTop(0);
             console.log(data);
         });
         socket.on('history', function (data) {
-            vm.history.push(data);
+            vm.history.unshift(data);
         });
         socket.on('chat', function (data) {
             var from;
@@ -303,6 +306,20 @@ function displayHistory(hist) {
     }
     return text;
 }
+function actionText() {
+    if (vm.state.state.name() == states.BLOCK_RESPONSE) {
+        return displayHistory({
+            message: vm.state.state.message(),
+            playerIdx: vm.state.state.target()
+        });
+    } else {
+        return displayHistory({
+            message: vm.state.state.message(),
+            playerIdx: vm.state.state.playerIdx(),
+            target: vm.state.state.target && vm.state.state.target()
+        });
+    }
+}
 function labelClass(role, revealed) {
     if (revealed) {
         return 'label-revealed';
@@ -367,11 +384,30 @@ function sendMessage(event) {
 }
 $(window).on('resize', function () {
     $('.activity').height($(window).height() - 40);
-    $('.activity').scrollTop(10000);
+    $('.activity').scrollTop(0);
 });
 $(function () {
     $('textarea').on('keydown', sendMessage);
     $('.activity').height($(window).height() - 40);
     $('input').focus();
     ko.applyBindings(vm);
+});
+$(window).on('keydown', function (event) {
+    var nodeName = event.target.nodeName;
+    if (nodeName == 'TEXTAREA' || nodeName == 'INPUT') {
+        return;
+    }
+    if (event.altKey || event.ctrlKey || event.shiftKey || event.metaKey) {
+        return;
+    }
+    var chr = String.fromCharCode(event.which).toLowerCase();
+    if (chr.match(/[a-z]/)) {
+        $('button:visible').each(function (idx, el) {
+            el = $(el);
+            if (el.text().toLowerCase().startsWith(chr)) {
+                el.click();
+                return false;
+            }
+        });
+    }
 });

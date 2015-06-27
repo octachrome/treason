@@ -43,12 +43,11 @@
                 <ul class="list-group" data-bind="foreach: state.players">
                     <li class="list-group-item">
                         <div class="row">
-                            <div class="col-xs-7" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
+                            <div class="col-xs-6" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
                                 <span data-bind="text: name, css: { 'dead-player' : influenceCount() == 0 }"></span>
                                 <span class="badge" data-bind="text: '$' + cash(), visible: influenceCount() != 0"></span>
-                                <br/><br/>
                             </div>
-                            <div class="col-xs-5">
+                            <div class="col-xs-6">
                                 <!-- ko foreach: influence -->
                                     <span class="label" data-bind="text: role, css: labelClass(role(), revealed()), tooltip: { title: roleDescription(role()), trigger: 'hover', placement: 'right' }"></span><br/>
                                 <!-- /ko -->
@@ -83,9 +82,6 @@
             <!-- Activity -->
             <div class="col-xs-8 activity">
                 <ul class="list-group">
-                    <!-- ko foreach: history -->
-                        <li class="list-group-item" data-bind="text: displayHistory($data)"></li>
-                    <!-- /ko -->
                     <li class="list-group-item">
                         <div data-bind="visible: state.state.name() == 'waiting-for-players'">
                             <p>Waiting for players</p>
@@ -127,20 +123,22 @@
                             <button class="btn btn-default" data-bind="click: exchange">Exchange</button>
                         </div>
                         <div data-bind="visible: weAreInState('action-response')">
+                            <span data-bind="text: actionText()"></span><br/>
                             Waiting for blocks/challenges
                         </div>
                         <div data-bind="visible: theyAreInState('action-response')">
+                            <span data-bind="text: actionText()"></span><br/>
                             <!-- ko if: !weAreAlive() -->
                                 Waiting for blocks/challenges
                             <!-- /ko -->
                             <!-- ko if: weAreAlive() -->
+                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
                                 <!-- ko if: weCanBlock() -->
                                     <!-- ko foreach: blockingRoles() -->
                                         <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
                                     <!-- /ko -->
                                 <!-- /ko -->
                                 <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
-                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreInState('final-action-response')">
@@ -151,22 +149,24 @@
                                 Waiting for blocks
                             <!-- /ko -->
                             <!-- ko if: weCanBlock() -->
+                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
                                 <!-- ko foreach: blockingRoles() -->
                                     <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
                                 <!-- /ko -->
-                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreTargeted('block-response')">
+                            <span data-bind="text: actionText()"></span><br/>
                             Waiting for challenges
                         </div>
                         <div data-bind="visible: theyAreTargeted('block-response') &amp;&amp; weAreAlive()">
+                            <span data-bind="text: actionText()"></span><br/>
                             <!-- ko if: !weAreAlive() -->
                                 Waiting for challenges
                             <!-- /ko -->
                             <!-- ko if: weAreAlive() -->
-                                <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
                                 <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
+                                <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreInState('game-won')">
@@ -187,6 +187,9 @@
                             Waiting for <span data-bind="text: toRevealPlayerName()"></span> to reveal an influence
                         </div>
                     </li>
+                    <!-- ko foreach: history -->
+                        <li class="list-group-item" data-bind="text: displayHistory($data)"></li>
+                    <!-- /ko -->
                 </ul>
             </div>
         </div>
