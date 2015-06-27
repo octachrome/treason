@@ -341,6 +341,9 @@ $(window).on('keydown', function (event) {
     if (nodeName == 'TEXTAREA' || nodeName == 'INPUT') {
         return;
     }
+    if (event.altKey || event.ctrlKey || event.shiftKey || event.metaKey) {
+        return;
+    }
     var chr = String.fromCharCode(event.which).toLowerCase();
     if (chr.match(/[a-z]/)) {
         $('button:visible').each(function (idx, el) {
