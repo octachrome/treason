@@ -349,7 +349,10 @@ function roleDescription(role) {
 }
 function buttonActionClass(actionName) {
     var action = actions[actionName];
-    return 'btn-action btn-' + action.role + '-action';
+    if (action && action.role) {
+        return 'btn-action btn-' + action.role + '-action';
+    }
+    return '';
 }
 function buttonClass(role) {
     return 'btn-' + role;
