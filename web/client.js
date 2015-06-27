@@ -336,3 +336,19 @@ $(function () {
     $('input').focus();
     ko.applyBindings(vm);
 });
+$(window).on('keydown', function (event) {
+    var nodeName = event.target.nodeName;
+    if (nodeName == 'TEXTAREA' || nodeName == 'INPUT') {
+        return;
+    }
+    var chr = String.fromCharCode(event.which).toLowerCase();
+    if (chr.match(/[a-z]/)) {
+        $('button:visible').each(function (idx, el) {
+            el = $(el);
+            if (el.text().toLowerCase().startsWith(chr)) {
+                el.click();
+                return false;
+            }
+        });
+    }
+});
