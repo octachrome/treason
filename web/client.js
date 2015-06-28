@@ -26,6 +26,26 @@ vm.state = ko.mapping.fromJS({
 vm.playerName.subscribe(function (newName) {
     localStorageSet('playerName', newName);
 });
+
+ko.bindingHandlers.tooltip = {
+    init: function(element, valueAccessor) {
+        var local = ko.utils.unwrapObservable(valueAccessor()),
+            options = {};
+
+        ko.utils.extend(options, ko.bindingHandlers.tooltip.options);
+        ko.utils.extend(options, local);
+
+        $(element).tooltip(options);
+
+        ko.utils.domNodeDisposal.addDisposeCallback(element, function() {
+            $(element).tooltip("destroy");
+        });
+    },
+    options: {
+        placement: "right",
+        trigger: "click"
+    }
+};
 var socket;
 function join() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
@@ -294,6 +314,31 @@ function labelClass(role, revealed) {
     } else {
         return 'label-' + role;
     }
+}
+function roleDescription(role) {
+    if (role === 'ambassador') {
+        return 'Draw two from the deck and optionally exchange your influences';
+    }
+    if (role === 'assassin') {
+        return 'Pay $3 to reveal another player\'s influence; blocked by contessa';
+    }
+    if (role === 'captain') {
+        return 'Steal $2 from another player; blocked by captain and ambassador';
+    }
+    if (role === 'contessa') {
+        return 'Block assassination';
+    }
+    if (role === 'duke') {
+        return 'Tax +$3; block foreign aid';
+    }
+    return '';
+}
+function buttonActionClass(actionName) {
+    var action = actions[actionName];
+    if (action && action.role) {
+        return 'btn-action btn-' + action.role + '-action';
+    }
+    return '';
 }
 function buttonClass(role) {
     return 'btn-' + role;

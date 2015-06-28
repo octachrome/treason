@@ -1,12 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Treason Coup</title>
-    <link rel="stylesheet" href="lib/bootstrap.min.css">
+
+    <link rel="stylesheet" href="lib/bootstrap-3.3.5-dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="client.css">
+
     <script src="lib/jquery-2.1.4.js"></script>
     <script src="lib/knockout-3.3.0.debug.js"></script>
     <script src="lib/knockout.mapping-debug.js"></script>
+    <script src="lib/bootstrap-3.3.5-dist/js/bootstrap.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="shared.js"></script>
     <script src="client.js"></script>
@@ -42,7 +49,7 @@
                             </div>
                             <div class="col-xs-6">
                                 <!-- ko foreach: influence -->
-                                    <span class="label" data-bind="text: role, css: labelClass(role(), revealed())"></span>
+                                    <span class="label" data-bind="text: role, css: labelClass(role(), revealed()), tooltip: { title: roleDescription(role()), trigger: 'hover', placement: 'right' }"></span><br/>
                                 <!-- /ko -->
                             </div>
                         </div>
@@ -87,7 +94,7 @@
                             <!-- ko if: !targetedAction() -->
                                 Your turn:
                                 <!-- ko foreach: Object.keys(actions).sort() -->
-                                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction"></button>
+                                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction, css: buttonActionClass($data)"></button>
                                 <!-- /ko -->
                             <!-- /ko -->
                             <!-- ko if: targetedAction -->
@@ -110,7 +117,7 @@
                             Choose <span data-bind="text: ourInfluenceCount()"></span> roles to keep:<br/>
                             <!-- ko foreach: state.state.exchangeOptions -->
                                 <span data-bind="text: $data"></span>
-                                <input type="checkbox" data-bind="attr: { 'data-role': $data }"></input>
+                                <input type="checkbox" data-bind="attr: { 'data-role': $data }"/>
                                 <br/>
                             <!-- /ko -->
                             <button class="btn btn-default" data-bind="click: exchange">Exchange</button>
