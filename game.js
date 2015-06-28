@@ -361,7 +361,8 @@ module.exports = function createGame(options) {
                     player.influenceCount--;
                     addHistory('%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
                     action = actions[state.state.action];
-                    if (action.blockedBy && !state.state.blockingRole && state.state.message.indexOf('incorrectly challenged') >= 0) {
+                    var failedChallenge = state.state.message.indexOf('incorrectly challenged') >= 0;
+                    if (action.blockedBy && !state.state.blockingRole && failedChallenge) {
                         // If the action can be blocked but hasn't yet, and if the player revealed because of a failed challenge,
                         // the targeted player has a final chance to block the action.
                         state.state = {
@@ -370,9 +371,11 @@ module.exports = function createGame(options) {
                             action: state.state.action,
                             target: state.state.target
                         };
-                    } else if (state.state.action == 'exchange' && state.state.playerToReveal != state.state.playerIdx) {
-                        // If the challenge was for an exchange, and the challenge was lost, the exchange must place after the reveal.
-                        playAction(state.state.playerIdx, state.state);
+                    } else if (failedChallenge) {
+                        // If the challenge was lost, the action must place after the reveal.
+                        if (playAction(state.state.playerIdx, state.state)) {
+                            nextTurn();
+                        }
                     } else {
                         nextTurn();
                     }
@@ -432,7 +435,7 @@ module.exports = function createGame(options) {
                 } else {
                     return;
                 }
-            } else if (state.state.name == stateNames.ACTION_RESPONSE) {
+            } else if (state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
                 if (state.state.playerIdx == playerIdx) {
                     throw new GameException('Cannot allow your own move');
                 }
@@ -530,29 +533,23 @@ module.exports = function createGame(options) {
             var oldRole = challengedPlayer.influence[influenceIdx].role;
             challengedPlayer.influence[influenceIdx].role = swapRole(oldRole);
 
-            if (player.influenceCount > 1 && state.state.action == 'exchange') {
-                // Special case: the challenger reveals first, then the exchange is played afterwards.
-            } else if (state.state.name == stateNames.ACTION_RESPONSE) {
-                // Play the challenged action now.
-                playAction(state.state.playerIdx, state.state);
-            }
-
             var message = format('{%d} incorrectly challenged {%d}; {%d} exchanged %s for a new role',
                 playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRole);
 
             // If the challenger is losing their last influence,
-            if (player.influenceCount <= 1 ||
-                // Or they are losing two influence because the itself action made the challenger reveal an influence,
-                // (e.g., someone assassinates you, you incorrectly challenge them, you lose two influence: one for the assassination, one for the failed challenge)
-                (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx)) {
+            if (player.influenceCount <= 1) {
                 // Then the challenger is dead.
                 addHistory(message);
                 killPlayer(playerIdx);
-                // With an exchange, the player still gets to exchange roles after the challenger dies.
-                if (state.state.action != 'exchange') {
-                    nextTurn();
+
+                // The action should go ahead immediately, unless someone has won.
+                if (state.state.name != stateNames.GAME_WON) {
+                    if (playAction(state.state.playerIdx, state.state)) {
+                        nextTurn();
+                    }
                 }
             } else {
+                // The action will take place after the reveal.
                 state.state = {
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: state.state.playerIdx,
