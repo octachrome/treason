@@ -340,10 +340,8 @@ function buttonActionClass(actionName) {
     }
     for (var property in actions) {
         if (actions.hasOwnProperty(property) && actions[property].blockedBy) {
-            for (var i = 0; i < actions[property].blockedBy.length; i++) {
-                if (actions[property].blockedBy[i] === actionName) {
-                    return 'btn-' + actionName + '-action';
-                }
+            if (actions[property].blockedBy.indexOf(actionName) >= 0) {
+                return 'btn-' + actionName + '-action';
             }
         }
     }
