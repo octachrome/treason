@@ -28,12 +28,8 @@ function createNetPlayer(game, socket, playerName) {
         });
     }
 
-    function onHistoryEvent(playerIdx, message, target) {
-        socket.emit('history', {
-            playerIdx: playerIdx,
-            message: message,
-            target: target
-        });
+    function onHistoryEvent(message) {
+        socket.emit('history', message);
     }
 
     var onCommand = function(data) {

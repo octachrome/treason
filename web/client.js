@@ -51,8 +51,8 @@ function join() {
             $('.activity').scrollTop(0);
             console.log(data);
         });
-        socket.on('history', function (data) {
-            vm.history.unshift(data);
+        socket.on('history', function (message) {
+            vm.history.unshift(formatMessage(message));
         });
         socket.on('chat', function (data) {
             var from;
@@ -266,39 +266,25 @@ function exchange() {
         alert('must choose ' + ourInfluenceCount() + ' roles');
     }
 }
-function displayHistory(hist) {
-    var text = '';
-    if (hist.playerIdx  == vm.state.playerIdx()) {
-        text = 'You ';
-    } else if (hist.playerIdx != null) {
-        var player = vm.state.players()[hist.playerIdx];
-        text = player ? player.name() : 'Unknown';
-        text += ' ';
-    }
-    text += hist.message;
-    if (hist.target == vm.state.playerIdx()) {
-        text += ' you';
-    } else if (hist.target != null) {
-        var target = vm.state.players()[hist.target];
-        if (target != null) {
-            text += ' ' + target.name();
+function formatMessage(message) {
+    for (var i = 0; i < vm.state.players().length; i++) {
+        var playerName;
+        if (i == vm.state.playerIdx()) {
+            playerName = 'you';
+        } else {
+            var player = vm.state.players()[i];
+            playerName = player ? player.name() : 'unknown';
         }
+        message = message.replace(new RegExp('\\{' + i + '\\}', 'g'), playerName);
     }
-    return text;
+    if (message.indexOf('you ') == 0) {
+        // Fix caps.
+        message = 'Y' + message.substr(1);
+    }
+    return message;
 }
 function actionText() {
-    if (vm.state.state.name() == states.BLOCK_RESPONSE) {
-        return displayHistory({
-            message: vm.state.state.message(),
-            playerIdx: vm.state.state.target()
-        });
-    } else {
-        return displayHistory({
-            message: vm.state.state.message(),
-            playerIdx: vm.state.state.playerIdx(),
-            target: vm.state.state.target && vm.state.state.target()
-        });
-    }
+    return formatMessage(vm.state.state.message() || "");
 }
 function labelClass(role, revealed) {
     if (revealed) {
@@ -362,7 +348,7 @@ $(window).on('keydown', function (event) {
     if (chr.match(/[a-z]/)) {
         $('button:visible').each(function (idx, el) {
             el = $(el);
-            if (el.text().toLowerCase().startsWith(chr)) {
+            if (el.text().toLowerCase().indexOf(chr) == 0) {
                 el.click();
                 return false;
             }

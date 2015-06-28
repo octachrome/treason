@@ -86,9 +86,11 @@ function createAiPlayer(game, options) {
         }
     }
 
-    function onHistoryEvent(playerIdx, message, target) {
-        if (message.indexOf('revealed ') == 0) {
-            var role = message.substring('revealed '.length);
+    function onHistoryEvent(message) {
+        var match = message.match(/\{([0-9]+)\} revealed ([a-z]+)/);
+        if (match) {
+            var playerIdx = match[1];
+            var role = match[2];
             // If the player had previously claimed the role, this claim is no longer valid
             delete claims[playerIdx][role];
         } else if (message.indexOf(' challenged') > 0) {
