@@ -65,6 +65,7 @@ div.chat {
     background-image: linear-gradient(-45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%, transparent 75%, transparent);
 }
 .btn-duke-action {
+    color: white;
     background-color: hsl(280, 60%, 50%);
 }
 .btn-assassin-action {
@@ -74,12 +75,15 @@ div.chat {
     color:white;
 }
 .btn-contessa-action {
+    color:white;
     background-color: hsl(359, 60%, 50%);
 }
 .btn-ambassador-action {
+    color:white;
     background-color: hsl(80, 50%, 45%);
 }
 .btn-captain-action {
+    color:white;
     background-color: hsl(195, 60%, 50%);
 }
 .current-player {

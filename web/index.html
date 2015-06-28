@@ -135,7 +135,7 @@
                                 <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
                                 <!-- ko if: weCanBlock() -->
                                     <!-- ko foreach: blockingRoles() -->
-                                        <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
+                                        <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
                                     <!-- /ko -->
                                 <!-- /ko -->
                                 <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
@@ -151,7 +151,7 @@
                             <!-- ko if: weCanBlock() -->
                                 <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
                                 <!-- ko foreach: blockingRoles() -->
-                                    <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data"></button>
+                                    <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
                                 <!-- /ko -->
                             <!-- /ko -->
                         </div>

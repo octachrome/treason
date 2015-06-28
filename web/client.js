@@ -336,7 +336,16 @@ function roleDescription(role) {
 function buttonActionClass(actionName) {
     var action = actions[actionName];
     if (action && action.role) {
-        return 'btn-action btn-' + action.role + '-action';
+        return 'btn-' + action.role + '-action';
+    }
+    for (var property in actions) {
+        if (actions.hasOwnProperty(property) && actions[property].blockedBy) {
+            for (var i = 0; i < actions[property].blockedBy.length; i++) {
+                if (actions[property].blockedBy[i] === actionName) {
+                    return 'btn-' + actionName + '-action';
+                }
+            }
+        }
     }
     return '';
 }
