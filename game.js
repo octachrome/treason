@@ -359,9 +359,9 @@ module.exports = function createGame(options) {
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
                     player.influenceCount--;
-                    addHistory('{%d} revealed %s', playerIdx, command.role);
+                    addHistory('%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
                     action = actions[state.state.action];
-                    if (action.blockedBy && !state.state.blockingRole && state.state.message == 'failed challenge') {
+                    if (action.blockedBy && !state.state.blockingRole && state.state.message.indexOf('incorrectly challenged') >= 0) {
                         // If the action can be blocked but hasn't yet, and if the player revealed because of a failed challenge,
                         // the targeted player has a final chance to block the action.
                         state.state = {
@@ -525,12 +525,10 @@ module.exports = function createGame(options) {
         var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole);
         if (influenceIdx != null) {
             // Player has role - challenge lost.
-            addHistory('{%d} incorrectly challenged {%d}', playerIdx, challengedPlayerIdx);
 
             // Deal the challenged player a replacement card.
             var oldRole = challengedPlayer.influence[influenceIdx].role;
             challengedPlayer.influence[influenceIdx].role = swapRole(oldRole);
-            addHistory('{%d} exchanged %s for a new role', challengedPlayerIdx, oldRole);
 
             if (player.influenceCount > 1 && state.state.action == 'exchange') {
                 // Special case: the challenger reveals first, then the exchange is played afterwards.
@@ -539,12 +537,16 @@ module.exports = function createGame(options) {
                 playAction(state.state.playerIdx, state.state);
             }
 
+            var message = format('{%d} incorrectly challenged {%d}; {%d} exchanged %s for a new role',
+                playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRole);
+
             // If the challenger is losing their last influence,
             if (player.influenceCount <= 1 ||
                 // Or they are losing two influence because the itself action made the challenger reveal an influence,
                 // (e.g., someone assassinates you, you incorrectly challenge them, you lose two influence: one for the assassination, one for the failed challenge)
                 (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx)) {
                 // Then the challenger is dead.
+                addHistory(message);
                 killPlayer(playerIdx);
                 // With an exchange, the player still gets to exchange roles after the challenger dies.
                 if (state.state.action != 'exchange') {
@@ -557,18 +559,19 @@ module.exports = function createGame(options) {
                     action: state.state.action,
                     target: state.state.target,
                     blockingRole: state.state.blockingRole,
-                    message: 'failed challenge',
+                    message: message,
                     playerToReveal: playerIdx
                 };
             }
         } else {
             // Player does not have role - challenge won.
-            addHistory('{%d} successfully challenged {%d}', playerIdx, challengedPlayerIdx);
 
             if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 // The block was successfully challenged, so play the original action.
                 playAction(state.state.playerIdx, state.state);
             }
+
+            var message = format('{%d} successfully challenged {%d}', playerIdx, challengedPlayerIdx);
 
             // If the challenged player is losing their last influence,
             if (challengedPlayer.influenceCount <= 1 ||
@@ -576,6 +579,7 @@ module.exports = function createGame(options) {
                 // (e.g., someone assassinates you, you bluff contessa, they challenge you, you lose two influence: one for the assassination, one for the successful challenge)
                 (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == challengedPlayerIdx)) {
                 // Then the challenged player is dead.
+                addHistory(message);
                 killPlayer(challengedPlayerIdx);
                 nextTurn();
             } else {
@@ -585,7 +589,7 @@ module.exports = function createGame(options) {
                     action: state.state.action,
                     target: state.state.target,
                     blockingRole: state.state.blockingRole,
-                    message: 'successfully challenged',
+                    message: message,
                     playerToReveal: challengedPlayerIdx
                 };
             }
@@ -594,13 +598,15 @@ module.exports = function createGame(options) {
 
     function playAction(playerIdx, actionState) {
         debug('playing action');
+        var target, message;
         var player = state.players[playerIdx];
         var action = actions[actionState.action];
         player.cash += action.gain || 0;
         if (actionState.action == 'assassinate') {
-            addHistory('{%d} assassinated {%d}', playerIdx, actionState.target);
-            var target = state.players[actionState.target];
+            message = format('{%d} assassinated {%d}', playerIdx, actionState.target);
+            target = state.players[actionState.target];
             if (target.influenceCount <= 1) {
+                addHistory(message);
                 killPlayer(actionState.target);
             } else {
                 state.state = {
@@ -609,15 +615,16 @@ module.exports = function createGame(options) {
                     action: actionState.action,
                     target: actionState.target,
                     blockingRole: actionState.blockingRole,
-                    message: 'assassinated',
+                    message: message,
                     playerToReveal: actionState.target
                 };
                 return false; // Not yet end of turn
             }
         } else if (actionState.action == 'coup') {
-            addHistory('{%d} staged a coup on {%d}', playerIdx, actionState.target);
-            var target = state.players[actionState.target];
+            message = format('{%d} staged a coup on {%d}', playerIdx, actionState.target);
+            target = state.players[actionState.target];
             if (target.influenceCount <= 1) {
+                addHistory(message);
                 killPlayer(actionState.target);
             } else {
                 state.state = {
@@ -626,13 +633,13 @@ module.exports = function createGame(options) {
                     action: actionState.action,
                     target: actionState.target,
                     blockingRole: actionState.blockingRole,
-                    message: 'coup',
+                    message: message,
                     playerToReveal: actionState.target
                 };
                 return false; // Not yet end of turn
             }
         } else if (actionState.action == 'steal') {
-            var target = state.players[actionState.target];
+            target = state.players[actionState.target];
             addHistory('{%d} stole from {%d}', playerIdx, actionState.target);
             if (target.cash >= 2) {
                 target.cash -= 2;

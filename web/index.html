@@ -123,11 +123,11 @@
                             <button class="btn btn-default" data-bind="click: exchange">Exchange</button>
                         </div>
                         <div data-bind="visible: weAreInState('action-response')">
-                            <span data-bind="text: actionText()"></span><br/>
+                            <span data-bind="text: stateMessage()"></span><br/><br/>
                             Waiting for blocks/challenges
                         </div>
                         <div data-bind="visible: theyAreInState('action-response')">
-                            <span data-bind="text: actionText()"></span><br/>
+                            <span data-bind="text: stateMessage()"></span><br/><br/>
                             <!-- ko if: !weAreAlive() -->
                                 Waiting for blocks/challenges
                             <!-- /ko -->
@@ -156,11 +156,11 @@
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreTargeted('block-response')">
-                            <span data-bind="text: actionText()"></span><br/>
+                            <span data-bind="text: stateMessage()"></span><br/><br/>
                             Waiting for challenges
                         </div>
                         <div data-bind="visible: theyAreTargeted('block-response') &amp;&amp; weAreAlive()">
-                            <span data-bind="text: actionText()"></span><br/>
+                            <span data-bind="text: stateMessage()"></span><br/><br/>
                             <!-- ko if: !weAreAlive() -->
                                 Waiting for challenges
                             <!-- /ko -->
@@ -178,12 +178,14 @@
                             <button class="btn btn-default" data-bind="click: join">Play again</button>
                         </div>
                         <div data-bind="visible: weMustReveal()">
+                            <span data-bind="text: stateMessage()"></span><br/><br/>
                             Must reveal an influence
                             <!-- ko foreach: ourInfluence() -->
                             <button class="btn btn-xs" data-bind="text: role, css: buttonClass(role()), visible: !revealed(), click: reveal"></button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: theyMustReveal()">
+                            <span data-bind="text: stateMessage()"></span><br/><br/>
                             Waiting for <span data-bind="text: toRevealPlayerName()"></span> to reveal an influence
                         </div>
                     </li>

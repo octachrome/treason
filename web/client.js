@@ -303,7 +303,7 @@ function formatMessage(message) {
     }
     return message;
 }
-function actionText() {
+function stateMessage() {
     return formatMessage(vm.state.state.message() || "");
 }
 function labelClass(role, revealed) {
