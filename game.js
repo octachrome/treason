@@ -369,7 +369,8 @@ module.exports = function createGame(options) {
                             name: stateNames.FINAL_ACTION_RESPONSE,
                             playerIdx: state.state.playerIdx,
                             action: state.state.action,
-                            target: state.state.target
+                            target: state.state.target,
+                            message: state.state.message
                         };
                     } else if (failedChallenge) {
                         // If the challenge was lost, the action must place after the reveal.
