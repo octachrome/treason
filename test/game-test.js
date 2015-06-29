@@ -576,7 +576,7 @@ describe('Game', function () {
     });
 
     describe('History', function () {
-        describe('Given it is player0 has a captain and player1 has an ambassador', function () {
+        describe('Given player0 has a captain and player1 has an ambassador', function () {
             beforeEach(function () {
                 game._test_setInfluence(0, 'captain', 'contessa');
                 game._test_setInfluence(1, 'ambassador', 'contessa');
@@ -782,6 +782,164 @@ describe('Game', function () {
                                 '{0} incorrectly challenged {1}; {1} exchanged ambassador for a new role; {0} revealed contessa'
                             ]);
                         });
+                    });
+                });
+            });
+        });
+
+        describe('Given player0 does not have a captain and player1 does not have an ambassador', function () {
+            beforeEach(function () {
+                game._test_setInfluence(0, 'contessa', 'contessa');
+                game._test_setInfluence(1, 'contessa', 'contessa');
+
+                game._test_setTurnState({
+                    name: stateNames.START_OF_TURN,
+                    playerIdx: 0
+                });
+
+                return player0.getHistory();
+            });
+
+            describe('When player0 tries to steal from player1', function () {
+                beforeEach(function () {
+                    player0.command({
+                        command: 'play-action',
+                        action: 'steal',
+                        target: 1
+                    });
+                });
+
+                // A attempted to steal from B; B successfully challenged A; A revealed contessa
+                describe('When player1 successfully challenges and player0 reveals', function () {
+                    beforeEach(function () {
+                        return player1.getNextState().then(function () {
+                            player1.command({
+                                command: 'challenge'
+                            });
+
+                            return player0.getNextState().then(function () {
+                                player0.command({
+                                    command: 'reveal',
+                                    role: 'contessa'
+                                });
+                            });
+                        });
+                    });
+
+                    it('Then the history should record the attempt and the challenge', function () {
+                        player0.getHistory().then(function (history) {
+                            expect(history).to.eql([
+                                '{0} attempted to steal from {1}',
+                                '{1} successfully challenged {0}; {0} revealed contessa'
+                            ]);
+                        })
+                    });
+                });
+
+                // A attempted to steal from B; B attempted to block with ambassador; A successfully challenged B; B revealed contessa; A stole from B
+                describe('When player1 blocks and player0 successfully challenges the block', function () {
+                    beforeEach(function () {
+                        return player1.getNextState().then(function () {
+                            player1.command({
+                                command: 'block',
+                                blockingRole: 'ambassador'
+                            });
+                        }).then(function () {
+                            return player0.getNextState().then(function () {
+                                player0.command({
+                                    command: 'challenge'
+                                });
+                            });
+                        }).then(function () {
+                            return player1.getNextState().then(function () {
+                                player1.command({
+                                    command: 'reveal',
+                                    role: 'contessa'
+                                });
+                            });
+                        });
+                    });
+
+                    it('Then the history should record the attempt, the block, the challenge and the final steal', function () {
+                        player0.getHistory().then(function (history) {
+                            expect(history).to.eql([
+                                '{0} attempted to steal from {1}',
+                                '{1} attempted to block with ambassador',
+                                '{0} successfully challenged {1}; {1} revealed contessa',
+                                '{0} stole from {1}'
+                            ]);
+                        })
+                    });
+                });
+            });
+        });
+
+        // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; B attempted to block with ambassador; A successfully challenged B; B revealed contessa; A stole from B
+        describe('Given player0 has a captain and player1 does not have an ambassador', function () {
+            beforeEach(function () {
+                player2 = createTestPlayer(game);
+                return player2.getNextState().then(function () {
+                    game._test_setInfluence(0, 'captain', 'contessa');
+                    game._test_setInfluence(1, 'contessa', 'contessa');
+                    game._test_setInfluence(2, 'contessa', 'contessa');
+
+                    game._test_setTurnState({
+                        name: stateNames.START_OF_TURN,
+                        playerIdx: 0
+                    });
+
+                    return player0.getHistory();
+                });
+            });
+
+            describe('When player0 tries to steal from player1', function () {
+                beforeEach(function () {
+                    player0.command({
+                        command: 'play-action',
+                        action: 'steal',
+                        target: 1
+                    });
+                });
+
+                describe('When player1 incorrectly challenges then finally blocks, and player0 successfully challenges the block', function () {
+                    beforeEach(function () {
+                        return player1.getNextState().then(function () {
+                            player1.command({
+                                command: 'challenge'
+                            });
+                        }).then(function () {
+                            return player1.getNextState().then(function () {
+                                player1.command({
+                                    command: 'reveal',
+                                    role: 'contessa'
+                                });
+                            });
+                        }).then(function () {
+                            return player1.getNextState().then(function () {
+                                player1.command({
+                                    command: 'block',
+                                    blockingRole: 'ambassador'
+                                });
+                            });
+                        }).then(function () {
+                            return player0.getNextState().then(function () {
+                                player0.command({
+                                    command: 'challenge'
+                                });
+                            });
+                        });
+                    });
+
+                    it('Then the history should record the attempt, the challenge, the block, the challenge and the final steal', function () {
+                        player0.getHistory().then(function (history) {
+                            expect(history).to.eql([
+                                '{0} attempted to steal from {1}',
+                                '{1} incorrectly challenged {0}; {0} exchanged captain for another role; {1} revealed contessa',
+                                '{1} attempted to block with ambassador',
+                                '{0} successfully challenged {1}; {1} revealed contessa',
+                                '{0} stole from {1}'
+                            ]);
+                        })
                     });
                 });
             });
