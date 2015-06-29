@@ -12,24 +12,37 @@ function createTestPlayer(game, logHistory) {
 
     var onNextState;
     var lastState;
+    var history = [];
 
     function onStateChange(state) {
         lastState = state;
-        if (onNextState) {
-            onNextState(state);
+        var resolve = onNextState;
+        if (resolve) {
             onNextState = null;
+            resolve(state);
         }
     }
 
-    function onHistoryEvent(playerIdx, message) {
+    function onHistoryEvent(message) {
+        history.push(message);
         if (logHistory) {
-            console.log(playerIdx + ' ' + message);
+            console.log(message);
         }
     }
 
     function getNextState() {
         return new Promise(function (resolve, reject) {
             onNextState = resolve;
+        });
+    }
+
+    function getHistory() {
+        return new Promise(function (resolve, reject) {
+            setTimeout(function () {
+                var hist = history;
+                history = [];
+                resolve(hist);
+            }, 10);
         });
     }
 
@@ -40,6 +53,7 @@ function createTestPlayer(game, logHistory) {
 
     return {
         getNextState: getNextState,
+        getHistory: getHistory,
         command: command
     };
 }

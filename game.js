@@ -429,7 +429,9 @@ module.exports = function createGame(options) {
                 throw new GameException('Action cannot be blocked by that role');
             }
             // Original player is in the playerIdx field; blocking player is in the target field.
-            addHistory(state.state.message);
+            if (state.state.name == stateNames.ACTION_RESPONSE) {
+                addHistory(state.state.message);
+            }
             state.state = {
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: state.state.playerIdx,
