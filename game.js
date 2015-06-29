@@ -361,23 +361,42 @@ module.exports = function createGame(options) {
                     player.influenceCount--;
                     addHistory('%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
                     action = actions[state.state.action];
-                    var failedChallenge = state.state.message.indexOf('incorrectly challenged') >= 0;
-                    if (action.blockedBy && !state.state.blockingRole && failedChallenge) {
-                        // If the action can be blocked but hasn't yet, and if the player revealed because of a failed challenge,
-                        // the targeted player has a final chance to block the action.
-                        state.state = {
-                            name: stateNames.FINAL_ACTION_RESPONSE,
-                            playerIdx: state.state.playerIdx,
-                            action: state.state.action,
-                            target: state.state.target,
-                            message: state.state.message
-                        };
-                    } else if (failedChallenge) {
-                        // If the challenge was lost, the action must place after the reveal.
-                        if (playAction(state.state.playerIdx, state.state)) {
+                    if (state.state.message.indexOf('incorrectly challenged') >= 0) {
+                        // The reveal is due to a failed challenge.
+                        if (state.state.blockingRole) {
+                            // A block was incorrectly challenged - the action is blocked.
+                            nextTurn();
+                        } else {
+                            // The original action was challenged.
+                            if (action.blockedBy) {
+                                // The targeted player has a final chance to block the action.
+                                state.state = {
+                                    name: stateNames.FINAL_ACTION_RESPONSE,
+                                    playerIdx: state.state.playerIdx,
+                                    action: state.state.action,
+                                    target: state.state.target,
+                                    message: state.state.message
+                                };
+                            } else {
+                                // The action cannot be blocked - it goes ahead.
+                                if (playAction(state.state.playerIdx, state.state)) {
+                                    nextTurn();
+                                }
+                            }
+                        }
+                    } else if (state.state.message.indexOf('successfully challenged') >= 0) {
+                        // The reveal is due to a successful challenge.
+                        if (state.state.blockingRole) {
+                            // A block was successfully challenged - the action goes ahead.
+                            if (playAction(state.state.playerIdx, state.state)) {
+                                nextTurn();
+                            }
+                        } else {
+                            // The original action was successfully challenged - it does not happen.
                             nextTurn();
                         }
                     } else {
+                        // The reveal is due to a coup or assassination.
                         nextTurn();
                     }
                     emitState();
