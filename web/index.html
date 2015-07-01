@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="client.css">
 
     <script src="lib/jquery-2.1.4.js"></script>
+    <script src="lib/jquery.mobile.custom.js"></script>
     <script src="lib/knockout-3.3.0.debug.js"></script>
     <script src="lib/knockout.mapping-debug.js"></script>
     <script src="lib/bootstrap-3.3.5-dist/js/bootstrap.min.js"></script>
@@ -57,14 +58,14 @@
                 </ul>
                 <ul class="list-group">
                     <li class="list-group-item">
-                        <a href="javascript: null" data-bind="click: showChat, visible: sidebar() != 'chat'">Chat</a>
+                        <a href="javascript: null" data-bind="event: {vclick: showChat}, visible: sidebar() != 'chat'">Chat</a>
                         <div data-bind="visible: sidebar() == 'chat'">
                             <div class="chat"></div>
                             <textarea class="form-control" rows="2" placeholder="Chat message"></textarea>
                         </div>
                     </li>
                     <li class="list-group-item">
-                        <a href="javascript: null" data-bind="click: showCheatSheet, visible: sidebar() != 'cheat'">Cheat sheet</a>
+                        <a href="javascript: null" data-bind="event: {vclick: showCheatSheet}, visible: sidebar() != 'cheat'">Cheat sheet</a>
                         <div data-bind="visible: sidebar() == 'cheat'">
                             <p><span class="label label-ambassador">ambassador</span> Draw two from the deck and optionally exchange your infuences</p>
                             <p><span class="label label-assassin">assassin</span> Pay $3 to reveal another player's influence; blocked by contessa</p>
@@ -86,25 +87,25 @@
                         <div data-bind="visible: state.state.name() == 'waiting-for-players'">
                             <p>Waiting for players</p>
                             <p>
-                                <button class="btn btn-default" data-bind="click: addAi">Add AI</button>
-                                <button class="btn btn-default" data-bind="click: start, visible: state.numPlayers() >= 2">Start</button>
+                                <button class="btn btn-default" data-bind="event: {vclick: addAi}">Add AI</button>
+                                <button class="btn btn-default" data-bind="event: {vclick: start}, visible: state.numPlayers() >= 2">Start</button>
                             </p>
                         </div>
                         <div data-bind="visible: weAreInState('start-of-turn')">
                             <!-- ko if: !targetedAction() -->
                                 Your turn:
                                 <!-- ko foreach: Object.keys(actions).sort() -->
-                                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), click: playAction, css: buttonActionClass($data)"></button>
+                                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)"></button>
                                 <!-- /ko -->
                             <!-- /ko -->
                             <!-- ko if: targetedAction -->
                                 <span data-bind="text: targetedAction"></span>:
                                 <!-- ko foreach: state.players -->
                                     <!-- ko if: canTarget($index()) -->
-                                        <button class="btn btn-default" data-bind="text: name, click: function () { playTargetedAction($index()); }"></button>
+                                        <button class="btn btn-default" data-bind="text: name, event: {vclick: function() { playTargetedAction($index()); }}"></button>
                                     <!-- /ko -->
                                 <!-- /ko -->
-                                <button class="btn btn-link" data-bind="click: cancelAction">back</button>
+                                <button class="btn btn-link" data-bind="event: {vclick: cancelAction}">back</button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: theyAreInState('start-of-turn')">
@@ -120,7 +121,7 @@
                                 <input type="checkbox" data-bind="attr: { 'data-role': $data }"/>
                                 <br/>
                             <!-- /ko -->
-                            <button class="btn btn-default" data-bind="click: exchange">Exchange</button>
+                            <button class="btn btn-default" data-bind="event: {vclick: exchange}">Exchange</button>
                         </div>
                         <div data-bind="visible: weAreInState('action-response')">
                             <span data-bind="text: stateMessage()"></span><br/><br/>
@@ -132,13 +133,13 @@
                                 Waiting for blocks/challenges
                             <!-- /ko -->
                             <!-- ko if: weAreAlive() -->
-                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
+                                <button class="btn btn-default" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed() }">Allow</button>
                                 <!-- ko if: weCanBlock() -->
                                     <!-- ko foreach: blockingRoles() -->
-                                        <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
+                                        <button class="btn btn-default" data-bind="event: {vclick: block}, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
                                     <!-- /ko -->
                                 <!-- /ko -->
-                                <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
+                                <button class="btn btn-default" data-bind="event: {vclick: challenge}, visible: weCanChallenge()">Challenge</button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreInState('final-action-response')">
@@ -149,9 +150,9 @@
                                 Waiting for blocks
                             <!-- /ko -->
                             <!-- ko if: weCanBlock() -->
-                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
+                                <button class="btn btn-default" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed() }">Allow</button>
                                 <!-- ko foreach: blockingRoles() -->
-                                    <button class="btn btn-default" data-bind="click: block, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
+                                    <button class="btn btn-default" data-bind="event: {vclick: block}, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
                                 <!-- /ko -->
                             <!-- /ko -->
                         </div>
@@ -165,23 +166,23 @@
                                 Waiting for challenges
                             <!-- /ko -->
                             <!-- ko if: weAreAlive() -->
-                                <button class="btn btn-default" data-bind="click: allow, css: { 'btn-success': weAllowed() }">Allow</button>
-                                <button class="btn btn-default" data-bind="click: challenge, visible: weCanChallenge()">Challenge</button>
+                                <button class="btn btn-default" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed() }">Allow</button>
+                                <button class="btn btn-default" data-bind="event: {vclick: challenge}, visible: weCanChallenge()">Challenge</button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreInState('game-won')">
                             You have won!<br/>
-                            <button class="btn btn-default" data-bind="click: join">Play again</button>
+                            <button class="btn btn-default" data-bind="event: {vclick: join}">Play again</button>
                         </div>
                         <div data-bind="visible: theyAreInState('game-won')">
                             <span data-bind="text: currentPlayerName()"></span> has won!
-                            <button class="btn btn-default" data-bind="click: join">Play again</button>
+                            <button class="btn btn-default" data-bind="event: {vclick: join}">Play again</button>
                         </div>
                         <div data-bind="visible: weMustReveal()">
                             <span data-bind="text: stateMessage()"></span><br/><br/>
                             Must reveal an influence
                             <!-- ko foreach: ourInfluence() -->
-                            <button class="btn btn-xs" data-bind="text: role, css: buttonClass(role()), visible: !revealed(), click: reveal"></button>
+                            <button class="btn btn-xs" data-bind="text: role, css: buttonClass(role()), visible: !revealed(), event: {vclick: reveal}"></button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: theyMustReveal()">
