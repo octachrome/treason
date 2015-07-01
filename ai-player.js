@@ -19,6 +19,7 @@ var playerId = 1;
 
 function createAiPlayer(game, options) {
     options = extend({
+        moveDelay: 0,
         searchHorizon: 7,
         chanceToBluff: 0.5
     }, options);
@@ -51,6 +52,10 @@ function createAiPlayer(game, options) {
 
     function onStateChange(s) {
         state = s;
+        setTimeout(onStateChangeAsync, options.moveDelay);
+    }
+
+    function onStateChangeAsync() {
         aiPlayer = state.players[state.playerIdx];
         currentPlayer = state.players[state.state.playerIdx];
         targetPlayer = state.players[state.state.target];

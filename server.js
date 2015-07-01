@@ -46,7 +46,8 @@ io.on('connection', function (socket) {
             } else {
                 game = createGame({
                     debug: argv.debug,
-                    logger: winston
+                    logger: winston,
+                    moveDelay: 1000 // For AI players
                 });
             }
         }
