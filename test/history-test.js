@@ -458,4 +458,40 @@ describe('History', function () {
             });
         });
     });
+
+    describe('Given player1 is blocking an assassination with a bluffed contessa and has only one influence left', function () {
+        beforeEach(function () {
+            game._test_setInfluence(0, 'assassin');
+            game._test_setInfluence(1, 'duke');
+
+            game._test_setTurnState({
+                name: stateNames.BLOCK_RESPONSE,
+                playerIdx: 0,
+                action: 'assassinate',
+                message: '{1} attempted to block with contessa',
+                target: 1,
+                blockingRole: 'contessa'
+            });
+
+            return player0.getHistory();
+        });
+
+        describe('When player0 challenges', function () {
+            beforeEach(function () {
+                player0.command({
+                    command: 'challenge'
+                });
+            });
+
+            it('Then the history should record the attempted assassination, the failed challenge', function () {
+                return player0.getHistory().then(function (history) {
+                    expect(history).to.eql([
+                        '{1} attempted to block with contessa',
+                        '{0} successfully challenged {1}; {1} revealed duke',
+                        '{1} suffered a humiliating defeat'
+                    ]);
+                });
+            });
+        });
+    });
 });

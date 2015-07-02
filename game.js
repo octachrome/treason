@@ -606,13 +606,11 @@ module.exports = function createGame(options) {
                 revealedRole = revealFirstInfluence(challengedPlayer);
                 addHistory('%s; {%d} revealed %s', message, challengedPlayerIdx, revealedRole);
 
-                endOfTurn = afterSuccessfulChallenge();
-
-                if (!wouldLoseTwoInfluences) {
+                if (challengedPlayer.influenceCount == 0) {
                     afterPlayerDeath(challengedPlayerIdx);
-                } else {
-                    // Already called by afterSuccessfulChallenge -> playAction
                 }
+
+                endOfTurn = afterSuccessfulChallenge();
 
                 if (endOfTurn) {
                     nextTurn();
