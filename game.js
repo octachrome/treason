@@ -137,9 +137,14 @@ module.exports = function createGame(options) {
                         influence[j].revealed = true;
                     }
                 }
+                player.influenceCount = 0;
                 var end = checkForGameEnd();
-                if (!end && state.state.playerIdx == playerIdx) {
-                    nextTurn();
+                if (!end) {
+                    if (state.state.playerIdx == playerIdx) {
+                        nextTurn();
+                    } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx) {
+                        nextTurn();
+                    }
                 }
             }
         }

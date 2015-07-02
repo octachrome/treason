@@ -51,10 +51,15 @@ function createTestPlayer(game, logHistory) {
         gameProxy.command(cmd);
     }
 
+    function leaveGame() {
+        gameProxy.playerLeft();
+    }
+
     return {
         getNextState: getNextState,
         getHistory: getHistory,
-        command: command
+        command: command,
+        leaveGame: leaveGame
     };
 }
 

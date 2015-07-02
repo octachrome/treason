@@ -359,4 +359,38 @@ describe('Game', function () {
             });
         });
     });
+
+    describe('Disconnects', function () {
+        beforeEach(function () {
+            player2 = createTestPlayer(game);
+            return player2.getNextState();
+        });
+
+        describe('Given player1 is revealing an influence due to a coup', function () {
+            beforeEach(function () {
+                game._test_setInfluence(0, 'ambassador', 'assassin');
+                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setTurnState({
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: 0,
+                    action: 'coup',
+                    playerToReveal: 1,
+                    message: 'staged a coup'
+                });
+            });
+
+            describe('When player1 leaves the game', function () {
+                beforeEach(function () {
+                    player1.leaveGame();
+                });
+
+                it('Then the turn should pass to player2', function () {
+                    return player0.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                        expect(state.state.playerIdx).to.be(2);
+                    });
+                });
+            });
+        });
+    });
 });
