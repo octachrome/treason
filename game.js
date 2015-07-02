@@ -129,8 +129,16 @@ module.exports = function createGame(options) {
         } else {
             players[playerIdx] = null;
             if (state.state.name != stateNames.GAME_WON) {
-                killPlayer(playerIdx, true);
-                if (state.state.playerIdx == playerIdx) {
+                // Reveal all the player's influence.
+                var influence = player.influence;
+                for (var j = 0; j < influence.length; j++) {
+                    if (!influence[j].revealed) {
+                        addHistory('{%d} revealed %s', playerIdx, influence[j].role);
+                        influence[j].revealed = true;
+                    }
+                }
+                var end = checkForGameEnd();
+                if (!end && state.state.playerIdx == playerIdx) {
                     nextTurn();
                 }
             }
@@ -139,22 +147,8 @@ module.exports = function createGame(options) {
         emitState();
     }
 
-    function killPlayer(playerIdx, playerLeft) {
-        // Reveal all the player's influence.
-        var player = state.players[playerIdx];
-        if (player.influenceCount > 0) {
-            var influence = player.influence;
-            for (var j = 0; j < influence.length; j++) {
-                if (!influence[j].revealed) {
-                    addHistory('{%d} revealed %s', playerIdx, influence[j].role);
-                    influence[j].revealed = true;
-                }
-            }
-            player.influenceCount = 0;
-            if (!playerLeft) {
-                addHistory('{%d} suffered a humiliating defeat', playerIdx);
-            }
-        }
+    function afterPlayerDeath(playerIdx) {
+        addHistory('{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
 
@@ -175,6 +169,9 @@ module.exports = function createGame(options) {
                 name: stateNames.GAME_WON,
                 playerIdx: winnerIdx
             };
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -501,7 +498,8 @@ module.exports = function createGame(options) {
             return true;
         } else {
             // The original action was challenged.
-            if (action.blockedBy) {
+            var target = state.players[state.state.target];
+            if (action.blockedBy && target.influenceCount > 0) {
                 // The targeted player has a final chance to block the action.
                 state.state = {
                     name: stateNames.FINAL_ACTION_RESPONSE,
@@ -577,7 +575,7 @@ module.exports = function createGame(options) {
 
                 endOfTurn = afterIncorrectChallenge();
 
-                killPlayer(playerIdx);
+                afterPlayerDeath(playerIdx);
 
                 if (endOfTurn) {
                     nextTurn();
@@ -610,7 +608,11 @@ module.exports = function createGame(options) {
 
                 endOfTurn = afterSuccessfulChallenge();
 
-                killPlayer(challengedPlayerIdx);
+                if (!wouldLoseTwoInfluences) {
+                    afterPlayerDeath(challengedPlayerIdx);
+                } else {
+                    // Already called by afterSuccessfulChallenge -> playAction
+                }
 
                 if (endOfTurn) {
                     nextTurn();
@@ -650,11 +652,11 @@ module.exports = function createGame(options) {
         if (actionState.action == 'assassinate') {
             message = format('{%d} assassinated {%d}', playerIdx, actionState.target);
             target = state.players[actionState.target];
-            if (target.influenceCount <= 1) {
+            if (target.influenceCount == 1) {
                 revealedRole = revealFirstInfluence(target);
                 addHistory('%s; {%d} revealed %s', message, actionState.target, revealedRole);
-                killPlayer(actionState.target);
-            } else {
+                afterPlayerDeath(actionState.target);
+            } else if (target.influenceCount > 1) {
                 state.state = {
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: state.state.playerIdx,
@@ -672,7 +674,7 @@ module.exports = function createGame(options) {
             if (target.influenceCount <= 1) {
                 revealedRole = revealFirstInfluence(target);
                 addHistory('%s; {%d} revealed %s', message, actionState.target, revealedRole);
-                killPlayer(actionState.target);
+                afterPlayerDeath(actionState.target);
             } else {
                 state.state = {
                     name: stateNames.REVEAL_INFLUENCE,

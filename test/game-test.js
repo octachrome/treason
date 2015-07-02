@@ -112,7 +112,7 @@ describe('Game', function () {
 
         describe('Given a player is revealing an influence due to a failed assassin challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'duke', 'captain');
+                game._test_setInfluence(0, 'assassin', 'captain');
                 game._test_setInfluence(1, 'duke', 'captain');
                 game._test_setInfluence(2, 'duke', 'captain');
                 game._test_setTurnState({

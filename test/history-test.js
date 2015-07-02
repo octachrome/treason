@@ -386,4 +386,76 @@ describe('History', function () {
             });
         });
     });
+
+    describe('Given player0 is assassinating player1 with a real assassin', function () {
+        beforeEach(function () {
+            game._test_setInfluence(0, 'assassin');
+            game._test_setInfluence(1, 'ambassador');
+
+            game._test_setTurnState({
+                name: stateNames.ACTION_RESPONSE,
+                playerIdx: 0,
+                action: 'assassinate',
+                message: '{0} attempted to assassinate {1}',
+                target: 1
+            });
+
+            return player0.getHistory();
+        });
+
+        describe('When player1 challenges', function () {
+            beforeEach(function () {
+                player1.command({
+                    command: 'challenge'
+                });
+            });
+
+            it('Then the history should record the attempted assassination, the failed challenge', function () {
+                return player0.getHistory().then(function (history) {
+                    expect(history).to.eql([
+                        '{0} attempted to assassinate {1}',
+                        '{1} incorrectly challenged {0}; {0} exchanged assassin for a new role; {1} revealed ambassador',
+                        '{1} suffered a humiliating defeat'
+                    ]);
+                });
+            });
+        });
+    });
+
+    describe('Given player1 is blocking an assassination with a bluffed contessa', function () {
+        beforeEach(function () {
+            game._test_setInfluence(0, 'assassin');
+            game._test_setInfluence(1, 'duke', 'duke');
+
+            game._test_setTurnState({
+                name: stateNames.BLOCK_RESPONSE,
+                playerIdx: 0,
+                action: 'assassinate',
+                message: '{1} attempted to block with contessa',
+                target: 1,
+                blockingRole: 'contessa'
+            });
+
+            return player0.getHistory();
+        });
+
+        describe('When player0 challenges', function () {
+            beforeEach(function () {
+                player0.command({
+                    command: 'challenge'
+                });
+            });
+
+            it('Then the history should record the attempted assassination, the failed challenge', function () {
+                return player0.getHistory().then(function (history) {
+                    expect(history).to.eql([
+                        '{1} attempted to block with contessa',
+                        '{0} successfully challenged {1}; {1} revealed duke',
+                        '{0} assassinated {1}; {1} revealed duke',
+                        '{1} suffered a humiliating defeat'
+                    ]);
+                });
+            });
+        });
+    });
 });
