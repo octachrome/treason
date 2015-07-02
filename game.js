@@ -42,7 +42,8 @@ module.exports = function createGame(options) {
         _test_setTurnState: _test_setTurnState,
         _test_setInfluence: _test_setInfluence,
         _test_setCash: _test_setCash,
-        _test_setDeck: _test_setDeck
+        _test_setDeck: _test_setDeck,
+        _test_resetAllows: resetAllows
     };
 
     function playerJoined(player) {
@@ -144,6 +145,9 @@ module.exports = function createGame(options) {
                         nextTurn();
                     } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx) {
                         nextTurn();
+                    } else if ((state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.BLOCK_RESPONSE)
+                        && !allows[playerIdx]) {
+                        allow(playerIdx);
                     }
                 }
             }
@@ -421,32 +425,7 @@ module.exports = function createGame(options) {
             if (player.influenceCount == 0) {
                 throw new GameException('Dead players cannot allow actions');
             }
-            if (state.state.name == stateNames.BLOCK_RESPONSE) {
-                if (state.state.target == playerIdx) {
-                    throw new GameException('Cannot allow your own block');
-                }
-                allows[playerIdx] = true;
-                if (everyoneAllows()) {
-                    addHistory('{%d} blocked with %s', state.state.target, state.state.blockingRole);
-                    nextTurn();
-                } else {
-                    return;
-                }
-            } else if (state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
-                if (state.state.playerIdx == playerIdx) {
-                    throw new GameException('Cannot allow your own move');
-                }
-                allows[playerIdx] = true;
-                if (everyoneAllows()) {
-                    if (playAction(state.state.playerIdx, state.state)) {
-                        nextTurn();
-                    }
-                } else {
-                    return;
-                }
-            } else {
-                throw new GameException('Incorrect state');
-            }
+            allow(playerIdx);
 
         } else if (command.command == 'exchange') {
             if (state.state.name != stateNames.EXCHANGE) {
@@ -481,6 +460,35 @@ module.exports = function createGame(options) {
         }
 
         emitState();
+    }
+
+    function allow(playerIdx) {
+        if (state.state.name == stateNames.BLOCK_RESPONSE) {
+            if (state.state.target == playerIdx) {
+                throw new GameException('Cannot allow your own block');
+            }
+            allows[playerIdx] = true;
+            if (everyoneAllows()) {
+                addHistory('{%d} blocked with %s', state.state.target, state.state.blockingRole);
+                nextTurn();
+            } else {
+                return;
+            }
+        } else if (state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
+            if (state.state.playerIdx == playerIdx) {
+                throw new GameException('Cannot allow your own move');
+            }
+            allows[playerIdx] = true;
+            if (everyoneAllows()) {
+                if (playAction(state.state.playerIdx, state.state)) {
+                    nextTurn();
+                }
+            } else {
+                return;
+            }
+        } else {
+            throw new GameException('Incorrect state');
+        }
     }
 
     function afterSuccessfulChallenge() {

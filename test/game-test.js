@@ -392,5 +392,37 @@ describe('Game', function () {
                 });
             });
         });
+
+        describe('Given player0 is attempting to draw tax, and player2 has allowed', function () {
+            beforeEach(function () {
+                game._test_setInfluence(0, 'ambassador', 'assassin');
+                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setTurnState({
+                    name: stateNames.ACTION_RESPONSE,
+                    playerIdx: 0,
+                    action: 'tax'
+                });
+                game._test_resetAllows(0);
+
+                player2.command({
+                    command: 'allow'
+                });
+            });
+
+            describe('When player1 leaves the game', function () {
+                beforeEach(function () {
+                    return player2.getNextState().then(function () {
+                        player1.leaveGame();
+                    });
+                });
+
+                it('Then the turn should pass to player2', function () {
+                    return player0.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                        expect(state.state.playerIdx).to.be(2);
+                    });
+                });
+            });
+        });
     });
 });
