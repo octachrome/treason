@@ -15,7 +15,28 @@ var actionsToRoles = {
     'exchange': 'ambassador'
 };
 
-var playerId = 1;
+var aiPlayerNames = [
+    'Frank',
+    'Bob',
+    'Stuart',
+    'Kevin',
+    'Phil',
+    'Pete',
+    'Carl',
+    'Dave',
+    'Steve',
+    'Tim',
+    'Mark',
+    'Jim',
+    'Tom',
+    'Joe',
+    'Ed',
+    'Ron',
+    'Gary',
+    'Eric',
+    'Walt',
+    'Mike'
+];
 
 function createAiPlayer(game, options) {
     options = extend({
@@ -24,8 +45,11 @@ function createAiPlayer(game, options) {
         chanceToBluff: 0.5
     }, options);
 
+    var rand = randomGen.create(options.randomSeed);
+    var bluffChoice = rand.random() < options.chanceToBluff;
+
     var player = {
-        name: 'Computer ' + playerId++,
+        name: aiPlayerNames[rand(aiPlayerNames.length)],
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
         onChatMessage: function() {}
@@ -46,9 +70,6 @@ function createAiPlayer(game, options) {
     var claims = [];
     // The last role to be claimed. Used when a challenge is issued, to track which role was challenged.
     var lastRoleClaim;
-
-    var rand = randomGen.create(options.randomSeed);
-    var bluffChoice = rand.random() < options.chanceToBluff;
 
     function onStateChange(s) {
         state = s;
