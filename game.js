@@ -425,7 +425,11 @@ module.exports = function createGame(options) {
             if (player.influenceCount == 0) {
                 throw new GameException('Dead players cannot allow actions');
             }
-            allow(playerIdx);
+            var stateChanged = allow(playerIdx);
+            if (!stateChanged) {
+                // Do not emit state.
+                return;
+            }
 
         } else if (command.command == 'exchange') {
             if (state.state.name != stateNames.EXCHANGE) {
@@ -471,8 +475,9 @@ module.exports = function createGame(options) {
             if (everyoneAllows()) {
                 addHistory('{%d} blocked with %s', state.state.target, state.state.blockingRole);
                 nextTurn();
+                return true;
             } else {
-                return;
+                return false;
             }
         } else if (state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
             if (state.state.playerIdx == playerIdx) {
@@ -483,8 +488,9 @@ module.exports = function createGame(options) {
                 if (playAction(state.state.playerIdx, state.state)) {
                     nextTurn();
                 }
+                return true;
             } else {
-                return;
+                return false;
             }
         } else {
             throw new GameException('Incorrect state');
