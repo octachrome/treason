@@ -93,9 +93,13 @@
                         </div>
                         <div data-bind="visible: weAreInState('start-of-turn')">
                             <!-- ko if: !targetedAction() -->
-                                Your turn:
-                                <!-- ko foreach: Object.keys(actions).sort() -->
-                                    <button class="btn btn-default" data-bind="text: $data, enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)"></button>
+                                Your turn:<br/>
+                                <!-- ko foreach: actionNames() -->
+                                    <button class="btn btn-default btn-action" data-bind="enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)">
+                                        <i data-bind="css: $data"></i>
+                                        <span data-bind="text: $data"></span>
+                                    </button>
+                                    <!-- ko if: $data == 'exchange' --><br/><!-- /ko -->
                                 <!-- /ko -->
                             <!-- /ko -->
                             <!-- ko if: targetedAction -->

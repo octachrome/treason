@@ -1,3 +1,33 @@
+@font-face {
+    font-family: icomoon;
+    src: url(icomoon.woff);
+}
+.btn-action {
+    margin-top: 5px;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+i {
+    font-family: icomoon;
+    font-size: 25px;
+    font-style: normal;
+    vertical-align: middle;
+}
+i.coup:before {
+    content: "\e601";
+}
+i.assassinate:before {
+    content: "\e602";
+}
+i.tax:before {
+    content: "\e603";
+}
+i.steal:before {
+    content: "\e605";
+}
+i.exchange:before {
+    content: "\e600";
+}
 body {
     padding-top: 15px;
 }
@@ -60,9 +90,6 @@ div.chat {
 .btn-captain:hover {
     color: white;
     background-color: hsl(195, 60%, 50%);
-}
-.btn-action {
-    background-image: linear-gradient(-45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%, transparent 75%, transparent);
 }
 .btn-duke-action {
     color: white;

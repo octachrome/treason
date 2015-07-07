@@ -350,6 +350,18 @@ function buttonActionClass(actionName) {
 function buttonClass(role) {
     return 'btn-' + role;
 }
+function actionNames() {
+    // This is the order I want them to appear in the UI.
+    return [
+        'tax',
+        'steal',
+        'assassinate',
+        'exchange',
+        'coup',
+        'foreign-aid',
+        'income'
+    ];
+}
 function showCheatSheet() {
     vm.sidebar('cheat');
 }
