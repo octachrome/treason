@@ -357,9 +357,9 @@ function actionNames() {
         'steal',
         'assassinate',
         'exchange',
-        'coup',
+        'income',
         'foreign-aid',
-        'income'
+        'coup'
     ];
 }
 function showCheatSheet() {

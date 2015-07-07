@@ -28,6 +28,12 @@ i.steal:before {
 i.exchange:before {
     content: "\e600";
 }
+i.income:before {
+    content: "\e607";
+}
+i.foreign-aid:before {
+    content: "\e606";
+}
 body {
     padding-top: 15px;
 }
