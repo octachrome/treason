@@ -90,7 +90,7 @@ function join() {
             alert(data);
         });
         socket.on('game-error', function (data) {
-            alert(data);
+            console.error(data);
         });
     }
     socket.emit('join', vm.playerName());
