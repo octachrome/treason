@@ -1,0 +1,38 @@
+<ul class="list-group" data-bind="foreach: state.players">
+    <li class="list-group-item">
+        <div class="row">
+            <div class="col-xs-6" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
+                <span data-bind="text: name, css: { 'dead-player' : influenceCount() == 0 }"></span>
+                <span class="badge" data-bind="text: '$' + cash(), visible: influenceCount() != 0"></span>
+            </div>
+            <div class="col-xs-6">
+                <!-- ko foreach: influence -->
+                    <span class="label" data-bind="text: role, css: labelClass(role(), revealed()), tooltip: { title: roleDescription(role()), trigger: 'hover', placement: 'right' }"></span><br/>
+                <!-- /ko -->
+            </div>
+        </div>
+    </li>
+</ul>
+<ul class="list-group">
+    <li class="list-group-item">
+        <a href="javascript: null" data-bind="event: {vclick: showChat}, visible: sidebar() != 'chat'">Chat</a>
+        <div data-bind="visible: sidebar() == 'chat'">
+            <div class="chat"></div>
+            <textarea class="form-control" rows="2" placeholder="Chat message"></textarea>
+        </div>
+    </li>
+    <li class="list-group-item">
+        <a href="javascript: null" data-bind="event: {vclick: showCheatSheet}, visible: sidebar() != 'cheat'">Cheat sheet</a>
+        <div data-bind="visible: sidebar() == 'cheat'">
+            <p><span class="label label-ambassador">ambassador</span> Draw two from the deck and optionally exchange your infuences</p>
+            <p><span class="label label-assassin">assassin</span> Pay $3 to reveal another player's influence; blocked by contessa</p>
+            <p><span class="label label-captain">captain</span> Steal $2 from another player; blocked by captain and ambassador</p>
+            <p><span class="label label-contessa">contessa</span> Block assassination</p>
+            <p><span class="label label-duke">duke</span> Tax +$3; block foreign aid</p>
+            <p>Income +$1</p>
+            <p>Foreign aid +$2; blocked by duke</p>
+            <p>Coup to reveal another player's influence for $7</p>
+        </div>
+    </li>
+</ul>
+<a href="rules.html" target="blank">How to play</a>
