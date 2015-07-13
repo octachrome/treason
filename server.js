@@ -18,6 +18,7 @@ winston.info('server started');
 
 var express = require('express');
 var app = express();
+app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/web'));
 
 var version = require('./version');
