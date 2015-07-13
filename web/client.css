@@ -97,27 +97,28 @@ div.chat {
     color: white;
     background-color: hsl(195, 60%, 50%);
 }
+
+
 .btn-duke-action {
-    color: white;
     background-color: hsl(280, 60%, 50%);
 }
 .btn-assassin-action {
     background-color: hsl(0, 0%, 20%);
 }
-.btn-assassin-action:enabled:not(:hover) {
-    color:white;
-}
 .btn-contessa-action {
-    color:white;
     background-color: hsl(359, 60%, 50%);
 }
 .btn-ambassador-action {
-    color:white;
     background-color: hsl(80, 50%, 45%);
 }
 .btn-captain-action {
-    color:white;
     background-color: hsl(195, 60%, 50%);
+}
+.btn-duke-action, .btn-assassin-action, .btn-contessa-action, .btn-ambassador-action, .btn-captain-action {
+    color: white;
+}
+.btn-action:disabled {
+    color: #333;
 }
 .current-player {
     border-left: 5px solid #1e90ff;

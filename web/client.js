@@ -149,7 +149,11 @@ function canPlayAction(actionName) {
         return player.cash() >= action.cost;
     }
 }
-function playAction(actionName) {
+function playAction(actionName, event) {
+    // Sometimes a click event gets fired on a disabled button.
+    if ($(event.target).closest('button:enabled').length == 0) {
+        return;
+    }
     var action = actions[actionName];
     if (!action) {
         return;
