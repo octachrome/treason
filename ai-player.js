@@ -70,13 +70,18 @@ function createAiPlayer(game, options) {
     var claims = [];
     // The last role to be claimed. Used when a challenge is issued, to track which role was challenged.
     var lastRoleClaim;
+    var timeout = null;
 
     function onStateChange(s) {
         state = s;
-        setTimeout(onStateChangeAsync, options.moveDelay);
+        if (timeout != null) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(onStateChangeAsync, options.moveDelay);
     }
 
     function onStateChangeAsync() {
+        timeout = null;
         aiPlayer = state.players[state.playerIdx];
         currentPlayer = state.players[state.state.playerIdx];
         targetPlayer = state.players[state.state.target];
