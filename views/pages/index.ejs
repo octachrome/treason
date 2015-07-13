@@ -58,7 +58,7 @@
                             <!-- ko if: !targetedAction() -->
                                 Your turn:<br/>
                                 <!-- ko foreach: actionNames() -->
-                                    <button class="btn btn-default btn-action" data-bind="enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)">
+                                    <button class="btn btn-action" data-bind="enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)">
                                         <i data-bind="css: $data"></i>
                                         <span data-bind="text: $data"></span>
                                     </button>
@@ -103,7 +103,7 @@
                                 <button class="btn btn-default" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed() }">Allow</button>
                                 <!-- ko if: weCanBlock() -->
                                     <!-- ko foreach: blockingRoles() -->
-                                        <button class="btn btn-default" data-bind="event: {vclick: block}, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
+                                        <button class="btn" data-bind="event: {vclick: block}, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
                                     <!-- /ko -->
                                 <!-- /ko -->
                                 <button class="btn btn-default" data-bind="event: {vclick: challenge}, visible: weCanChallenge()">Challenge</button>
@@ -119,7 +119,7 @@
                             <!-- ko if: weCanBlock() -->
                                 <button class="btn btn-default" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed() }">Allow</button>
                                 <!-- ko foreach: blockingRoles() -->
-                                    <button class="btn btn-default" data-bind="event: {vclick: block}, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
+                                    <button class="btn" data-bind="event: {vclick: block}, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
                                 <!-- /ko -->
                             <!-- /ko -->
                         </div>
@@ -149,7 +149,7 @@
                             <span data-bind="text: stateMessage()"></span><br/><br/>
                             Must reveal an influence
                             <!-- ko foreach: ourInfluence() -->
-                            <button class="btn btn-xs" data-bind="text: role, css: buttonClass(role()), visible: !revealed(), event: {vclick: reveal}"></button>
+                            <button class="btn btn-xs" data-bind="text: role, css: buttonRoleClass(role()), visible: !revealed(), event: {vclick: reveal}"></button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: theyMustReveal()">

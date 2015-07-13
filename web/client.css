@@ -2,11 +2,6 @@
     font-family: icomoon;
     src: url(icomoon.woff);
 }
-.btn-action {
-    margin-top: 5px;
-    padding-top: 0;
-    padding-bottom: 0;
-}
 i {
     font-family: icomoon;
     font-size: 25px;
@@ -57,68 +52,49 @@ div.chat {
     background: white;
     border: 1px solid #444;
 }
-.label-duke, .btn-duke {
-    color: white;
-    background-color: hsl(280, 60%, 60%);
-}
-.label-assassin, .btn-assassin {
-    color: white;
-    background-color: hsl(0, 0%, 30%);
-}
-.label-contessa, .btn-contessa {
-    color: white;
-    background-color: hsl(359, 60%, 60%);
-}
-.label-ambassador, .btn-ambassador {
-    color: white;
-    background-color: hsl(80, 50%, 50%);
-}
-.label-captain, .btn-captain {
-    color: white;
-    background-color: hsl(195, 60%, 60%);
-}
-.btn-duke:hover {
-    color: white;
-    background-color: hsl(280, 60%, 50%);
-}
-.btn-assassin:hover {
-    color: white;
-    background-color: hsl(0, 0%, 20%);
-}
-.btn-contessa:hover {
-    color: white;
-    background-color: hsl(359, 60%, 50%);
-}
-.btn-ambassador:hover {
-    color: white;
-    background-color: hsl(80, 50%, 45%);
-}
-.btn-captain:hover {
-    color: white;
-    background-color: hsl(195, 60%, 50%);
-}
-
-
-.btn-duke-action {
-    background-color: hsl(280, 60%, 50%);
-}
-.btn-assassin-action {
-    background-color: hsl(0, 0%, 20%);
-}
-.btn-contessa-action {
-    background-color: hsl(359, 60%, 50%);
-}
-.btn-ambassador-action {
-    background-color: hsl(80, 50%, 45%);
-}
-.btn-captain-action {
-    background-color: hsl(195, 60%, 50%);
-}
-.btn-duke-action, .btn-assassin-action, .btn-contessa-action, .btn-ambassador-action, .btn-captain-action {
-    color: white;
+.btn-action {
+    border-color: #ccc;
+    background: white;
+    margin-top: 5px;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 .btn-action:disabled {
-    color: #333;
+    color: #888;
+    background: white;
+    opacity: inherit;
+}
+.btn-action:disabled:hover {
+    color: #888;
+}
+.label-duke, .btn-duke {
+    background-color: hsl(280, 60%, 50%);
+}
+.label-assassin, .btn-assassin {
+    background-color: hsl(0, 0%, 20%);
+}
+.label-contessa, .btn-contessa {
+    background-color: hsl(359, 60%, 50%);
+}
+.label-ambassador, .btn-ambassador {
+    background-color: hsl(80, 60%, 45%);
+}
+.label-captain, .btn-captain {
+    background-color: hsl(195, 60%, 50%);
+}
+.btn-duke, .btn-assassin, .btn-contessa, .btn-ambassador, .btn-captain {
+    color: white;
+    opacity: 0.8;
+}
+.btn-duke:hover, .btn-assassin:hover, .btn-contessa:hover, .btn-ambassador:hover, .btn-captain:hover {
+    opacity: 1.0;
+    color: white;
+}
+.btn-other:hover {
+    background: #e6e6e6;
+}
+.btn-other:disabled {
+    background: white;
 }
 .current-player {
     border-left: 5px solid #1e90ff;

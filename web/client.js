@@ -340,18 +340,18 @@ function roleDescription(role) {
 function buttonActionClass(actionName) {
     var action = actions[actionName];
     if (action && action.role) {
-        return 'btn-' + action.role + '-action';
+        return 'btn-' + action.role;
     }
     for (var property in actions) {
         if (actions.hasOwnProperty(property) && actions[property].blockedBy) {
             if (actions[property].blockedBy.indexOf(actionName) >= 0) {
-                return 'btn-' + actionName + '-action';
+                return 'btn-' + actionName;
             }
         }
     }
-    return '';
+    return 'btn-other';
 }
-function buttonClass(role) {
+function buttonRoleClass(role) {
     return 'btn-' + role;
 }
 function actionNames() {
