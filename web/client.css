@@ -51,6 +51,12 @@ i.player-died:before {
 i.player-won:before {
     content: "\e60b";
 }
+i.challenge:before {
+    content: "\e60c";
+}
+i.allow:before {
+    content: "\ea10";
+}
 body {
     padding-top: 15px;
 }
@@ -80,6 +86,12 @@ div.chat {
     margin-top: 5px;
     padding-top: 0;
     padding-bottom: 0;
+}
+.btn-action:focus {
+    border-color: #ccc;
+}
+.btn-success {
+    background: #5cb85c;
 }
 .btn-action:disabled {
     color: #888;
@@ -111,12 +123,6 @@ div.chat {
 .btn-duke:hover, .btn-assassin:hover, .btn-contessa:hover, .btn-ambassador:hover, .btn-captain:hover {
     opacity: 1.0;
     color: white;
-}
-.btn-other:hover {
-    background: #e6e6e6;
-}
-.btn-other:disabled {
-    background: white;
 }
 .current-player {
     border-left: 5px solid #1e90ff;

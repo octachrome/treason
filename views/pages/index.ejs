@@ -88,7 +88,10 @@
                                 <input type="checkbox" data-bind="attr: { 'data-role': $data }"/>
                                 <br/>
                             <!-- /ko -->
-                            <button class="btn btn-default" data-bind="event: {vclick: exchange}">Exchange</button>
+                            <button class="btn btn-action btn-ambassador" data-bind="event: {vclick: exchange}">
+                                <i class="exchange"></i>
+                                <span>Exchange</span>
+                            </button>
                         </div>
                         <div data-bind="visible: weAreInState('action-response')">
                             <span data-bind="text: stateMessage()"></span><br/><br/>
@@ -100,13 +103,22 @@
                                 Waiting for blocks/challenges
                             <!-- /ko -->
                             <!-- ko if: weAreAlive() -->
-                                <button class="btn btn-default" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed() }">Allow</button>
+                                <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
+                                    <i class="allow"></i>
+                                    <span>Allow</span>
+                                </button>
                                 <!-- ko if: weCanBlock() -->
                                     <!-- ko foreach: blockingRoles() -->
-                                        <button class="btn" data-bind="event: {vclick: block}, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
+                                        <button class="btn btn-action" data-bind="event: {vclick: block}, css: buttonActionClass($data)">
+                                            <i class="block"></i>
+                                            <span data-bind="text: 'Block with ' + $data"></span>
+                                        </button>
                                     <!-- /ko -->
                                 <!-- /ko -->
-                                <button class="btn btn-default" data-bind="event: {vclick: challenge}, visible: weCanChallenge()">Challenge</button>
+                                <button class="btn btn-action btn-default" data-bind="event: {vclick: challenge}, visible: weCanChallenge()">
+                                    <i class="challenge"></i>
+                                    <span>Challenge</span>
+                                </button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreInState('final-action-response')">
@@ -117,9 +129,15 @@
                                 Waiting for blocks
                             <!-- /ko -->
                             <!-- ko if: weCanBlock() -->
-                                <button class="btn btn-default" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed() }">Allow</button>
+                                <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
+                                    <i class="allow"></i>
+                                    <span>Allow</span>
+                                </button>
                                 <!-- ko foreach: blockingRoles() -->
-                                    <button class="btn" data-bind="event: {vclick: block}, text: 'Block with ' + $data, css: buttonActionClass($data)"></button>
+                                    <button class="btn btn-action" data-bind="event: {vclick: block}, css: buttonActionClass($data)">
+                                        <i class="block"></i>
+                                        <span data-bind="text: 'Block with ' + $data"></span>
+                                    </button>
                                 <!-- /ko -->
                             <!-- /ko -->
                         </div>
@@ -133,8 +151,14 @@
                                 Waiting for challenges
                             <!-- /ko -->
                             <!-- ko if: weAreAlive() -->
-                                <button class="btn btn-default" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed() }">Allow</button>
-                                <button class="btn btn-default" data-bind="event: {vclick: challenge}, visible: weCanChallenge()">Challenge</button>
+                                <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
+                                    <i class="allow"></i>
+                                    <span>Allow</span>
+                                </button>
+                                <button class="btn btn-action btn-default" data-bind="event: {vclick: challenge}, visible: weCanChallenge()">
+                                    <i class="challenge"></i>
+                                    <span>Challenge</span>
+                                </button>
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreInState('game-won')">

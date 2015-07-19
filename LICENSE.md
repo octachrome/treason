@@ -13,7 +13,7 @@ cycle.svg, hand.svg, pistol-gun.svg, plain-dagger.svg, snatch.svg, swap-bag.svg,
 
 thumbs-up.svg, thumbs-down.svg: http://www.clipartbest.com; Free without explicit license.
 
-coins.svg, coin.svg: Copyright Chris Brown, 2015; https://creativecommons.org/licenses/by/4.0
+coins.svg, coin.svg, gavel.svg: Copyright Chris Brown, 2015; https://creativecommons.org/licenses/by/4.0
 
 Icon fonts generated with https://icomoon.io.
 
