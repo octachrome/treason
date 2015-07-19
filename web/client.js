@@ -4,7 +4,8 @@ vm = {
     targetedAction: ko.observable(''),
     weAllowed: ko.observable(false),
     sidebar: ko.observable('chat'),
-    history: ko.observableArray()
+    history: ko.observableArray(),
+    gameUrl: ko.observable('')
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -12,6 +13,7 @@ vm.state = ko.mapping.fromJS({
     players: [],
     playerIdx: null,
     numPlayers: null,
+    gameName: null,
     state: {
         name: null,
         playerIdx: null,
@@ -25,6 +27,13 @@ vm.state = ko.mapping.fromJS({
 });
 vm.playerName.subscribe(function (newName) {
     localStorageSet('playerName', newName);
+});
+
+$(window).on('hashchange load', function() {
+    if (location.hash) {
+        vm.gameUrl(location.hash);
+        join(null, null, vm.gameUrl());
+    }
 });
 
 ko.bindingHandlers.tooltip = {
@@ -47,7 +56,7 @@ ko.bindingHandlers.tooltip = {
     }
 };
 var socket;
-function join() {
+function join(form, event, privateGameName) {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
         alert('Enter a valid name');
     }
@@ -104,7 +113,14 @@ function join() {
             console.error(data);
         });
     }
-    socket.emit('join', vm.playerName());
+    socket.emit('join', {
+        playerName: vm.playerName(),
+        privateGameName: privateGameName
+    });
+}
+function create(form, event) {
+    join(form, event, vm.playerName());
+    //window.location += '#' + vm.state.gameName();
 }
 function start() {
     command('start');
@@ -385,6 +401,12 @@ function showChat() {
 }
 function playing() {
     return vm.state && vm.state.state && vm.state.state.name() != null;
+}
+function privateGame() {
+    return playing() && vm.state.gameName;
+}
+function gameUrl2() {
+    return window.location.protocol + '//' + window.location.host + '/#' + vm.state.gameName();
 }
 function localStorageGet(key) {
     return window.localStorage ? window.localStorage.getItem(key) : null;

@@ -24,6 +24,7 @@ module.exports = function createGame(options) {
         gameId: gameId,
         players: [],
         numPlayers: 0,
+        gameName: options.gameName,
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
         }
@@ -39,6 +40,8 @@ module.exports = function createGame(options) {
     var game = {
         canJoin: canJoin,
         playerJoined: playerJoined,
+        gameOver: gameOver,
+        gamePath: gamePath,
         _test_setTurnState: _test_setTurnState,
         _test_setInfluence: _test_setInfluence,
         _test_setCash: _test_setCash,
@@ -859,6 +862,14 @@ module.exports = function createGame(options) {
 
     function canJoin() {
         return state.state.name == stateNames.WAITING_FOR_PLAYERS;
+    }
+
+    function gameOver() {
+        return state.state.name == stateNames.GAME_WON && state.numPlayers === 0;
+    }
+
+    function gamePath() {
+        return window.location + '#' + state.gameName;
     }
 
     function sendChatMessage(playerIdx, message) {
