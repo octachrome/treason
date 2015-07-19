@@ -1,4 +1,11 @@
 @font-face {
+    font-family: XoloniumRegular;
+    src: url(XoloniumRegular.otf) format(opentype);
+}
+body, p {
+   font-family: XoloniumRegular;
+}
+@font-face {
     font-family: icomoon;
     src: url(icomoon.woff);
 }
@@ -24,10 +31,16 @@ i.exchange:before {
     content: "\e600";
 }
 i.income:before {
-    content: "\e607";
+    content: "\e606";
 }
 i.foreign-aid:before {
-    content: "\e606";
+    content: "\e607";
+}
+i.challenge-success:before {
+    content: "\e608";
+}
+i.challenge-fail:before {
+    content: "\e609";
 }
 body {
     padding-top: 15px;
