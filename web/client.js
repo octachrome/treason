@@ -360,7 +360,7 @@ function buttonActionClass(actionName) {
             }
         }
     }
-    return 'btn-other';
+    return 'btn-default';
 }
 function buttonRoleClass(role) {
     return 'btn-' + role;
