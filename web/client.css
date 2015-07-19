@@ -2,7 +2,7 @@
     font-family: XoloniumRegular;
     src: url(XoloniumRegular.otf) format(opentype);
 }
-body, p {
+body, p, .tooltip {
    font-family: XoloniumRegular;
 }
 @font-face {
