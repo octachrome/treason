@@ -159,7 +159,14 @@
                         </div>
                     </li>
                     <!-- ko foreach: history -->
-                        <li class="list-group-item" data-bind="text: $data"></li>
+                        <li class="list-group-item">
+                            <ul class="history-group" data-bind="foreach: $data">
+                                <li class="history-group-item">
+                                    <i data-bind="css: icon"></i>
+                                    <span data-bind="text: message"></span>
+                                </li>
+                            </ul>
+                        </li>
                     <!-- /ko -->
                 </ul>
             </div>

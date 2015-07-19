@@ -36,11 +36,14 @@ i.income:before {
 i.foreign-aid:before {
     content: "\e607";
 }
-i.challenge-success:before {
+i.successful-challenge:before {
     content: "\e608";
 }
-i.challenge-fail:before {
+i.incorrect-challenge:before {
     content: "\e609";
+}
+i.block:before {
+    content: "\e604";
 }
 body {
     padding-top: 15px;
@@ -114,4 +117,14 @@ div.chat {
 }
 .dead-player {
     color: #aaa;
+}
+.history-group {
+    padding: 0;
+}
+.history-group-item {
+    list-style-type: none;
+    padding-left: 20px
+}
+.history-group-item:first-child {
+    padding-left: 0
 }

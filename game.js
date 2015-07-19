@@ -78,7 +78,7 @@ module.exports = function createGame(options) {
             start();
         }
 
-        addHistory(playerState.name + ' joined the game');
+        addHistory('player-joined', playerState.name + ' joined the game');
         emitState();
 
         var proxy = createGameProxy(playerIdx);
@@ -118,6 +118,7 @@ module.exports = function createGame(options) {
         if (!player) {
             throw new GameException('Unknown player disconnected');
         }
+        var historySuffix = '';
         if (state.state.name == stateNames.WAITING_FOR_PLAYERS) {
             state.players.splice(playerIdx, 1);
             players.splice(playerIdx, 1);
@@ -134,7 +135,7 @@ module.exports = function createGame(options) {
                 var influence = player.influence;
                 for (var j = 0; j < influence.length; j++) {
                     if (!influence[j].revealed) {
-                        addHistory('{%d} revealed %s', playerIdx, influence[j].role);
+                        historySuffix += format('; {%d} revealed %s', playerIdx, influence[j].role);
                         influence[j].revealed = true;
                     }
                 }
@@ -152,12 +153,12 @@ module.exports = function createGame(options) {
                 }
             }
         }
-        addHistory(player.name + ' left the game');
+        addHistory('player-left', player.name + ' left the game' + historySuffix);
         emitState();
     }
 
     function afterPlayerDeath(playerIdx) {
-        addHistory('{%d} suffered a humiliating defeat', playerIdx);
+        addHistory('player-died', '{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
 
@@ -365,7 +366,7 @@ module.exports = function createGame(options) {
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
                     player.influenceCount--;
-                    addHistory('%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
+                    addHistory(state.state.reason, '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
                     if (state.state.message.indexOf('incorrectly challenged') >= 0) {
                         if (afterIncorrectChallenge()) {
                             nextTurn();
@@ -409,7 +410,7 @@ module.exports = function createGame(options) {
             }
             // Original player is in the playerIdx field; blocking player is in the target field.
             if (state.state.name == stateNames.ACTION_RESPONSE) {
-                addHistory(state.state.message);
+                addHistory(state.state.action, state.state.message);
             }
             state.state = {
                 name: stateNames.BLOCK_RESPONSE,
@@ -456,7 +457,7 @@ module.exports = function createGame(options) {
             }
             // Return the other roles to the deck.
             deck = shuffle(deck.concat(unchosen));
-            addHistory('{%d} exchanged roles', playerIdx);
+            addHistory('exchange', '{%d} exchanged roles', playerIdx);
             nextTurn();
 
         } else {
@@ -473,7 +474,7 @@ module.exports = function createGame(options) {
             }
             allows[playerIdx] = true;
             if (everyoneAllows()) {
-                addHistory('{%d} blocked with %s', state.state.target, state.state.blockingRole);
+                addHistory('block', '{%d} blocked with %s', state.state.target, state.state.blockingRole);
                 nextTurn();
                 return true;
             } else {
@@ -573,7 +574,11 @@ module.exports = function createGame(options) {
         if (!challengedPlayer) {
             throw new GameException('Cannot identify challenged player');
         }
-        addHistory(state.state.message);
+        if (state.state.blockingRole) {
+            addHistory('block', state.state.message);
+        } else {
+            addHistory(state.state.action, state.state.message);
+        }
 
         var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole);
         if (influenceIdx != null) {
@@ -590,7 +595,7 @@ module.exports = function createGame(options) {
             if (player.influenceCount <= 1) {
                 // Then the challenger is dead. Reveal an influence.
                 revealedRole = revealFirstInfluence(player);
-                addHistory('%s; {%d} revealed %s', message, playerIdx, revealedRole);
+                addHistory('incorrect-challenge', '%s; {%d} revealed %s', message, playerIdx, revealedRole);
 
                 endOfTurn = afterIncorrectChallenge();
 
@@ -608,6 +613,7 @@ module.exports = function createGame(options) {
                     target: state.state.target,
                     blockingRole: state.state.blockingRole,
                     message: message,
+                    reason: 'incorrect-challenge',
                     playerToReveal: playerIdx
                 };
             }
@@ -623,7 +629,7 @@ module.exports = function createGame(options) {
             if (challengedPlayer.influenceCount <= 1 || wouldLoseTwoInfluences) {
                 // Then the challenged player is dead. Reveal an influence.
                 revealedRole = revealFirstInfluence(challengedPlayer);
-                addHistory('%s; {%d} revealed %s', message, challengedPlayerIdx, revealedRole);
+                addHistory('successful-challenge', '%s; {%d} revealed %s', message, challengedPlayerIdx, revealedRole);
 
                 if (challengedPlayer.influenceCount == 0) {
                     afterPlayerDeath(challengedPlayerIdx);
@@ -642,6 +648,7 @@ module.exports = function createGame(options) {
                     target: state.state.target,
                     blockingRole: state.state.blockingRole,
                     message: message,
+                    reason: 'successful-challenge',
                     playerToReveal: challengedPlayerIdx
                 };
             }
@@ -671,7 +678,7 @@ module.exports = function createGame(options) {
             target = state.players[actionState.target];
             if (target.influenceCount == 1) {
                 revealedRole = revealFirstInfluence(target);
-                addHistory('%s; {%d} revealed %s', message, actionState.target, revealedRole);
+                addHistory('assassinate', '%s; {%d} revealed %s', message, actionState.target, revealedRole);
                 afterPlayerDeath(actionState.target);
             } else if (target.influenceCount > 1) {
                 state.state = {
@@ -681,6 +688,7 @@ module.exports = function createGame(options) {
                     target: actionState.target,
                     blockingRole: actionState.blockingRole,
                     message: message,
+                    reason: 'assassinate',
                     playerToReveal: actionState.target
                 };
                 return false; // Not yet end of turn
@@ -690,7 +698,7 @@ module.exports = function createGame(options) {
             target = state.players[actionState.target];
             if (target.influenceCount <= 1) {
                 revealedRole = revealFirstInfluence(target);
-                addHistory('%s; {%d} revealed %s', message, actionState.target, revealedRole);
+                addHistory('coup', '%s; {%d} revealed %s', message, actionState.target, revealedRole);
                 afterPlayerDeath(actionState.target);
             } else {
                 state.state = {
@@ -700,13 +708,14 @@ module.exports = function createGame(options) {
                     target: actionState.target,
                     blockingRole: actionState.blockingRole,
                     message: message,
+                    reason: 'coup',
                     playerToReveal: actionState.target
                 };
                 return false; // Not yet end of turn
             }
         } else if (actionState.action == 'steal') {
             target = state.players[actionState.target];
-            addHistory('{%d} stole from {%d}', playerIdx, actionState.target);
+            addHistory('steal', '{%d} stole from {%d}', playerIdx, actionState.target);
             if (target.cash >= 2) {
                 target.cash -= 2;
                 player.cash += 2;
@@ -724,7 +733,7 @@ module.exports = function createGame(options) {
             };
             return false; // Not yet end of turn
         } else {
-            addHistory('{%d} drew %s', playerIdx, actionState.action);
+            addHistory(actionState.action, '{%d} drew %s', playerIdx, actionState.action);
         }
         return true; // End of turn
     }
@@ -806,19 +815,43 @@ module.exports = function createGame(options) {
     }
 
     function addHistory() {
-        var message = format.apply(null, arguments);
+        var args = Array.prototype.slice.apply(arguments);
+        var type = args.shift();
+        var message = format.apply(null, args);
+        var continuation = isContinuation(type);
+
         if (options.logger) {
             options.logger.log('info', 'game %d: %s', gameId, message);
         }
         for (var i = 0; i < state.numPlayers; i++) {
-            addHistoryAsync(i, message);
+            addHistoryAsync(i, message, type, continuation);
         }
     }
 
-    function addHistoryAsync(dest, message) {
+    function isContinuation(type) {
+        switch (type) {
+            case 'player-joined':
+            case 'player-left':
+            case 'player-died':
+                // These types always begin a new history item.
+                return false;
+
+            case 'incorrect-challenge':
+            case 'successful-challenge':
+            case 'block':
+                // These types always continue an earlier history item.
+                return true;
+
+            default:
+                // Actions (assassinate, etc.) may or may not begin a new history item, depending on state.
+                return state.state.name != stateNames.START_OF_TURN && state.state.name != stateNames.ACTION_RESPONSE;
+        }
+    }
+
+    function addHistoryAsync(dest, message, type, continuation) {
         setTimeout(function () {
             if (players[dest] != null) {
-                players[dest].onHistoryEvent(message);
+                players[dest].onHistoryEvent(message, type, continuation);
             }
         }, 0);
     }

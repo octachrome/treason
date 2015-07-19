@@ -71,8 +71,19 @@ function join() {
             $('.activity').scrollTop(0);
             console.log(data);
         });
-        socket.on('history', function (message) {
-            vm.history.unshift(formatMessage(message));
+        socket.on('history', function (data) {
+            var items;
+            if (data.continuation && vm.history().length) {
+                // Collect related history items together.
+                items = vm.history()[0];
+            } else {
+                items = ko.observableArray();
+                vm.history.unshift(items);
+            }
+            items.push({
+                icon: data.type,
+                message: formatMessage(data.message)
+            });
         });
         socket.on('chat', function (data) {
             var from;
