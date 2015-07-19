@@ -833,6 +833,7 @@ module.exports = function createGame(options) {
             case 'player-joined':
             case 'player-left':
             case 'player-died':
+            case 'coup':
                 // These types always begin a new history item.
                 return false;
 
