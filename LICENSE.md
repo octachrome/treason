@@ -9,7 +9,7 @@ Icons
 
 Icons are from various sources.
 
-cycle.svg, hand.svg, pistol-gun.svg, plain-dagger.svg, snatch.svg, swap-bag.svg: http://game-icons.net; http://creativecommons.org/licenses/by/3.0
+cycle.svg, hand.svg, pistol-gun.svg, plain-dagger.svg, snatch.svg, swap-bag.svg, broken-skull.svg, queen-crown.svg: http://game-icons.net; http://creativecommons.org/licenses/by/3.0
 
 thumbs-up.svg, thumbs-down.svg: http://www.clipartbest.com; Free without explicit license.
 

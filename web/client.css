@@ -45,6 +45,12 @@ i.incorrect-challenge:before {
 i.block:before {
     content: "\e604";
 }
+i.player-died:before {
+    content: "\e60a";
+}
+i.player-won:before {
+    content: "\e60b";
+}
 body {
     padding-top: 15px;
 }
