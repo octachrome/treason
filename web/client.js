@@ -31,7 +31,7 @@ vm.playerName.subscribe(function (newName) {
 
 $(window).on('hashchange load', function() {
     if (location.hash) {
-        vm.gameUrl(location.hash);
+        vm.gameUrl(location.hash.substring(1));
         join(null, null, vm.gameUrl());
     }
 });
@@ -119,8 +119,19 @@ function join(form, event, privateGameName) {
     });
 }
 function create(form, event) {
-    join(form, event, vm.playerName());
-    //window.location += '#' + vm.state.gameName();
+    //todo Stop multiple clicks
+    if (socket == null) {
+        socket = io();
+    }
+
+    socket.on('created', function(data) {
+        socket = null;
+        window.location += '#' + data.gameName;
+    });
+
+    socket.emit('create', {
+        gameName: vm.playerName()
+    });
 }
 function start() {
     command('start');

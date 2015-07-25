@@ -40,11 +40,7 @@ var privateGames = {};
 io.on('connection', function (socket) {
     socket.on('join', function (data) {
         var playerName = data.playerName;
-        var privateGameName = data.privateGameName;//If it has a hash, it's someone joining, else it's someone creating
-        var isCreatingPrivateGame = privateGameName && privateGameName.indexOf('#') === -1;
-        if (privateGameName && !isCreatingPrivateGame) {
-            privateGameName = privateGameName.substring(1);
-        }
+        var privateGameName = data.privateGameName;
 
         if (!playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
             return;
@@ -52,27 +48,11 @@ io.on('connection', function (socket) {
         var game = null;
         while (!game) {
             if (privateGameName) {
-                if (isCreatingPrivateGame) {
-                    var gameName = playerName;
-                    while (privateGames[gameName]) {
-                        //gameName += Date.now() % 17 + '';
-                        gameName += 'x';
-                    }
-                    privateGames[gameName] = {};
-                    game = createGame({
-                        debug: argv.debug,
-                        logger: winston,
-                        moveDelay: 1000,
-                        gameName: gameName
-                    });
-                    privateGames[gameName] = game;
+                //joining a private game
+                if (privateGames[privateGameName]) {
+                    game = privateGames[privateGameName];
                 } else {
-                    //joining a private game
-                    if (privateGames[privateGameName]) {
-                        game = privateGames[privateGameName];
-                    } else {
-                        //todo this game has expired/was not found
-                    }
+                    //todo this game has expired/was not found
                 }
 
                 //todo figure out what parameters to reap on. maybe instead when number of player is empty?
@@ -107,6 +87,26 @@ io.on('connection', function (socket) {
         if (game.canJoin() && !privateGameName) {
             pending.push(game);
         }
+    });
+
+    socket.on('create', function(data) {
+        var gameName = data.gameName;
+        while (privateGames[gameName]) {
+            //gameName += Date.now() % 17 + '';
+            gameName += 'x';
+        }
+        privateGames[gameName] = {};
+        var game = createGame({
+            debug: argv.debug,
+            logger: winston,
+            moveDelay: 1000,
+            gameName: gameName
+        });
+        privateGames[gameName] = game;
+
+        socket.emit('created', {
+            gameName:gameName
+        });
     });
 
     socket.on('disconnect', function () {
