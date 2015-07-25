@@ -69,6 +69,11 @@ function join(form, event, privateGameName) {
         // Re-use the same socket. Automatically reconnects if disconnected.
         socket = io();
 
+        socket.on('gamenotfound', function(data) {
+            vm.welcomeMessage('Private game: "' + data.privateGameName + '" was not found.');
+            vm.state.state.name(null);
+        });
+
         socket.on('disconnect', function () {
             vm.welcomeMessage('Disconnected');
             vm.state.state.name(null); // Opens the welcome screen.

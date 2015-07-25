@@ -52,7 +52,10 @@ io.on('connection', function (socket) {
                 if (privateGames[privateGameName]) {
                     game = privateGames[privateGameName];
                 } else {
-                    //todo this game has expired/was not found
+                    socket.emit('gamenotfound', {
+                        privateGameName: privateGameName
+                    });
+                    return;
                 }
 
                 //todo figure out what parameters to reap on. maybe instead when number of player is empty?
