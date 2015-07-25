@@ -376,7 +376,7 @@ function buttonActionClass(actionName) {
             }
         }
     }
-    return 'btn-other';
+    return 'btn-default';
 }
 function buttonRoleClass(role) {
     return 'btn-' + role;
@@ -445,11 +445,12 @@ $(window).on('keydown', function (event) {
     if (event.altKey || event.ctrlKey || event.shiftKey || event.metaKey) {
         return;
     }
+    // Keyboard shortcuts for all action buttons.
     var chr = String.fromCharCode(event.which).toLowerCase();
     if (chr.match(/[a-z]/)) {
         $('button:visible').each(function (idx, el) {
             el = $(el);
-            if (el.text().toLowerCase().indexOf(chr) == 0) {
+            if (el.text().trim().toLowerCase().indexOf(chr) == 0) {
                 el.click();
                 return false;
             }
