@@ -25,6 +25,7 @@ module.exports = function createGame(options) {
         players: [],
         numPlayers: 0,
         gameName: options.gameName,
+        created: options.created,
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
         }
@@ -865,7 +866,9 @@ module.exports = function createGame(options) {
     }
 
     function gameOver() {
-        return state.state.name == stateNames.GAME_WON && state.numPlayers === 0;
+        //24 hours
+        var maxAge = 1000 * 60 * 60 * 24;
+        return state.created.getTime() + maxAge  < new Date().getTime();
     }
 
     function gamePath() {

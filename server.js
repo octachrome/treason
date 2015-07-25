@@ -58,19 +58,15 @@ io.on('connection', function (socket) {
                     return;
                 }
 
-                //todo figure out what parameters to reap on. maybe instead when number of player is empty?
-                /*for (var property in privateGames) {
+                for (var property in privateGames) {
                     if (privateGames.hasOwnProperty(property)) {
-                        var privateGameToBeReapedMaybe = privateGames[property];
-                        if (privateGameToBeReapedMaybe.gameOver && privateGameToBeReapedMaybe.gameOver()) {
+                        var privateGameUpForReaping = privateGames[property];
+                        if (privateGameUpForReaping.gameOver && privateGameUpForReaping.gameOver()) {
                             console.log('Reaping finished private game ' + property);
-                            app.get(privateGameToBeReapedMaybe.gamePath, function(req, res) {
-                                res.send('This game has expired');
-                            });
-                            delete privateGames.property;
+                            delete privateGames[property];
                         }
                     }
-                }*/
+                }
             } else {
                 if (pending.length) {
                     game = pending.pop();
@@ -103,7 +99,8 @@ io.on('connection', function (socket) {
             debug: argv.debug,
             logger: winston,
             moveDelay: 1000,
-            gameName: gameName
+            gameName: gameName,
+            created: new Date()
         });
         privateGames[gameName] = game;
 
