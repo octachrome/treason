@@ -119,20 +119,21 @@ function join(form, event, privateGameName) {
     });
 }
 function create(form, event) {
-    //todo Stop multiple clicks
-    if (socket == null) {
-        socket = io();
-    }
+    _.debounce(new function() {
+        if (socket == null) {
+            socket = io();
+        }
 
-    socket.on('created', function(data) {
-        socket.emit('disconnect');
-        socket = null;
-        window.location += '#' + data.gameName;
-    });
+        socket.on('created', function(data) {
+            socket.emit('disconnect');
+            socket = null;
+            window.location += '#' + data.gameName;
+        });
 
-    socket.emit('create', {
-        gameName: vm.playerName()
-    });
+        socket.emit('create', {
+            gameName: vm.playerName()
+        });
+    }, 500, true);
 }
 function start() {
     command('start');
