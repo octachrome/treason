@@ -29,13 +29,11 @@
                 <div class="alert alert-danger" role="alert" data-bind="text: welcomeMessage, visible: welcomeMessage"></div>
                 <h3>Treason Coup</h3>
                 <p data-bind="text: version"></p>
-                <p><input type="text" placeholder="Name" data-bind="value: playerName"/></p>
                 <form data-bind="submit: join">
+                    <p><input type="text" placeholder="Name" data-bind="value: playerName"/></p>
                     <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join public game</button></p>
                 </form>
-                <form data-bind="submit: create">
-                    <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Create private game</button></p>
-                </form>
+                <p><button class="btn btn-default" data-bind="enable: playerName, click: create">Create private game</button></p>
                 <p><a href="rules.html" target="blank">How to play</a></p>
             </div>
         </div>
