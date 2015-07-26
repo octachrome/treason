@@ -5,7 +5,8 @@ vm = {
     weAllowed: ko.observable(false),
     sidebar: ko.observable('chat'),
     history: ko.observableArray(),
-    gameUrl: ko.observable('')
+    gameUrl: ko.observable(''),
+    needName: ko.observable(false)
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -32,7 +33,11 @@ vm.playerName.subscribe(function (newName) {
 $(window).on('hashchange load', function() {
     if (location.hash) {
         vm.gameUrl(location.hash.substring(1));
-        join(null, null, vm.gameUrl());
+        if (vm.playerName()) {
+            join(null, null, vm.gameUrl());
+        } else {
+            vm.needName(true);
+        }
     }
 });
 
@@ -57,6 +62,10 @@ ko.bindingHandlers.tooltip = {
 };
 var socket;
 function join(form, event, gameName) {
+    //This seems clunky
+    if (form && form.privateGameName && form.privateGameName.value) {
+        gameName = form.privateGameName.value;
+    }
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
         alert('Enter a valid name');
     }
@@ -72,11 +81,13 @@ function join(form, event, gameName) {
         socket.on('gamenotfound', function(data) {
             vm.welcomeMessage('Private game: "' + data.gameName + '" was not found.');
             vm.state.state.name(null);
+            vm.needName(false);
         });
 
         socket.on('disconnect', function () {
             vm.welcomeMessage('Disconnected');
             vm.state.state.name(null); // Opens the welcome screen.
+            vm.needName(false);
         });
         socket.on('state', function (data) {
             ko.mapping.fromJS(data, vm.state);
