@@ -7,21 +7,21 @@ use Cwd 'abs_path';
 my $args = <>;
 my ($from, $to, $branch) = split(/\s+/, $args);
 
-# 2. Only deploy if master branch was pushed
-if ($branch !~ /master$/) {
+# 2. Only deploy if live branch was pushed
+if ($branch !~ /live$/) {
     print "Received branch $branch, not deploying.\n";
     exit;
 }
 
 # 3. Copy files to deploy directory
 my $deploy_to_dir = abs_path('../deploy');
-print `GIT_WORK_TREE="$deploy_to_dir" git checkout -f master`;
+print `GIT_WORK_TREE="$deploy_to_dir" git checkout -f live`;
 my $version = `git describe --tags --long`;
 chomp $version;
 open VERSION, ">$deploy_to_dir/web/version.js";
 print VERSION "window.version='$version';\n";
 close VERSION;
-print "DEPLOY: master($to) copied to '$deploy_to_dir'\n";
+print "DEPLOY: live($to) copied to '$deploy_to_dir'\n";
 
 # 4. Deployment Tasks
 print `sudo stop treason`;
