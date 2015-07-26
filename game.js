@@ -42,7 +42,6 @@ module.exports = function createGame(options) {
         canJoin: canJoin,
         playerJoined: playerJoined,
         gameOver: gameOver,
-        gamePath: gamePath,
         _test_setTurnState: _test_setTurnState,
         _test_setInfluence: _test_setInfluence,
         _test_setCash: _test_setCash,
@@ -869,10 +868,6 @@ module.exports = function createGame(options) {
         //24 hours
         var maxAge = 1000 * 60 * 60 * 24;
         return state.created.getTime() + maxAge  < new Date().getTime();
-    }
-
-    function gamePath() {
-        return window.location + '#' + state.gameName;
     }
 
     function sendChatMessage(playerIdx, message) {
