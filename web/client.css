@@ -1,13 +1,13 @@
 @font-face {
     font-family: XoloniumRegular;
-    src: url(XoloniumRegular.otf) format(opentype);
+    src: url('XoloniumRegular.otf') format('opentype');
 }
 body, p {
    font-family: XoloniumRegular;
 }
 @font-face {
     font-family: icomoon;
-    src: url(icomoon.woff);
+    src: url('icomoon.woff');
 }
 i {
     font-family: icomoon;
