@@ -34,67 +34,75 @@ var io = require('socket.io')(server);
 var createGame = require('./game');
 var createNetPlayer = require('./net-player');
 
-var pending = [];//public games
+var publicGames = [];
 var privateGames = {};
 
 io.on('connection', function (socket) {
     socket.on('join', function (data) {
+        reapPrivateGames();
+
         var playerName = data.playerName;
         var privateGameName = data.privateGameName;
 
         if (!playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
             return;
         }
+        if (privateGameName) {
+            joinPrivateGame(playerName, privateGameName);
+        } else {
+            joinOrCreatePublicGame(playerName);
+        }
+    });
+
+    function reapPrivateGames() {
+        for (var gameName in privateGames) {
+            var privateGameUpForReaping = privateGames[gameName];
+            if (privateGameUpForReaping.gameOver()) {
+                console.log('Reaping finished private game ' + gameName);
+                delete privateGames[gameName];
+            }
+        }
+    }
+
+    function joinPrivateGame(playerName, gameName) {
+        var game = privateGames[gameName];
+        if (!game) {
+            socket.emit('gamenotfound', {
+                privateGameName: gameName
+            });
+            return;
+        }
+        createNetPlayer(game, socket, playerName);
+    }
+
+    function joinOrCreatePublicGame(playerName) {
         var game = null;
         while (!game) {
-            if (privateGameName) {
-                //joining a private game
-                if (privateGames[privateGameName]) {
-                    game = privateGames[privateGameName];
-                } else {
-                    socket.emit('gamenotfound', {
-                        privateGameName: privateGameName
-                    });
-                    return;
-                }
-
-                for (var property in privateGames) {
-                    if (privateGames.hasOwnProperty(property)) {
-                        var privateGameUpForReaping = privateGames[property];
-                        if (privateGameUpForReaping.gameOver && privateGameUpForReaping.gameOver()) {
-                            console.log('Reaping finished private game ' + property);
-                            delete privateGames[property];
-                        }
-                    }
+            if (publicGames.length) {
+                game = publicGames.pop();
+                if (!game.canJoin()) {
+                    game = null;
                 }
             } else {
-                if (pending.length) {
-                    game = pending.pop();
-                    if (!game.canJoin()) {
-                        game = null;
-                    }
-                } else {
-                    game = createGame({
-                        debug: argv.debug,
-                        logger: winston,
-                        moveDelay: 1000 // For AI players
-                    });
-                }
+                game = createGame({
+                    debug: argv.debug,
+                    logger: winston,
+                    moveDelay: 1000 // For AI players
+                });
             }
         }
         createNetPlayer(game, socket, playerName);
-        if (game.canJoin() && !privateGameName) {
-            pending.push(game);
+        if (game.canJoin()) {
+            // The game is not yet full; still open for more players.
+            publicGames.push(game);
         }
-    });
+    }
 
     socket.on('create', function(data) {
         var gameName = data.gameName;
         while (privateGames[gameName]) {
-            //gameName += Date.now() % 17 + '';
-            gameName += 'x';
+            gameName += ' (1)';
         }
-        privateGames[gameName] = {};
         var game = createGame({
             debug: argv.debug,
             logger: winston,
@@ -105,7 +113,7 @@ io.on('connection', function (socket) {
         privateGames[gameName] = game;
 
         socket.emit('created', {
-            gameName:gameName
+            gameName: gameName
         });
     });
 
