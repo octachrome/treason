@@ -56,7 +56,7 @@ ko.bindingHandlers.tooltip = {
     }
 };
 var socket;
-function join(form, event, privateGameName) {
+function join(form, event, gameName) {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
         alert('Enter a valid name');
     }
@@ -70,7 +70,7 @@ function join(form, event, privateGameName) {
         socket = io();
 
         socket.on('gamenotfound', function(data) {
-            vm.welcomeMessage('Private game: "' + data.privateGameName + '" was not found.');
+            vm.welcomeMessage('Private game: "' + data.gameName + '" was not found.');
             vm.state.state.name(null);
         });
 
@@ -120,7 +120,7 @@ function join(form, event, privateGameName) {
     }
     socket.emit('join', {
         playerName: vm.playerName(),
-        privateGameName: privateGameName
+        gameName: gameName
     });
 }
 function create(form, event) {

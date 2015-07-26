@@ -42,13 +42,13 @@ io.on('connection', function (socket) {
         reapPrivateGames();
 
         var playerName = data.playerName;
-        var privateGameName = data.privateGameName;
+        var gameName = data.gameName;
 
         if (!playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
             return;
         }
-        if (privateGameName) {
-            joinPrivateGame(playerName, privateGameName);
+        if (gameName) {
+            joinPrivateGame(playerName, gameName);
         } else {
             joinOrCreatePublicGame(playerName);
         }
@@ -68,7 +68,7 @@ io.on('connection', function (socket) {
         var game = privateGames[gameName];
         if (!game) {
             socket.emit('gamenotfound', {
-                privateGameName: gameName
+                gameName: gameName
             });
             return;
         }
