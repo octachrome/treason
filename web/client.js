@@ -66,6 +66,10 @@ function join(form, event, gameName) {
     if (form && form.privateGameName && form.privateGameName.value) {
         gameName = form.privateGameName.value;
     }
+    if (gameName) {
+        //Firefox encodes URLs copied from the address bar.
+        gameName = decodeURIComponent(gameName);
+    }
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
         alert('Enter a valid name');
     }
