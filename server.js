@@ -129,7 +129,7 @@ fs.readFile('adjectives.txt', function(err, data) {
     if (err) {
         throw err;
     }
-    adjectives = data.toString().split('\n');
+    adjectives = data.toString().replace(/\r\n/g,'\n').split('\n');
 });
 
 function randomGameName(playerName) {
