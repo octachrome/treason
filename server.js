@@ -1,5 +1,8 @@
 'use strict';
 
+var fs = require('fs');
+var rand = require('random-seed')();
+
 var argv = require('optimist')
     .usage('$0 [--debug] [--port <port>] [--log <logfile>]')
     .default('port', 8080)
@@ -99,10 +102,7 @@ io.on('connection', function (socket) {
     }
 
     socket.on('create', function(data) {
-        var gameName = data.gameName;
-        while (privateGames[gameName]) {
-            gameName += ' (1)';
-        }
+        var gameName = randomGameName(data.gameName);
         var game = createGame({
             debug: argv.debug,
             logger: winston,
@@ -122,3 +122,27 @@ io.on('connection', function (socket) {
         socket = null;
     })
 });
+
+var adjectives;
+
+fs.readFile('adjectives.txt', function(err, data) {
+    if (err) {
+        throw err;
+    }
+    adjectives = data.toString().split('\n');
+});
+
+function randomGameName(playerName) {
+    var i = 1;
+    while (true) {
+        var adjective = adjectives[rand(adjectives.length)];
+        var gameName =  playerName + "'s " + adjective + " game";
+        if (i > 100) {
+            gameName += " (" + i + ")";
+        }
+        if (!privateGames[gameName]) {
+            return gameName;
+        }
+        i++;
+    }
+}
