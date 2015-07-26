@@ -132,7 +132,7 @@ function create(form, event) {
         socket.on('created', function(data) {
             socket.emit('disconnect');
             socket = null;
-            window.location += '#' + data.gameName;
+            location.hash = data.gameName;
         });
 
         socket.emit('create', {
