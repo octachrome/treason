@@ -178,10 +178,10 @@ module.exports = function createGame(options) {
             }
         }
         if (winnerIdx != null) {
-            state.state = {
+            setState({
                 name: stateNames.GAME_WON,
                 playerIdx: winnerIdx
-            };
+            });
             return true;
         } else {
             return false;
@@ -249,10 +249,10 @@ module.exports = function createGame(options) {
                 }
             }
             var firstPlayer = Math.floor(Math.random() * state.numPlayers);
-            state.state = {
+            setState({
                 name: stateNames.START_OF_TURN,
                 playerIdx: firstPlayer
-            };
+            });
         }
     }
 
@@ -320,13 +320,13 @@ module.exports = function createGame(options) {
                 } else {
                     message = format('{%d} attempted to draw %s', playerIdx, command.action);
                 }
-                state.state = {
+                setState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: playerIdx,
                     action: command.action,
                     target: command.target,
                     message: message
-                };
+                });
                 resetAllows(playerIdx);
             }
 
@@ -415,14 +415,14 @@ module.exports = function createGame(options) {
             if (state.state.name == stateNames.ACTION_RESPONSE) {
                 addHistory(state.state.action, state.state.message);
             }
-            state.state = {
+            setState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: state.state.playerIdx,
                 action: state.state.action,
                 target: playerIdx,
                 blockingRole: command.blockingRole,
                 message: format('{%d} attempted to block with ' + command.blockingRole, playerIdx)
-            };
+            });
             resetAllows(playerIdx);
 
         } else if (command.command == 'allow') {
@@ -524,13 +524,13 @@ module.exports = function createGame(options) {
             var target = state.players[state.state.target];
             if (action.blockedBy && target.influenceCount > 0) {
                 // The targeted player has a final chance to block the action.
-                state.state = {
+                setState({
                     name: stateNames.FINAL_ACTION_RESPONSE,
                     playerIdx: state.state.playerIdx,
                     action: state.state.action,
                     target: state.state.target,
                     message: state.state.message
-                };
+                });
                 return false;
             } else {
                 // The action cannot be blocked - it goes ahead.
@@ -609,7 +609,7 @@ module.exports = function createGame(options) {
                 }
             } else {
                 // The action will take place after the reveal.
-                state.state = {
+                setState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: state.state.playerIdx,
                     action: state.state.action,
@@ -618,7 +618,7 @@ module.exports = function createGame(options) {
                     message: message,
                     reason: 'incorrect-challenge',
                     playerToReveal: playerIdx
-                };
+                });
             }
         } else {
             // Player does not have role - challenge won.
@@ -644,7 +644,7 @@ module.exports = function createGame(options) {
                     nextTurn();
                 }
             } else {
-                state.state = {
+                setState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: state.state.playerIdx,
                     action: state.state.action,
@@ -653,7 +653,7 @@ module.exports = function createGame(options) {
                     message: message,
                     reason: 'successful-challenge',
                     playerToReveal: challengedPlayerIdx
-                };
+                });
             }
         }
     }
@@ -684,7 +684,7 @@ module.exports = function createGame(options) {
                 addHistory('assassinate', '%s; {%d} revealed %s', message, actionState.target, revealedRole);
                 afterPlayerDeath(actionState.target);
             } else if (target.influenceCount > 1) {
-                state.state = {
+                setState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: state.state.playerIdx,
                     action: actionState.action,
@@ -693,7 +693,7 @@ module.exports = function createGame(options) {
                     message: message,
                     reason: 'assassinate',
                     playerToReveal: actionState.target
-                };
+                });
                 return false; // Not yet end of turn
             }
         } else if (actionState.action == 'coup') {
@@ -704,7 +704,7 @@ module.exports = function createGame(options) {
                 addHistory('coup', '%s; {%d} revealed %s', message, actionState.target, revealedRole);
                 afterPlayerDeath(actionState.target);
             } else {
-                state.state = {
+                setState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: state.state.playerIdx,
                     action: actionState.action,
@@ -713,7 +713,7 @@ module.exports = function createGame(options) {
                     message: message,
                     reason: 'coup',
                     playerToReveal: actionState.target
-                };
+                });
                 return false; // Not yet end of turn
             }
         } else if (actionState.action == 'steal') {
@@ -728,17 +728,21 @@ module.exports = function createGame(options) {
             }
         } else if (actionState.action == 'exchange') {
             var exchangeOptions = [deck.pop(), deck.pop()].concat(getInfluence(player));
-            state.state = {
+            setState({
                 name: stateNames.EXCHANGE,
                 playerIdx: state.state.playerIdx,
                 action: actionState.action,
                 exchangeOptions: exchangeOptions
-            };
+            });
             return false; // Not yet end of turn
         } else {
             addHistory(actionState.action, '{%d} drew %s', playerIdx, actionState.action);
         }
         return true; // End of turn
+    }
+
+    function setState(s) {
+        state.state = s;
     }
 
     function swapRole(role) {
@@ -750,10 +754,10 @@ module.exports = function createGame(options) {
     function nextTurn() {
         debug('next turn');
         if (state.state.name != stateNames.GAME_WON) {
-            state.state = {
+            setState({
                 name: stateNames.START_OF_TURN,
                 playerIdx: nextPlayerIdx()
-            };
+            });
         }
     }
 
@@ -884,7 +888,7 @@ module.exports = function createGame(options) {
     }
 
     function _test_setTurnState(turn, emit) {
-        state.state = turn;
+        setState(turn);
         if (emit) {
             emitState();
         }
