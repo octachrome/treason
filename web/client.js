@@ -415,6 +415,13 @@ function buttonActionClass(actionName) {
 function buttonRoleClass(role) {
     return 'btn-' + role;
 }
+function historyBorderClass(items) {
+    if (items.length) {
+        return 'hist-' + items[0].icon;
+    } else {
+        return '';
+    }
+}
 function actionNames() {
     // This is the order I want them to appear in the UI.
     return [

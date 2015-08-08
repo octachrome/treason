@@ -124,6 +124,18 @@ div.chat {
     opacity: 1.0;
     color: white;
 }
+.hist-steal {
+    border-left: 5px solid hsl(195, 60%, 50%);
+}
+.hist-tax {
+    border-left: 5px solid hsl(280, 60%, 50%);
+}
+.hist-assassinate {
+    border-left: 5px solid hsl(0, 0%, 20%);
+}
+.hist-exchange {
+    border-left: 5px solid hsl(80, 60%, 45%);
+}
 .current-player {
     border-left: 5px solid #1e90ff;
 }
