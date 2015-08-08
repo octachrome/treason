@@ -98,6 +98,7 @@ function join(form, event, gameName) {
             vm.targetedAction('');
             vm.weAllowed(false);
             $('.activity').scrollTop(0);
+            $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
             console.log(data);
         });
         socket.on('history', function (data) {
