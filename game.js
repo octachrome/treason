@@ -366,7 +366,7 @@ module.exports = function createGame(options) {
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
                     player.influenceCount--;
-                    contHistory(state.state.reason, '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
+                    addHistoryEx(state.state.reason, state.state.continuation, '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
                     if (state.state.message.indexOf('incorrectly challenged') >= 0) {
                         if (afterIncorrectChallenge()) {
                             nextTurn();
@@ -618,7 +618,8 @@ module.exports = function createGame(options) {
                     blockingRole: state.state.blockingRole,
                     message: message,
                     reason: 'incorrect-challenge',
-                    playerToReveal: playerIdx
+                    playerToReveal: playerIdx,
+                    continuation: true
                 });
             }
         } else {
@@ -653,7 +654,8 @@ module.exports = function createGame(options) {
                     blockingRole: state.state.blockingRole,
                     message: message,
                     reason: 'successful-challenge',
-                    playerToReveal: challengedPlayerIdx
+                    playerToReveal: challengedPlayerIdx,
+                    continuation: true
                 });
             }
         }
@@ -693,7 +695,8 @@ module.exports = function createGame(options) {
                     blockingRole: actionState.blockingRole,
                     message: message,
                     reason: 'assassinate',
-                    playerToReveal: actionState.target
+                    playerToReveal: actionState.target,
+                    continuation: cont
                 });
                 return false; // Not yet end of turn
             }
@@ -713,7 +716,8 @@ module.exports = function createGame(options) {
                     blockingRole: actionState.blockingRole,
                     message: message,
                     reason: 'coup',
-                    playerToReveal: actionState.target
+                    playerToReveal: actionState.target,
+                    continuation: cont
                 });
                 return false; // Not yet end of turn
             }
