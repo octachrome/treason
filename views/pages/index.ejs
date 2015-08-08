@@ -83,6 +83,7 @@
                                 <!-- /ko -->
                             <!-- /ko -->
                             <!-- ko if: targetedAction -->
+                                <i data-bind="css: targetedAction"></i>
                                 <span data-bind="text: targetedAction"></span>:
                                 <!-- ko foreach: state.players -->
                                     <!-- ko if: canTarget($index()) -->
@@ -96,9 +97,11 @@
                             Waiting for <span data-bind="text: currentPlayerName()"></span> to play
                         </div>
                         <div data-bind="visible: theyAreInState('exchange')">
+                            <i class="exchange"></i>
                             Waiting for <span data-bind="text: currentPlayerName()"></span> to exchange roles
                         </div>
                         <div data-bind="visible: weAreInState('exchange')">
+                            <i class="exchange"></i>
                             Choose <span data-bind="text: ourInfluenceCount()"></span> roles to keep:<br/>
                             <!-- ko foreach: state.state.exchangeOptions -->
                                 <span data-bind="text: $data"></span>
@@ -111,10 +114,12 @@
                             </button>
                         </div>
                         <div data-bind="visible: weAreInState('action-response')">
+                            <i data-bind="css: state.state.action"></i>
                             <span data-bind="text: stateMessage()"></span><br/><br/>
                             Waiting for blocks/challenges
                         </div>
                         <div data-bind="visible: theyAreInState('action-response')">
+                            <i data-bind="css: state.state.action"></i>
                             <span data-bind="text: stateMessage()"></span><br/><br/>
                             <!-- ko if: !weAreAlive() -->
                                 Waiting for blocks/challenges
@@ -139,9 +144,11 @@
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreInState('final-action-response')">
+                            <i data-bind="css: state.state.action"></i>
                             Waiting for blocks
                         </div>
                         <div data-bind="visible: theyAreInState('final-action-response')">
+                            <i data-bind="css: state.state.action"></i>
                             <!-- ko if: !weCanBlock() -->
                                 Waiting for blocks
                             <!-- /ko -->
@@ -159,10 +166,12 @@
                             <!-- /ko -->
                         </div>
                         <div data-bind="visible: weAreTargeted('block-response')">
+                            <i class="block"></i>
                             <span data-bind="text: stateMessage()"></span><br/><br/>
                             Waiting for challenges
                         </div>
                         <div data-bind="visible: theyAreTargeted('block-response') &amp;&amp; weAreAlive()">
+                            <i class="block"></i>
                             <span data-bind="text: stateMessage()"></span><br/><br/>
                             <!-- ko if: !weAreAlive() -->
                                 Waiting for challenges
