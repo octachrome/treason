@@ -208,17 +208,15 @@
                         Waiting for <span data-bind="text: toRevealPlayerName()"></span> to reveal an influence
                     </div>
                 </div>
-                <ul class="list-group">
-                    <!-- ko foreach: history -->
-                        <li class="list-group-item">
-                            <ul class="history-group" data-bind="foreach: $data">
-                                <li class="history-group-item">
-                                    <i data-bind="css: icon"></i>
-                                    <span data-bind="text: message"></span>
-                                </li>
-                            </ul>
-                        </li>
-                    <!-- /ko -->
+                <ul class="list-group" data-bind="foreach: history">
+                    <li class="list-group-item">
+                        <ul class="history-group" data-bind="foreach: {data: $data, afterAdd: slideIn}">
+                            <li class="history-group-item">
+                                <i data-bind="css: icon"></i>
+                                <span data-bind="text: message"></span>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
         </div>

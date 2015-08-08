@@ -461,6 +461,11 @@ function sendMessage(event) {
         $('textarea').val('');
     }
 }
+function slideIn(el) {
+    $(el).filter('li')
+        .effect('slide', {direction: 'left'}, 400)
+        .effect('highlight', {color: '#ddeeff'}, 1000);
+}
 $(window).on('resize', function () {
     $('.activity').height($(window).height() - 40);
     $('.activity').scrollTop(0);
