@@ -412,10 +412,15 @@ function sendMessage(event) {
         $('textarea').val('');
     }
 }
-function slideIn(el) {
-    $(el).filter('li')
-        .effect('slide', {direction: 'left'}, 400)
-        .effect('highlight', {color: '#ddeeff'}, 1000);
+function animateHistory(e) {
+    var el = $(e).filter('li');
+
+    if (el.data('icon') == 'player-died') {
+        el.effect('shake', {times: '5'}, 1000);
+    } else {
+        el.effect('slide', {direction: 'left'}, 400)
+            .effect('highlight', {color: '#ddeeff'}, 1000);
+    }
 }
 $(window).on('resize', function () {
     $('.activity').height($(window).height() - 40);
