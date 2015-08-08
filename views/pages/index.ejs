@@ -181,7 +181,7 @@
                     </div>
                 </div>
                 <ul class="list-group" data-bind="foreach: history">
-                    <li class="list-group-item">
+                    <li class="list-group-item" data-bind="css: historyBorderClass($data)">
                         <ul class="history-group" data-bind="foreach: {data: $data, afterAdd: slideIn}">
                             <li class="history-group-item">
                                 <i data-bind="css: icon"></i>
