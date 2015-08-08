@@ -413,7 +413,7 @@ module.exports = function createGame(options) {
             }
             // Original player is in the playerIdx field; blocking player is in the target field.
             if (state.state.name == stateNames.ACTION_RESPONSE) {
-                contHistory(state.state.action, state.state.message);
+                addHistory(state.state.action, state.state.message);
             }
             setState({
                 name: stateNames.BLOCK_RESPONSE,
@@ -460,7 +460,7 @@ module.exports = function createGame(options) {
             }
             // Return the other roles to the deck.
             deck = shuffle(deck.concat(unchosen));
-            contHistory('exchange', '{%d} exchanged roles', playerIdx);
+            addHistoryEx('exchange', state.state.continuation, '{%d} exchanged roles', playerIdx);
             nextTurn();
 
         } else {
@@ -580,9 +580,11 @@ module.exports = function createGame(options) {
             throw new GameException('Cannot identify challenged player');
         }
         if (state.state.blockingRole) {
+            // Someone already blocked, so the history item is a continuation.
             contHistory('block', state.state.message);
         } else {
-            contHistory(state.state.action, state.state.message);
+            // Otherwise, this is the first history item (<player> attempted to <action>).
+            addHistory(state.state.action, state.state.message);
         }
 
         var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole);
@@ -734,7 +736,9 @@ module.exports = function createGame(options) {
                 name: stateNames.EXCHANGE,
                 playerIdx: state.state.playerIdx,
                 action: actionState.action,
-                exchangeOptions: exchangeOptions
+                exchangeOptions: exchangeOptions,
+                // After exchanging, need to know whether to create a new history item or continue existing one
+                continuation: cont
             });
             return false; // Not yet end of turn
         } else {
