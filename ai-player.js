@@ -30,9 +30,10 @@ fs.readFile('names.txt', function(err, data) {
 
 function createAiPlayer(game, options) {
     options = extend({
-        moveDelay: 0,       // How long the AI will "think" for before playing its move (ms)
-        searchHorizon: 7,   // How many moves the AI will search ahead for an end-game
-        chanceToBluff: 0.5  // How likely the AI is to bluff
+        moveDelay: 0,           // How long the AI will "think" for before playing its move (ms)
+        searchHorizon: 7,       // How many moves the AI will search ahead for an end-game
+        chanceToBluff: 0.5,     // Fraction of games in which the AI will bluff
+        chanceToChallenge: 0.1  // Fraction of turns in which the AI will challenge (not in the end-game)
     }, options);
 
     var rand = randomGen.create(options.randomSeed);
@@ -186,19 +187,41 @@ function createAiPlayer(game, options) {
     }
 
     function shouldChallenge() {
-        if (!isEndGame()) {
-            return false;
-        }
+        // Cannot challenge after a failed challenge.
         if (state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
-            // Cannot challenge after a failed challenge.
             return false;
         }
-        if (state.state.action != 'tax' && state.state.action != 'steal' && state.state.action != 'assassinate') {
-            // Only challenge actions that could lead to a victory if not challenged.
+        // Only challenge actions that could lead to a victory if not challenged.
+        if (!actionIsWorthChallenging()) {
             return false;
         }
-        // Challenge if the opponent would otherwise win soon.
-        return simulate() < 0;
+        if (isEndGame()) {
+            var result = simulate() < 0;
+            // Challenge if the opponent would otherwise win soon.
+            if (result < 0) {
+                return true;
+            }
+            // Don't bother challenging if we're going to win anyway.
+            if (result > 0) {
+                return false;
+            }
+        }
+        // Challenge at random.
+        return rand.random() < options.chanceToChallenge;
+    }
+
+    function actionIsWorthChallenging() {
+        // Worth challenging anyone drawing tax.
+        if (state.state.action == 'tax') {
+            return true;
+        }
+        // Worth chalenging someone assassinating us or stealing from us,
+        // Or someone trying to block us from assassinating or stealing.
+        if ((state.state.action == 'steal' || state.state.action == 'assassinate') &&
+            (state.state.playerIdx == state.playerIdx || state.state.target == state.playerIdx)) {
+            return true;
+        }
+        return false;
     }
 
     function isEndGame() {
@@ -295,6 +318,8 @@ function createAiPlayer(game, options) {
                 } else if (actionName == 'assassinate') {
                     playAction('assassinate', assassinTarget());
                 }
+                // Now that we've bluffed, recalculate whether or not to bluff next time.
+                bluffChoice = rand.random() < options.chanceToBluff;
             } else {
                 // No bluffing.
                 if (influence.indexOf('assassin') < 0 ) {
@@ -309,13 +334,13 @@ function createAiPlayer(game, options) {
     }
 
     function shouldBluff(actionName) {
-        if (!bluffChoice) {
-            // We shall not bluff in this game.
-            return false;
-        }
         var action = actions[actionName];
         if (calledBluffs.indexOf(action.role) >= 0) {
             // Don't bluff a role that we previously bluffed and got caught out on.
+            return false;
+        }
+        if (!bluffChoice && !claims[state.playerIdx][action.role]) {
+            // We shall not bluff (unless we already claimed this role earlier).
             return false;
         }
         if (Object.keys(claims[state.playerIdx]).length > 2 && !claims[state.playerIdx][action.role]) {
@@ -327,6 +352,7 @@ function createAiPlayer(game, options) {
             // If bluffing would win us the game, we will probably be challenged, so don't bluff.
             return false;
         } else {
+            // We will bluff.
             return true;
         }
     }
