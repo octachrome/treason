@@ -21,7 +21,7 @@ var actionsToRoles = {
 // http://random-name-generator.info/
 var aiPlayerNames;
 
-fs.readFile('names.txt', function(err, data) {
+fs.readFile(__dirname + '/names.txt', function(err, data) {
     if (err) {
         throw err;
     }
