@@ -2,6 +2,7 @@
 
 var extend = require('extend');
 var randomGen = require('random-seed');
+var fs = require('fs');
 
 var shared = require('./web/shared');
 var stateNames = shared.states;
@@ -15,28 +16,17 @@ var actionsToRoles = {
     'exchange': 'ambassador'
 };
 
-var aiPlayerNames = [
-    'Frank',
-    'Bob',
-    'Stuart',
-    'Kevin',
-    'Phil',
-    'Pete',
-    'Carl',
-    'Dave',
-    'Steve',
-    'Tim',
-    'Mark',
-    'Jim',
-    'Tom',
-    'Joe',
-    'Ed',
-    'Ron',
-    'Gary',
-    'Eric',
-    'Walt',
-    'Mike'
-];
+// https://www.randomlists.com/random-first-names
+// http://listofrandomnames.com/
+// http://random-name-generator.info/
+var aiPlayerNames;
+
+fs.readFile('names.txt', function(err, data) {
+    if (err) {
+        throw err;
+    }
+    aiPlayerNames = data.toString().split(/\r?\n/);
+});
 
 function createAiPlayer(game, options) {
     options = extend({
