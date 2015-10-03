@@ -367,11 +367,11 @@ module.exports = function createGame(options) {
                     influence.revealed = true;
                     player.influenceCount--;
                     addHistoryEx(state.state.reason, state.state.continuation, '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
-                    if (state.state.message.indexOf('incorrectly challenged') >= 0) {
+                    if (state.state.reason == 'incorrect-challenge') {
                         if (afterIncorrectChallenge()) {
                             nextTurn();
                         }
-                    } else if (state.state.message.indexOf('successfully challenged') >= 0) {
+                    } else if (state.state.reason == 'successful-challenge') {
                         if (afterSuccessfulChallenge()) {
                             nextTurn();
                         }

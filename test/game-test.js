@@ -47,7 +47,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'exchange',
                     playerToReveal: 1,
-                    message: 'incorrectly challenged'
+                    reason: 'incorrect-challenge'
                 });
             });
 
@@ -83,7 +83,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'exchange',
                     playerToReveal: 0,
-                    message: 'successfully challenged'
+                    reason: 'successful-challenge'
                 });
             });
 
@@ -120,7 +120,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'assassinate',
                     target: 1,
-                    message: 'incorrectly challenged',
+                    reason: 'incorrect-challenge',
                     playerToReveal: 2
                 });
             });
@@ -159,7 +159,7 @@ describe('Game', function () {
                     action: 'assassinate',
                     target: 1,
                     playerToReveal: 0,
-                    message: 'successfully challenged'
+                    reason: 'successful-challenge'
                 });
             });
 
@@ -197,7 +197,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'tax',
                     playerToReveal: 1,
-                    message: 'incorrectly challenged'
+                    reason: 'incorrect-challenge'
                 });
             });
 
@@ -241,7 +241,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'tax',
                     playerToReveal: 0,
-                    message: 'sucessfuly challenged'
+                    reason: 'sucessful-challenge'
                 });
             });
 
@@ -287,7 +287,7 @@ describe('Game', function () {
                     target: 1,
                     blockingRole: 'ambassador',
                     playerToReveal: 0,
-                    message: 'incorrectly challenged'
+                    reason: 'incorrect-challenge'
                 });
             });
 
@@ -332,7 +332,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'coup',
                     playerToReveal: 1,
-                    message: 'staged a coup'
+                    reason: 'coup'
                 });
             });
 
@@ -375,7 +375,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'coup',
                     playerToReveal: 1,
-                    message: 'staged a coup'
+                    reason: 'coup'
                 });
             });
 
