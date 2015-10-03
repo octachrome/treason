@@ -188,11 +188,53 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should bluff duke or captain (random)', function () {
+            it('Then the AI should bluff captain (random)', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
                     expect(state.state.playerIdx).to.be(AI_IDX);
-                    expect(state.state.action).to.match(/tax|steal/);
+                    expect(state.state.action).to.be('steal');
+                });
+            });
+        });
+
+        describe('When our captain bluff has previously been called', function () {
+            beforeEach(function () {
+                game._test_setTurnState({
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: AI_IDX,
+                    action: 'steal',
+                    target: OPPONENT_IDX,
+                    playerToReveal: AI_IDX,
+                    reason: 'successful-challenge'
+                }, true);
+
+                return testPlayer.getNextState().then(function (state) {
+                    expect(state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+
+                    return testPlayer.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                    });
+                });
+            });
+
+            describe('When it is the AI turn', function () {
+                beforeEach(function () {
+                    game._test_setTurnState({
+                        name: stateNames.START_OF_TURN,
+                        playerIdx: AI_IDX
+                    }, true);
+
+                    return testPlayer.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                    });
+                });
+
+                it('Then the AI should not bluff captain again', function () {
+                    return testPlayer.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
+                        expect(state.state.playerIdx).to.be(AI_IDX);
+                        expect(state.state.action).not.to.be('steal');
+                    });
                 });
             });
         });

@@ -30,9 +30,9 @@ fs.readFile('names.txt', function(err, data) {
 
 function createAiPlayer(game, options) {
     options = extend({
-        moveDelay: 0,
-        searchHorizon: 7,
-        chanceToBluff: 0.5
+        moveDelay: 0,       // How long the AI will "think" for before playing its move (ms)
+        searchHorizon: 7,   // How many moves the AI will search ahead for an end-game
+        chanceToBluff: 0.5  // How likely the AI is to bluff
     }, options);
 
     var rand = randomGen.create(options.randomSeed);
@@ -61,6 +61,8 @@ function createAiPlayer(game, options) {
     // The last role to be claimed. Used when a challenge is issued, to track which role was challenged.
     var lastRoleClaim;
     var timeout = null;
+    // Roles that we have bluffed and then been called on - can no longer bluff these.
+    var calledBluffs = [];
 
     function onStateChange(s) {
         state = s;
@@ -101,6 +103,7 @@ function createAiPlayer(game, options) {
         } else if (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer) {
             respondToBlock();
         } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == state.playerIdx) {
+            updateCalledBluffs();
             revealLowestRanked();
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();
@@ -311,6 +314,10 @@ function createAiPlayer(game, options) {
             return false;
         }
         var action = actions[actionName];
+        if (calledBluffs.indexOf(action.role) >= 0) {
+            // Don't bluff a role that we previously bluffed and got caught out on.
+            return false;
+        }
         if (Object.keys(claims[state.playerIdx]).length > 2 && !claims[state.playerIdx][action.role]) {
             // We have already bluffed a different role: don't bluff any more.
             return false;
@@ -363,6 +370,19 @@ function createAiPlayer(game, options) {
             }
         }
         return roles;
+    }
+
+    function updateCalledBluffs() {
+        // We are in reveal state.
+        if (state.state.reason = 'successful-challenge') {
+            if (state.state.target == state.playerIdx && state.state.blockingRole) {
+                // We bluffed a blocking role.
+                calledBluffs.push(state.state.blockingRole);
+            } else if (state.state.playerIdx == state.playerIdx && state.state.action) {
+                // We bluffed an action.
+                calledBluffs.push(actionsToRoles[state.state.action]);
+            }
+        }
     }
 
     function revealLowestRanked() {
