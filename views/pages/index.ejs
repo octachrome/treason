@@ -31,7 +31,7 @@
                 <h3>Treason Coup</h3>
                 <p data-bind="text: version"></p>
                 <form data-bind="submit: join">
-                    <p><input type="text" placeholder="Name" data-bind="value: playerName"/></p>
+                    <p><input type="text" placeholder="Name" data-bind="value: playerName, valueUpdate: 'keyup'"/></p>
                     <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join game</button></p>
                 </form>
                 <p><a href="rules.html" target="blank">How to play</a></p>
