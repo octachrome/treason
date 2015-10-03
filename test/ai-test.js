@@ -89,7 +89,7 @@ describe('AI', function () {
             it('Then the AI should bluff captain/ambassador', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.BLOCK_RESPONSE);
-                    expect(state.state.blockingRole).to.be('ambassador');
+                    expect(state.state.blockingRole).to.match(/captain|ambassador/);
                     expect(state.state.playerIdx).to.be(OPPONENT_IDX);
                 });
             });
@@ -188,11 +188,11 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should bluff duke and draw tax (random)', function () {
+            it('Then the AI should bluff duke or captain (random)', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
                     expect(state.state.playerIdx).to.be(AI_IDX);
-                    expect(state.state.action).to.be('tax');
+                    expect(state.state.action).to.match(/tax|steal/);
                 });
             });
         });
@@ -218,7 +218,7 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should exchange instead of bluffing a winning move', function () {
+            it('Then the AI should exchange instead of bluffing a winning move (because we will just get challenged)', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
                     expect(state.state.playerIdx).to.be(AI_IDX);

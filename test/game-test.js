@@ -411,9 +411,7 @@ describe('Game', function () {
 
             describe('When player1 leaves the game', function () {
                 beforeEach(function () {
-                    return player2.getNextState().then(function () {
-                        player1.leaveGame();
-                    });
+                    player1.leaveGame();
                 });
 
                 it('Then the turn should pass to player2', function () {
