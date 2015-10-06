@@ -3,6 +3,7 @@ vm = {
     welcomeMessage: ko.observable(''),
     targetedAction: ko.observable(''),
     weAllowed: ko.observable(false),
+    chosenExchangeOptions: ko.observable({}),
     sidebar: ko.observable('chat'),
     history: ko.observableArray()
 };
@@ -68,6 +69,7 @@ function join() {
             ko.mapping.fromJS(data, vm.state);
             vm.targetedAction('');
             vm.weAllowed(false);
+            vm.chosenExchangeOptions({});
             $('.activity').scrollTop(0);
             $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
             console.log(data);
@@ -288,18 +290,41 @@ function reveal(influence) {
         role: influence.role()
     });
 }
-function exchange() {
-    var checked = $('input:checked');
+function toggleExchangeOption(index) {
+    var options = vm.chosenExchangeOptions();
+    if (options[index]) {
+        delete options[index];
+    } else {
+        options[index] = vm.state.state.exchangeOptions()[index];
+    }
+    vm.chosenExchangeOptions(options);
+}
+function exchangeOptionClass(index) {
+    if (vm.chosenExchangeOptions()[index]) {
+        return buttonRoleClass(vm.state.state.exchangeOptions()[index]);
+    } else {
+        return 'btn-default';
+    }
+}
+function chosenExchangeOptions() {
     var roles = [];
-    checked.each(function (index, el) {
-        roles.push($(el).data('role'));
-    });
+    var options = vm.chosenExchangeOptions();
+    for (key in options) {
+        if (options[key]) {
+            roles.push(options[key]);
+        }
+    }
+    return roles;
+}
+function exchangeOptionsValid() {
+    return chosenExchangeOptions().length == ourInfluenceCount();
+}
+function exchange() {
+    var roles = chosenExchangeOptions();
     if (roles.length == ourInfluenceCount()) {
         command('exchange', {
             roles: roles
         });
-    } else {
-        alert('must choose ' + ourInfluenceCount() + ' roles');
     }
 }
 function formatMessage(message) {

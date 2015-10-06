@@ -83,9 +83,11 @@ div.chat {
 .btn-action {
     border-color: #ccc;
     background: white;
-    margin-top: 5px;
     padding-top: 0;
     padding-bottom: 0;
+}
+.btn {
+    margin-top: 5px;
 }
 .btn-action:focus {
     border-color: #ccc;
@@ -101,20 +103,24 @@ div.chat {
 .btn-action:disabled:hover {
     color: #888;
 }
-.label-duke, .btn-duke {
+.label-duke, .btn-duke, .btn-duke:focus {
     background-color: hsl(280, 60%, 50%);
 }
-.label-assassin, .btn-assassin {
+.label-assassin, .btn-assassin, .btn-assassin:focus {
     background-color: hsl(0, 0%, 20%);
 }
-.label-contessa, .btn-contessa {
+.label-contessa, .btn-contessa, .btn-contessa:focus {
     background-color: hsl(359, 60%, 50%);
 }
-.label-ambassador, .btn-ambassador {
+.label-ambassador, .btn-ambassador, .btn-ambassador:focus {
     background-color: hsl(80, 60%, 45%);
 }
-.label-captain, .btn-captain {
+.label-captain, .btn-captain, .btn-captain:focus {
     background-color: hsl(195, 60%, 50%);
+}
+.btn-default, .btn-default:focus {
+    background-color: white;
+    color: #333;
 }
 .btn-duke, .btn-assassin, .btn-contessa, .btn-ambassador, .btn-captain {
     color: white;
@@ -122,6 +128,9 @@ div.chat {
 }
 .btn-duke:hover, .btn-assassin:hover, .btn-contessa:hover, .btn-ambassador:hover, .btn-captain:hover {
     opacity: 1.0;
+    color: white;
+}
+.btn-duke:focus, .btn-assassin:focus, .btn-contessa:focus, .btn-ambassador:focus, .btn-captain:focus {
     color: white;
 }
 .hist-steal {

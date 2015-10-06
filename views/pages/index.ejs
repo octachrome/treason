@@ -86,11 +86,10 @@
                     <div data-bind="visible: weAreInState('exchange')">
                         Choose <span data-bind="text: ourInfluenceCount()"></span> roles to keep:<br/>
                         <!-- ko foreach: state.state.exchangeOptions -->
-                            <span data-bind="text: $data"></span>
-                            <input type="checkbox" data-bind="attr: { 'data-role': $data }"/>
-                            <br/>
+                            <button class="btn" data-bind="text: $data, css: exchangeOptionClass($index()), event: {vclick: function() {toggleExchangeOption($index());}}"></button>
                         <!-- /ko -->
-                        <button class="btn btn-action btn-ambassador" data-bind="event: {vclick: exchange}">
+                        <br/>
+                        <button class="btn btn-action btn-ambassador" data-bind="enable: exchangeOptionsValid(), event: {vclick: exchange}">
                             <i class="exchange"></i>
                             <span>Exchange</span>
                         </button>
@@ -100,8 +99,9 @@
                         Waiting for blocks/challenges
                     </div>
                     <div data-bind="visible: theyAreInState('action-response')">
-                        <span data-bind="text: stateMessage()"></span><br/><br/>
+                        <span data-bind="text: stateMessage()"></span><br/>
                         <!-- ko if: !weAreAlive() -->
+                            <br/>
                             Waiting for blocks/challenges
                         <!-- /ko -->
                         <!-- ko if: weAreAlive() -->
@@ -131,7 +131,7 @@
                             Waiting for blocks
                         <!-- /ko -->
                         <!-- ko if: weCanBlock() -->
-                            Last chance to block<br/><br/>
+                            Last chance to block<br/>
                             <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
                                 <i class="allow"></i>
                                 <span>Allow</span>
@@ -149,8 +149,9 @@
                         Waiting for challenges
                     </div>
                     <div data-bind="visible: theyAreTargeted('block-response') &amp;&amp; weAreAlive()">
-                        <span data-bind="text: stateMessage()"></span><br/><br/>
+                        <span data-bind="text: stateMessage()"></span><br/>
                         <!-- ko if: !weAreAlive() -->
+                            <br/>
                             Waiting for challenges
                         <!-- /ko -->
                         <!-- ko if: weAreAlive() -->
@@ -174,9 +175,9 @@
                     </div>
                     <div data-bind="visible: weMustReveal()">
                         <span data-bind="text: stateMessage()"></span><br/><br/>
-                        Must reveal an influence
+                        Must reveal an influence<br/>
                         <!-- ko foreach: ourInfluence() -->
-                        <button class="btn btn-xs" data-bind="text: role, css: buttonRoleClass(role()), visible: !revealed(), event: {vclick: reveal}"></button>
+                        <button class="btn" data-bind="text: role, css: buttonRoleClass(role()), visible: !revealed(), event: {vclick: reveal}"></button>
                         <!-- /ko -->
                     </div>
                     <div data-bind="visible: theyMustReveal()">
