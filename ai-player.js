@@ -196,7 +196,7 @@ function createAiPlayer(game, options) {
             return false;
         }
         if (isEndGame()) {
-            var result = simulate() < 0;
+            var result = simulate();
             // Challenge if the opponent would otherwise win soon.
             if (result < 0) {
                 return true;
