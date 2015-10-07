@@ -6,7 +6,6 @@ Licensed under Creative Commons Attribution-NonCommercial, http://creativecommon
 
 Icons
 -----
-
 Icons are from various sources.
 
 cycle.svg, hand.svg, pistol-gun.svg, plain-dagger.svg, snatch.svg, swap-bag.svg, broken-skull.svg, queen-crown.svg: http://game-icons.net; http://creativecommons.org/licenses/by/3.0
@@ -23,5 +22,4 @@ Font is Xolonium; http://openfontlibrary.org/en/font/xolonium; SIL Open Font Lic
 
 Coup
 -----
-
 The Coup card game is Copyright Rikki Tahta, La Mame Games.
