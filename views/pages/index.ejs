@@ -175,7 +175,7 @@
                     </div>
                     <div data-bind="visible: weMustReveal()">
                         <span data-bind="text: stateMessage()"></span><br/><br/>
-                        Must reveal an influence<br/>
+                        You must reveal an influence<br/>
                         <!-- ko foreach: ourInfluence() -->
                         <button class="btn" data-bind="text: role, css: buttonRoleClass(role()), visible: !revealed(), event: {vclick: reveal}"></button>
                         <!-- /ko -->

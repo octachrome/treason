@@ -13,8 +13,8 @@ describe('Game', function () {
 
     beforeEach(function () {
         game = createGame();
-        player0 = createTestPlayer(game);
-        player1 = createTestPlayer(game);
+        player0 = createTestPlayer(game, false, 'player0');
+        player1 = createTestPlayer(game, false, 'player');
         return player1.getNextState();
     });
 
@@ -113,7 +113,7 @@ describe('Game', function () {
         describe('Given a player is revealing an influence due to a failed assassin challenge', function () {
             beforeEach(function () {
                 game._test_setInfluence(0, 'assassin', 'captain');
-                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setInfluence(1, 'duke', 'ambassador');
                 game._test_setInfluence(2, 'duke', 'captain');
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
@@ -146,6 +146,23 @@ describe('Game', function () {
                         expect(state.state.target).to.be(1);
                     });
                 });
+
+                describe('When player1 allows the assassination', function () {
+                    beforeEach(function () {
+                        return player1.getNextState().then(function () {
+                            player1.command({
+                                command: 'allow'
+                            });
+                        });
+                    });
+
+                    it('Then player1 should have to reveal an influence', function () {
+                        return player1.getNextState().then(function (state) {
+                            expect(state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                            expect(state.state.playerToReveal).to.be(1);
+                        });
+                    });
+                })
             });
         });
 

@@ -1,8 +1,8 @@
 var Promise = require('es6-promise').Promise;
 
-function createTestPlayer(game, logHistory) {
+function createTestPlayer(game, logHistory, playerName) {
     var player = {
-        name: 'Test',
+        name: playerName || 'Test',
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
         onChatMessage: function() {}

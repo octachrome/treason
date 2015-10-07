@@ -482,19 +482,24 @@ module.exports = function createGame(options) {
             }
         } else if (state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
             if (state.state.playerIdx == playerIdx) {
-                throw new GameException('Cannot allow your own move');
+                throw new GameException('Cannot allow your own action');
             }
-            allows[playerIdx] = true;
-            if (everyoneAllows()) {
-                // Create a new history item if everyone allowed the initial action, with no other events.
-                var continuation = state.state.name != stateNames.ACTION_RESPONSE;
-                if (playAction(state.state.playerIdx, state.state, continuation)) {
-                    nextTurn();
+            if (state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
+                if (state.state.target != playerIdx) {
+                    throw new GameException('Only the targetted player can allow the action');
                 }
-                return true;
             } else {
-                return false;
+                allows[playerIdx] = true;
+                if (!everyoneAllows()) {
+                    return false;
+                }
             }
+            // Create a new history item if everyone allowed the initial action, with no other events.
+            var continuation = state.state.name != stateNames.ACTION_RESPONSE;
+            if (playAction(state.state.playerIdx, state.state, continuation)) {
+                nextTurn();
+            }
+            return true;
         } else {
             throw new GameException('Incorrect state');
         }
