@@ -64,7 +64,8 @@ io.on('connection', function (socket) {
                 game = createGame({
                     debug: argv.debug,
                     logger: winston,
-                    moveDelay: 1000 // For AI players
+                    moveDelay: 3000, // For AI players
+                    moveDelaySpread: 700
                 });
             }
         }

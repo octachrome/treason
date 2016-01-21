@@ -31,6 +31,7 @@ fs.readFile(__dirname + '/names.txt', function(err, data) {
 function createAiPlayer(game, options) {
     options = extend({
         moveDelay: 0,           // How long the AI will "think" for before playing its move (ms)
+        moveDelaySpread: 0,     // How much randomness to apply to moveDelay (ms)
         searchHorizon: 7,       // How many moves the AI will search ahead for an end-game
         chanceToBluff: 0.5,     // Fraction of games in which the AI will bluff
         chanceToChallenge: 0.1  // Fraction of turns in which the AI will challenge (not in the end-game)
@@ -70,7 +71,8 @@ function createAiPlayer(game, options) {
         if (timeout != null) {
             clearTimeout(timeout);
         }
-        timeout = setTimeout(onStateChangeAsync, options.moveDelay);
+        var delay = rand.intBetween(options.moveDelay - options.moveDelaySpread, options.moveDelay + options.moveDelaySpread);
+        timeout = setTimeout(onStateChangeAsync, delay);
     }
 
     function onStateChangeAsync() {
