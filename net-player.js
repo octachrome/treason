@@ -64,10 +64,12 @@ function createNetPlayer(game, socket, playerName) {
         }
     }
 
-    var onDisconnect = function () {
+    var onDisconnect = function onDisconnect() {
         if (gameProxy != null) {
             socket.removeListener('command', onCommand);
             socket.removeListener('chat', sendChatMessage);
+            socket.removeListener('disconnect', onDisconnect);
+            socket.removeListener('join', onDisconnect);
             gameProxy.playerLeft();
             gameProxy = null;
             game = null;
