@@ -180,7 +180,7 @@ module.exports = function createGame(options) {
     }
 
     function destroyGame() {
-        console.log('Destroying game');
+        debug('destroying game');
         players = [];
         proxies = [];
     }
