@@ -119,11 +119,13 @@ function createAiPlayer(game, options) {
             var playerIdx = match[1];
             var role = match[2];
             // If the player had previously claimed the role, this claim is no longer valid
-            delete claims[playerIdx][role];
+            if (claims[playerIdx]) {
+                delete claims[playerIdx][role];
+            }
         } else if (message.indexOf(' challenged') > 0) {
             // If a player was successfully challenged, any earlier claim was a bluff.
             // If a player was incorrectly challenged, they swap the role, so an earlier claim is no longer valid.
-            if (lastRoleClaim) {
+            if (lastRoleClaim && claims[lastRoleClaim.playerIdx]) {
                 delete claims[lastRoleClaim.playerIdx][lastRoleClaim.role];
             }
         }
@@ -424,7 +426,9 @@ function createAiPlayer(game, options) {
                     role: role
                 });
                 // Don't claim this role any more.
-                delete claims[state.playerIdx][role];
+                if (claims[state.playerIdx]) {
+                    delete claims[state.playerIdx][role];
+                }
                 return;
             }
         }
