@@ -166,7 +166,23 @@ module.exports = function createGame(options) {
             }
         }
         addHistory('player-left', player.name + ' left the game' + historySuffix);
+        checkOnlyAiLeft();
         emitState();
+    }
+
+    function checkOnlyAiLeft() {
+        for (var i = 0; i < players.length; i++) {
+            if (players[i] && !players[i].ai) {
+                return;
+            }
+        }
+        destroyGame();
+    }
+
+    function destroyGame() {
+        console.log('Destroying game');
+        players = [];
+        proxies = [];
     }
 
     function afterPlayerDeath(playerIdx) {

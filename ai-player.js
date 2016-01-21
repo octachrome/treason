@@ -44,7 +44,8 @@ function createAiPlayer(game, options) {
         name: aiPlayerNames[rand(aiPlayerNames.length)],
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
-        onChatMessage: function() {}
+        onChatMessage: function() {},
+        ai: true
     };
 
     try {
