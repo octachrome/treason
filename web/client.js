@@ -12,6 +12,7 @@
  */
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
+    activeUsers: ko.observable(),
     welcomeMessage: ko.observable(''),
     targetedAction: ko.observable(''),
     weAllowed: ko.observable(false),
@@ -59,7 +60,56 @@ ko.bindingHandlers.tooltip = {
         trigger: "click"
     }
 };
-var socket;
+var socket = io();
+socket.on('hello', function (data) {
+    vm.activeUsers(data.activeUsers);
+});
+socket.on('disconnect', function () {
+    vm.welcomeMessage('Disconnected');
+    vm.state.state.name(null); // Opens the welcome screen.
+});
+socket.on('state', function (data) {
+    ko.mapping.fromJS(data, vm.state);
+    vm.targetedAction('');
+    vm.weAllowed(false);
+    vm.chosenExchangeOptions({});
+    $('.activity').scrollTop(0);
+    $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
+    console.log(data);
+});
+socket.on('history', function (data) {
+    var items;
+    if (data.continuation && vm.history().length) {
+        // Collect related history items together.
+        items = vm.history()[0];
+    } else {
+        items = ko.observableArray();
+        vm.history.unshift(items);
+    }
+    items.push({
+        icon: data.type,
+        message: formatMessage(data.message)
+    });
+});
+socket.on('chat', function (data) {
+    var from;
+    if (data.from == vm.state.playerIdx()) {
+        from = 'You';
+    } else {
+        var player = vm.state.players()[data.from];
+        from = player ? player.name() : 'Unknown';
+    }
+    var html = '<b>' + from + ':</b> ' + data.message + '<br/>';
+    $('.chat').append(html);
+    $('.chat').scrollTop(10000);
+});
+socket.on('error', function (data) {
+    alert(data);
+});
+socket.on('game-error', function (data) {
+    console.error(data);
+});
+
 function join() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
         alert('Enter a valid name');
@@ -69,56 +119,6 @@ function join() {
     }
     vm.history([]);
     $('.chat').html('');
-    if (socket == null) {
-        // Re-use the same socket. Automatically reconnects if disconnected.
-        socket = io();
-
-        socket.on('disconnect', function () {
-            vm.welcomeMessage('Disconnected');
-            vm.state.state.name(null); // Opens the welcome screen.
-        });
-        socket.on('state', function (data) {
-            ko.mapping.fromJS(data, vm.state);
-            vm.targetedAction('');
-            vm.weAllowed(false);
-            vm.chosenExchangeOptions({});
-            $('.activity').scrollTop(0);
-            $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
-            console.log(data);
-        });
-        socket.on('history', function (data) {
-            var items;
-            if (data.continuation && vm.history().length) {
-                // Collect related history items together.
-                items = vm.history()[0];
-            } else {
-                items = ko.observableArray();
-                vm.history.unshift(items);
-            }
-            items.push({
-                icon: data.type,
-                message: formatMessage(data.message)
-            });
-        });
-        socket.on('chat', function (data) {
-            var from;
-            if (data.from == vm.state.playerIdx()) {
-                from = 'You';
-            } else {
-                var player = vm.state.players()[data.from];
-                from = player ? player.name() : 'Unknown';
-            }
-            var html = '<b>' + from + ':</b> ' + data.message + '<br/>';
-            $('.chat').append(html);
-            $('.chat').scrollTop(10000);
-        });
-        socket.on('error', function (data) {
-            alert(data);
-        });
-        socket.on('game-error', function (data) {
-            console.error(data);
-        });
-    }
     socket.emit('join', vm.playerName());
 }
 function start() {

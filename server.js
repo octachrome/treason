@@ -47,8 +47,24 @@ var createGame = require('./game');
 var createNetPlayer = require('./net-player');
 
 var pending = [];
+var sockets = {};
+var TIMEOUT = 30 * 60 * 1000;
 
 io.on('connection', function (socket) {
+    var timestamp = new Date().getTime();
+    sockets[socket.id] = timestamp;
+    var activeUsers = 0;
+    for (var id in sockets) {
+        if (timestamp - sockets[id] > TIMEOUT) {
+            delete sockets[id];
+        } else {
+            activeUsers++;
+        }
+    }
+    socket.emit('hello', {
+        activeUsers: activeUsers
+    });
+
     socket.on('join', function (playerName) {
         if (!playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
             return;
@@ -76,6 +92,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('disconnect', function () {
+        delete sockets[socket.id];
         socket.removeAllListeners();
         socket = null;
     })
