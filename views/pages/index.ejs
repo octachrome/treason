@@ -24,11 +24,12 @@
     <script src="version.js"></script>
 </head>
 <body>
+    <div class="banner" data-bind="visible: welcomeMessage, html: welcomeMessage"></div>
     <div class="container" data-bind="visible: !playing()">
+        <div class="row"><br/></div>
         <div class="row">
             <!-- Welcome screen -->
             <div class="col-xs-12">
-                <div class="alert alert-danger" role="alert" data-bind="text: welcomeMessage, visible: welcomeMessage"></div>
                 <h3>Treason Coup</h3>
                 <p data-bind="text: version"></p>
                 <form data-bind="submit: join">

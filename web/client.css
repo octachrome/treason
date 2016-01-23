@@ -167,3 +167,11 @@ div.chat {
     padding: 10px 15px;
     margin: 5px 0px;
 }
+.banner {
+    position: absolute;
+    top: 0;
+    padding: 10px;
+    width: 100%;
+    background: #fdd;
+    text-align: center;
+}

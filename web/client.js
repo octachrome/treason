@@ -41,6 +41,10 @@ vm.playerName.subscribe(function (newName) {
     localStorageSet('playerName', newName);
 });
 
+if (window.location.href.indexOf('amazonaws') >= 0) {
+    vm.welcomeMessage('Update your bookmarks to <a href="http://coup.thebrown.net">http://coup.thebrown.net</a>');
+}
+
 ko.bindingHandlers.tooltip = {
     init: function(element, valueAccessor) {
         var local = ko.utils.unwrapObservable(valueAccessor()),
