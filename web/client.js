@@ -13,7 +13,7 @@
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
     activeUsers: ko.observable(),
-    welcomeMessage: ko.observable(''),
+    bannerMessage: ko.observable(''),
     targetedAction: ko.observable(''),
     weAllowed: ko.observable(false),
     chosenExchangeOptions: ko.observable({}),
@@ -40,9 +40,12 @@ vm.state = ko.mapping.fromJS({
 vm.playerName.subscribe(function (newName) {
     localStorageSet('playerName', newName);
 });
+vm.bannerVisible = ko.computed(function () {
+    return !playing() && vm.bannerMessage();
+});
 
 if (window.location.href.indexOf('amazonaws') >= 0) {
-    vm.welcomeMessage('Update your bookmarks to <a href="http://coup.thebrown.net">http://coup.thebrown.net</a>');
+    vm.bannerMessage('Update your bookmarks to <a href="http://coup.thebrown.net">http://coup.thebrown.net</a>');
 }
 
 ko.bindingHandlers.tooltip = {
@@ -69,7 +72,7 @@ socket.on('hello', function (data) {
     vm.activeUsers(data.activeUsers);
 });
 socket.on('disconnect', function () {
-    vm.welcomeMessage('Disconnected');
+    vm.bannerMessage('Disconnected');
     vm.state.state.name(null); // Opens the welcome screen.
 });
 socket.on('state', function (data) {
