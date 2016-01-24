@@ -124,6 +124,25 @@ io.on('connection', function (socket) {
         });
     });
 
+    socket.on('ready', function(data) {
+        var playerName = data.playerName;
+        var gameName = data.gameName;
+        var playerIndex = data.playerIdx;
+        var game = privateGames[gameName];
+        game.playerReady(playerName, playerIndex);
+
+        if (game.allPlayersReady()) {
+            game = createGame({
+                debug: argv.debug,
+                logger: winston,
+                moveDelay: 1000,
+                gameName: gameName,
+                created: new Date()
+            });
+            privateGames[gameName] = game;
+        }
+    });
+
     socket.on('disconnect', function () {
         socket.removeAllListeners();
         socket = null;

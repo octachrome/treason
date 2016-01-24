@@ -41,6 +41,8 @@ module.exports = function createGame(options) {
     var game = {
         canJoin: canJoin,
         playerJoined: playerJoined,
+        playerReady: playerReady,
+        allPlayersReady: allPlayersReady,
         gameOver: gameOver,
         _test_setTurnState: _test_setTurnState,
         _test_setInfluence: _test_setInfluence,
@@ -87,6 +89,30 @@ module.exports = function createGame(options) {
         var proxy = createGameProxy(playerIdx);
         proxies.push(proxy);
         return proxy;
+    }
+
+    function playerReady(playerName, playerIndex) {
+        var player = players[playerIndex];
+        player.isReady = true;
+        addHistory('player-ready', playerName + ' is ready to play a new game');
+
+        if (allPlayersReady()) {
+            addHistory('everyone-ready', 'Every player is ready for a new game, starting a new game in 5 seconds');
+            setTimeout(function() {
+                for (var i = 0; i < players.length; i++) {
+                    players[i].onAllPlayersReadyForNewGame(state.gameName);
+                }
+            }, 5000);
+        }
+    }
+
+    function allPlayersReady() {
+        for (var i = 0; i < players.length; i++) {
+            if (!players[i].isReady) {
+                return false;
+            }
+        }
+        return true;
     }
 
     function playerName(name) {

@@ -5,7 +5,9 @@ function createTestPlayer(game, logHistory) {
         name: 'Test',
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
-        onChatMessage: function() {}
+        onChatMessage: function() {},
+        onAllPlayersReadyForNewGame: function() {},
+        isReady: true
     };
 
     var gameProxy = game.playerJoined(player);

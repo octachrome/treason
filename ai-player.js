@@ -52,7 +52,9 @@ function createAiPlayer(game, options) {
         name: aiPlayerNames[rand(aiPlayerNames.length)],
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
-        onChatMessage: function() {}
+        onChatMessage: function() {},
+        onAllPlayersReadyForNewGame: function() {},
+        isReady: true
     };
 
     try {
@@ -588,6 +590,13 @@ function createAiPlayer(game, options) {
 
     function debug(msg) {
         options.debug && console.log(msg);
+    }
+
+    function handleError(e) {
+        if (e instanceof Error) {
+            console.error(e);
+            console.error(e.stack);
+        }
     }
 }
 
