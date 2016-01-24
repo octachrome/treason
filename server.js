@@ -74,6 +74,13 @@ io.on('connection', function (socket) {
                 gameName: gameName
             });
             return;
+        } else {
+            if (!game.canJoin()) {
+                socket.emit('gameinprogress', {
+                    gameName: gameName
+                });
+                return;
+            }
         }
         createNetPlayer(game, socket, playerName);
     }

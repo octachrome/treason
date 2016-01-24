@@ -83,7 +83,17 @@ function join(form, event, gameName) {
         socket = io();
 
         socket.on('gamenotfound', function(data) {
-            vm.welcomeMessage('Private game: "' + data.gameName + '" was not found.');
+            vm.welcomeMessage('Private game: "' + data.gameName + '" was not found. Redirecting you back to the lobby...');
+            vm.state.state.name(null);
+            vm.needName(false);
+            //Redirect to the root
+            setTimeout(function() {
+                window.location = window.location.protocol + '//' + window.location.host;
+            }, 3000);
+        });
+
+        socket.on('gameinprogress', function(data) {
+            vm.welcomeMessage('The game: "' + data.gameName + '" is currently in progress.');
             vm.state.state.name(null);
             vm.needName(false);
         });
@@ -446,7 +456,7 @@ function playing() {
 function privateGame() {
     return playing() && vm.state.gameName;
 }
-function gameUrl2() {
+function calculatedGameUrl() {
     return window.location.protocol + '//' + window.location.host + '/#' + vm.state.gameName();
 }
 function localStorageGet(key) {
