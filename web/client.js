@@ -471,7 +471,7 @@ function playing() {
     return vm.state && vm.state.state && vm.state.state.name() != null;
 }
 function privateGame() {
-    return playing() && vm.state.gameName;
+    return playing() && vm.state.gameName && vm.state.gameName();
 }
 function calculatedGameUrl() {
     return window.location.protocol + '//' + window.location.host + '/#' + vm.state.gameName();
