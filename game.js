@@ -16,6 +16,7 @@ var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared');
 var actions = shared.actions;
 var stateNames = shared.states;
+var stats = require('./stats');
 
 var format = require('util').format;
 var deepcopy = require('deepcopy');
@@ -330,6 +331,7 @@ module.exports = function createGame(options) {
                 }
             }
             player.cash -= action.cost;
+            recordAction(player, action, command.action);
             if (action.role == null && action.blockedBy == null) {
                 if (playAction(playerIdx, command, false)) {
                     nextTurn();
@@ -493,6 +495,19 @@ module.exports = function createGame(options) {
         }
 
         emitState();
+    }
+
+    function recordAction(player, action, actionName) {
+        // Only record interesting actions
+        if (action.role) {
+            var playerType = player.ai ? 'ai' : 'human';
+            var bluff = !!indexOfInfluence(player, action);
+            stats.action({
+                action: actionName,
+                playerType: playerType,
+                bluff: bluff
+            });
+        }
     }
 
     function allow(playerIdx) {
