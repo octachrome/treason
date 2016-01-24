@@ -290,7 +290,7 @@ module.exports = function createGame(options) {
             throw new GameException('Unknown player');
         }
         if (command.stateId != state.stateId) {
-            throw new GameException('Stale state');
+            throw new GameException('Stale state (' + command.stateId + '!=' + state.stateId + ')');
         }
         if (command.command == 'start') {
             start();

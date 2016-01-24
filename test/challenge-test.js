@@ -1,22 +1,24 @@
 var expect = require('expect.js');
 
 var createGame = require('../game');
-var createTestPlayer = require('../test-util/test-player');
+var TestPlayers = require('../test-util/test-player');
 var shared = require('../web/shared');
 var stateNames = shared.states;
 
 describe('Challenges', function () {
     var game;
+    var testPlayers;
     var player0;
     var player1;
     var player2;
 
     beforeEach(function () {
         game = createGame();
-        player0 = createTestPlayer(game);
-        player1 = createTestPlayer(game);
-        player2 = createTestPlayer(game);
-        return player2.getNextState();
+        testPlayers = new TestPlayers(game)
+        player0 = testPlayers.createTestPlayer();
+        player1 = testPlayers.createTestPlayer();
+        player2 = testPlayers.createTestPlayer();
+        return testPlayers.waitForNewPlayers(player0, player1, player1);
     });
 
     describe('Given player0 assassinates player1 with a real assassin', function () {
@@ -235,7 +237,7 @@ describe('Challenges', function () {
 
             describe('When player0 reveals', function () {
                 beforeEach(function () {
-                    return player0.getNextState().then(function () {
+                    return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                         player0.command({
                             command: 'reveal',
                             role: 'assassin'
@@ -365,7 +367,7 @@ describe('Challenges', function () {
 
             describe('When player1 reveals', function () {
                 beforeEach(function () {
-                    return player1.getNextState().then(function () {
+                    return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                         player1.command({
                             command: 'reveal',
                             role: 'contessa'

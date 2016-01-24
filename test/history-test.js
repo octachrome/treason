@@ -1,21 +1,23 @@
 var expect = require('expect.js');
 
 var createGame = require('../game');
-var createTestPlayer = require('../test-util/test-player');
+var TestPlayers = require('../test-util/test-player');
 var shared = require('../web/shared');
 var stateNames = shared.states;
 
 describe('History', function () {
     var game;
+    var testPlayers;
     var player0;
     var player1;
     var player2;
 
     beforeEach(function () {
-        game = createGame();
-        player0 = createTestPlayer(game);
-        player1 = createTestPlayer(game);
-        return player1.getNextState();
+        game = createGame({debug: false});
+        testPlayers = new TestPlayers(game);
+        player0 = testPlayers.createTestPlayer();
+        player1 = testPlayers.createTestPlayer();
+        return testPlayers.waitForNewPlayers(player0, player1);
     });
 
     describe('Given player0 has a captain and player1 has an ambassador', function () {
@@ -43,7 +45,7 @@ describe('History', function () {
             // A stole from B
             describe('When player1 allows', function () {
                 beforeEach(function () {
-                    player1.getNextState().then(function () {
+                    return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                         player1.command({
                             command: 'allow',
                         });
@@ -60,13 +62,13 @@ describe('History', function () {
             // A attempted to steal from B; B blocked with ambassador
             describe('When player1 blocks and player0 allows the block', function () {
                 beforeEach(function () {
-                    player1.getNextState().then(function () {
+                    return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                         player1.command({
                             command: 'block',
                             blockingRole: 'ambassador'
                         });
 
-                        return player0.getNextState().then(function () {
+                        return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
                             player0.command({
                                 command: 'allow'
                             });
@@ -86,12 +88,12 @@ describe('History', function () {
 
             describe('When player1 incorrectly challenges and reveals an influence', function () {
                 beforeEach(function () {
-                    return player1.getNextState().then(function () {
+                    return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                         player1.command({
                             command: 'challenge'
                         });
 
-                        return player1.getNextState().then(function () {
+                        return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                             player1.command({
                                 command: 'reveal',
                                 role: 'contessa'
@@ -112,7 +114,7 @@ describe('History', function () {
                 // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; A stole from B
                 describe('When player1 allows the steal after a failed challenge', function () {
                     beforeEach(function () {
-                        return player1.getNextState().then(function (state) {
+                        return testPlayers.consumeState(stateNames.FINAL_ACTION_RESPONSE).then(function (state) {
                             player1.command({
                                 command: 'allow'
                             });
@@ -133,7 +135,7 @@ describe('History', function () {
                 // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; B blocked with ambassador
                 describe('When player1 blocks the steal after a failed challenge', function () {
                     beforeEach(function () {
-                        return player1.getNextState().then(function (state) {
+                        return testPlayers.consumeState(stateNames.FINAL_ACTION_RESPONSE).then(function (state) {
                             player1.command({
                                 command: 'block',
                                 blockingRole: 'ambassador'
@@ -143,7 +145,7 @@ describe('History', function () {
 
                     describe('When player0 allows the block', function () {
                         beforeEach(function () {
-                            return player0.getNextState().then(function () {
+                            return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
                                 player0.command({
                                     command: 'allow'
                                 });
@@ -164,12 +166,11 @@ describe('History', function () {
                     // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; B attempted to block with ambassador; A incorrectly challenged B; A revealed contessa
                     describe('When player0 incorrectly challenges the block', function () {
                         beforeEach(function () {
-                            return player0.getNextState().then(function () {
+                            return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
                                 player0.command({
                                     command: 'challenge'
                                 });
-                            }).then(function () {
-                                return player0.getNextState().then(function () {
+                                return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                                     player0.command({
                                         command: 'reveal',
                                         role: 'contessa'
@@ -195,22 +196,22 @@ describe('History', function () {
             // A attempted to steal from B; B attempted to block with ambassador; A incorrectly challenged B; A revealed contessa
             describe('When player1 blocks and player0 incorrectly challenges the block', function () {
                 beforeEach(function () {
-                    player1.getNextState().then(function () {
+                    return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                         player1.command({
                             command: 'block',
                             blockingRole: 'ambassador'
                         });
-
-                        return player0.getNextState().then(function () {
+                    }).then(function () {
+                        return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
                             player0.command({
                                 command: 'challenge'
                             });
-                        }).then(function () {
-                            player0.getNextState().then(function () {
-                                player0.command({
-                                    command: 'reveal',
-                                    role: 'contessa'
-                                });
+                        });
+                    }).then(function () {
+                        return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
+                            player0.command({
+                                command: 'reveal',
+                                role: 'contessa'
                             });
                         });
                     });
@@ -254,12 +255,12 @@ describe('History', function () {
             // A attempted to steal from B; B successfully challenged A; A revealed contessa
             describe('When player1 successfully challenges and player0 reveals', function () {
                 beforeEach(function () {
-                    return player1.getNextState().then(function () {
+                    return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                         player1.command({
                             command: 'challenge'
                         });
 
-                        return player0.getNextState().then(function () {
+                        return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                             player0.command({
                                 command: 'reveal',
                                 role: 'contessa'
@@ -281,19 +282,19 @@ describe('History', function () {
             // A attempted to steal from B; B attempted to block with ambassador; A successfully challenged B; B revealed contessa; A stole from B
             describe('When player1 blocks and player0 successfully challenges the block', function () {
                 beforeEach(function () {
-                    return player1.getNextState().then(function () {
+                    return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                         player1.command({
                             command: 'block',
                             blockingRole: 'ambassador'
                         });
                     }).then(function () {
-                        return player0.getNextState().then(function () {
+                        return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
                             player0.command({
                                 command: 'challenge'
                             });
                         });
                     }).then(function () {
-                        return player1.getNextState().then(function () {
+                        return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                             player1.command({
                                 command: 'reveal',
                                 role: 'contessa'
@@ -319,8 +320,8 @@ describe('History', function () {
     // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; B attempted to block with ambassador; A successfully challenged B; B revealed contessa; A stole from B
     describe('Given player0 has a captain and player1 does not have an ambassador', function () {
         beforeEach(function () {
-            player2 = createTestPlayer(game);
-            return player2.getNextState().then(function () {
+            player2 = testPlayers.createTestPlayer();
+            return testPlayers.waitForNewPlayers(player2).then(function () {
                 game._test_setInfluence(0, 'captain', 'contessa');
                 game._test_setInfluence(1, 'contessa', 'contessa');
                 game._test_setInfluence(2, 'contessa', 'contessa');
@@ -329,8 +330,6 @@ describe('History', function () {
                     name: stateNames.START_OF_TURN,
                     playerIdx: 0
                 });
-
-                return player0.getHistory();
             });
         });
 
@@ -345,26 +344,26 @@ describe('History', function () {
 
             describe('When player1 incorrectly challenges then finally blocks, and player0 successfully challenges the block', function () {
                 beforeEach(function () {
-                    return player1.getNextState().then(function () {
+                    return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                         player1.command({
                             command: 'challenge'
                         });
                     }).then(function () {
-                        return player1.getNextState().then(function () {
+                        return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                             player1.command({
                                 command: 'reveal',
                                 role: 'contessa'
                             });
                         });
                     }).then(function () {
-                        return player1.getNextState().then(function () {
+                        return testPlayers.consumeState(stateNames.FINAL_ACTION_RESPONSE).then(function () {
                             player1.command({
                                 command: 'block',
                                 blockingRole: 'ambassador'
                             });
                         });
                     }).then(function () {
-                        return player0.getNextState().then(function () {
+                        return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
                             player0.command({
                                 command: 'challenge'
                             });

@@ -1,7 +1,7 @@
 var expect = require('expect.js');
 
 var createGame = require('../game');
-var createTestPlayer = require('../test-util/test-player');
+var TestPlayers = require('../test-util/test-player');
 var createAiPlayer = require('../ai-player');
 var shared = require('../web/shared');
 var stateNames = shared.states;
@@ -21,8 +21,9 @@ describe('AI', function () {
             chanceToBluff: 1,
             randomSeed: 1 // Make AI decisions predictably random.
         });
-        testPlayer = createTestPlayer(game);
-        return testPlayer.getNextState();
+        var testPlayers = new TestPlayers(game);
+        testPlayer = testPlayers.createTestPlayer();
+        return testPlayers.waitForNewPlayers(testPlayer);
     });
 
     describe('Given an AI with a duke vs an opponent with a captain', function () {
