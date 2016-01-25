@@ -33,7 +33,7 @@
                 <p data-bind="text: version"></p>
                 <!-- ko if: !needName() -->
                 <form data-bind="submit: join">
-                    <p><input type="text" placeholder="Name" data-bind="value: playerName"/></p>
+                    <p><input type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
                     <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join public game</button></p>
                 </form>
                 <p><button class="btn btn-default" data-bind="enable: playerName, click: create">Create private game</button></p>
@@ -41,7 +41,7 @@
                 <!-- ko if: needName() -->
                 <p>Please enter a name to be able to join <span data-bind="text: gameUrl()"></span></p>
                 <form data-bind="submit: join">
-                    <p><input type="text" placeholder="Name" data-bind="value: playerName"/></p>
+                    <p><input type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
                     <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join private game</button></p>
                     <input type="hidden" data-bind="value: gameUrl()" name="privateGameName"/>
                 </form>
