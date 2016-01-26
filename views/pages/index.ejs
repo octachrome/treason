@@ -54,7 +54,8 @@
     <div class="container" style="display: none" data-bind="visible: playing()">
         <div class="row" data-bind="visible: privateGame()">
             <div class="col-xs-12">
-                <p>Private game, URL to join: <span data-bind="text: calculatedGameUrl()"></span></p>
+                <p>Private game, URL to join: <input type="text" onclick="this.focus();this.select()" readonly="readonly"
+                                                     data-bind="value: calculatedGameUrl(), style: {width: (calculatedGameUrl().length+1) * 9 +'px' }"/></p>
             </div>
         </div>
         <div class="row">
