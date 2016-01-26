@@ -33,7 +33,7 @@ vm.playerName.subscribe(function (newName) {
 
 $(window).on('hashchange load', function() {
     if (location.hash) {
-        vm.gameUrl(location.hash.substring(1));
+        vm.gameUrl(decodeURIComponent(location.hash.substring(1)));
         if (vm.playerName()) {
             join(null, null, vm.gameUrl());
         } else {
