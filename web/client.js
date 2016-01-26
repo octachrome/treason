@@ -103,6 +103,7 @@ function join(form, event, gameName) {
         });
         socket.on('disconnect', function () {
             vm.welcomeMessage('Disconnected');
+            $('#privateGameCreatedModal').modal('hide');//close the modal in case it was open when we disconnected
             vm.state.state.name(null); // Opens the welcome screen.
             vm.needName(false);
         });
@@ -162,6 +163,8 @@ function create(form, event) {
             socket.emit('disconnect');
             socket = null;
             location.hash = data.gameName;
+            //if you created a private game, we show you the welcome modal
+            $('#privateGameCreatedModal').modal({})
         });
 
         socket.emit('create', {

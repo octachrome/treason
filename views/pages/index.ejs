@@ -52,12 +52,29 @@
     </div>
 
     <div class="container" style="display: none" data-bind="visible: playing()">
+        <div class="modal fade" id="privateGameCreatedModal" tabindex="-1" role="dialog" aria-labelledby="privateGameLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="privateGameModalTitle">You have just created a private game</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>To invite someone else to join this private game, share the following URL with them:</p>
+                        <input type="text" onclick="this.focus();this.select()" readonly="readonly"
+                               data-bind="value: calculatedGameUrl(), style: {width: (calculatedGameUrl().length+1) * 9 +'px' }"/>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="row" data-bind="visible: privateGame()">
             <div class="col-xs-12">
                 <p>
                     <span data-bind="tooltip: {title: 'Share this URL with someone who you would like to share this game with.', trigger: 'hover', placement: 'right'}">
-                        Private game: <input type="text" onclick="this.focus();this.select()"
-                                             readonly="readonly"
+                        Private game: <input type="text" onclick="this.focus();this.select()" readonly="readonly"
                                              data-bind="value: calculatedGameUrl(), style: {width: (calculatedGameUrl().length+1) * 9 +'px' }"/>
                     </span>
                 </p>
