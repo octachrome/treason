@@ -158,7 +158,7 @@ module.exports = function createGame(options) {
         if (!player) {
             throw new GameException('Unknown player disconnected');
         }
-        var historySuffix = '';
+        var historySuffix = [];
         if (state.state.name == stateNames.WAITING_FOR_PLAYERS) {
             state.players.splice(playerIdx, 1);
             players.splice(playerIdx, 1);
@@ -175,7 +175,7 @@ module.exports = function createGame(options) {
                 var influence = player.influence;
                 for (var j = 0; j < influence.length; j++) {
                     if (!influence[j].revealed) {
-                        historySuffix += format('; {%d} revealed %s', playerIdx, influence[j].role);
+                        historySuffix.push(format('{%d} revealed %s', playerIdx, influence[j].role));
                         influence[j].revealed = true;
                     }
                 }
@@ -193,7 +193,10 @@ module.exports = function createGame(options) {
                 }
             }
         }
-        addHistory('player-left', player.name + ' left the game' + historySuffix);
+        addHistory('player-left', player.name + ' left the game');
+        for (var k = 0; k < historySuffix.length; k++) {
+            contHistory('player-left', historySuffix[k]);
+        }
         emitState();
     }
 
@@ -876,7 +879,7 @@ module.exports = function createGame(options) {
         addHistoryEx.apply(null, args);
     }
 
-    // Add a contination history item.
+    // Add a continuation history item.
     function contHistory(/*type, format_string, format_args...*/) {
         var args = Array.prototype.slice.apply(arguments);
         args.splice(1, 0, true);
