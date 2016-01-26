@@ -47,7 +47,7 @@ io.on('connection', function (socket) {
         var playerName = data.playerName;
         var gameName = data.gameName;
 
-        if (!playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
+        if (isInvalidPlayerName(playerName)) {
             return;
         }
         if (gameName) {
@@ -110,6 +110,9 @@ io.on('connection', function (socket) {
 
     socket.on('create', function(data) {
         var gameName = randomGameName(data.gameName);
+        if (isInvalidPlayerName(data.playerName)) {
+            return;
+        }
         var game = createGame({
             debug: argv.debug,
             logger: winston,
@@ -157,6 +160,10 @@ fs.readFile('adjectives.txt', function(err, data) {
     }
     adjectives = data.toString().split(/\r?\n/);
 });
+
+function isInvalidPlayerName(playerName) {
+    return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/);
+}
 
 function randomGameName(playerName) {
     var i = 1;

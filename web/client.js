@@ -63,6 +63,9 @@ ko.bindingHandlers.tooltip = {
 };
 var socket;
 function join(form, event, gameName) {
+    if (isInvalidPlayerName()) {
+        return;
+    }
     //This seems clunky
     if (form && form.privateGameName && form.privateGameName.value) {
         gameName = form.privateGameName.value;
@@ -70,12 +73,6 @@ function join(form, event, gameName) {
     if (gameName) {
         //Firefox encodes URLs copied from the address bar.
         gameName = decodeURIComponent(gameName);
-    }
-    if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
-        alert('Enter a valid name');
-    }
-    if (vm.playerName().length > 30) {
-        alert('Enter a shorter name');
     }
     vm.history([]);
     $('.chat').html('');
@@ -154,6 +151,9 @@ function join(form, event, gameName) {
     });
 }
 function create(form, event) {
+    if (isInvalidPlayerName()) {
+        return;
+    }
     _.debounce(new function() {
         if (socket == null) {
             socket = io();
@@ -168,7 +168,8 @@ function create(form, event) {
         });
 
         socket.emit('create', {
-            gameName: vm.playerName()
+            gameName: vm.playerName(),
+            playerName: vm.playerName()
         });
     }, 500, true);
 }
@@ -179,6 +180,17 @@ function ready(form, event) {
         gameName: vm.state.gameName(),
         playerIdx: vm.state.playerIdx()
     });
+}
+function isInvalidPlayerName() {
+    if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
+        alert('Enter a valid name');
+        return true;
+    }
+    if (vm.playerName().length > 30) {
+        alert('Enter a shorter name');
+        return true;
+    }
+    return false;
 }
 function start() {
     command('start');
