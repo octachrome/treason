@@ -72,7 +72,6 @@ function createNetPlayer(game, socket, playerName) {
 
     var ready = function () {
         if (gameProxy != null) {
-            gameProxy.sendChatMessage('I am ready to play again.');
             player.isReady = true;
         }
     };
