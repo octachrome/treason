@@ -97,13 +97,24 @@ module.exports = function createGame(options) {
         addHistory('player-ready', playerName + ' is ready to play a new game');
 
         if (allPlayersReady()) {
-            addHistory('everyone-ready', 'Every player is ready for a new game, starting a new game in 5 seconds');
+            addHistory('everyone-ready', 'Every player is ready for a new game');
+            countdown(5);
             setTimeout(function() {
                 for (var i = 0; i < players.length; i++) {
                     players[i] && players[i].onAllPlayersReadyForNewGame(state.gameName);
                 }
             }, 5000);
         }
+    }
+
+    function countdown(seconds) {
+        if (seconds === 0) {
+            return;
+        }
+        addHistory('everyone-ready', 'Starting a new game in '+seconds+' seconds');
+        setTimeout(function() {
+            countdown(--seconds);
+        }, 1000)
     }
 
     function allPlayersReady() {
