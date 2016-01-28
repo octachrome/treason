@@ -71,8 +71,6 @@ io.on('connection', function (socket) {
     });
 
     socket.on('join', function (data) {
-        reapPrivateGames();
-
         var playerName = data.playerName;
         var gameName = data.gameName;
 
@@ -86,30 +84,16 @@ io.on('connection', function (socket) {
         }
     });
 
-    function reapPrivateGames() {
-        for (var gameName in privateGames) {
-            var privateGameUpForReaping = privateGames[gameName];
-            if (privateGameUpForReaping.gameOver()) {
-                console.log('Reaping finished private game ' + gameName);
-                delete privateGames[gameName];
-            }
-        }
-    }
-
     function joinPrivateGame(playerName, gameName) {
         var game = privateGames[gameName];
         if (!game) {
-            socket.emit('gamenotfound', {
+            game = createPrivateGame(gameName);
+        }
+        if (!game.canJoin()) {
+            socket.emit('gameinprogress', {
                 gameName: gameName
             });
             return;
-        } else {
-            if (!game.canJoin()) {
-                socket.emit('gameinprogress', {
-                    gameName: gameName
-                });
-                return;
-            }
         }
         createNetPlayer(game, socket, playerName);
     }
@@ -138,11 +122,7 @@ io.on('connection', function (socket) {
         }
     }
 
-    socket.on('create', function(data) {
-        var gameName = randomGameName(data.gameName);
-        if (isInvalidPlayerName(data.playerName)) {
-            return;
-        }
+    function createPrivateGame(gameName) {
         var game = createGame({
             debug: argv.debug,
             logger: winston,
@@ -151,29 +131,21 @@ io.on('connection', function (socket) {
             created: new Date()
         });
         privateGames[gameName] = game;
+        game.once('end', function () {
+            delete privateGames[gameName];
+        });
+        return game;
+    }
 
+    socket.on('create', function(data) {
+        var gameName = randomGameName(data.gameName);
+        if (isInvalidPlayerName(data.playerName)) {
+            return;
+        }
+        var game = createPrivateGame(gameName);
         socket.emit('created', {
             gameName: gameName
         });
-    });
-
-    socket.on('ready', function(data) {
-        var playerName = data.playerName;
-        var gameName = data.gameName;
-        var playerIndex = data.playerIdx;
-        var game = privateGames[gameName];
-        game.playerReady(playerName, playerIndex);
-
-        if (game.allPlayersReady()) {
-            game = createGame({
-                debug: argv.debug,
-                logger: winston,
-                moveDelay: 1000,
-                gameName: gameName,
-                created: new Date()
-            });
-            privateGames[gameName] = game;
-        }
     });
 
     socket.on('disconnect', function () {

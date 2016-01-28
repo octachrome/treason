@@ -222,11 +222,8 @@
                     <div data-bind="visible: theyAreInState('game-won')">
                         <span data-bind="text: currentPlayerName()"></span> has won!<br/>
                     </div>
-                    <div data-bind="visible: gameOver() &amp;&amp; !privateGame()">
-                        <button class="btn btn-default" data-bind="event: {vclick: join}">Play again</button>
-                    </div>
-                    <div data-bind="visible: gameOver() &amp;&amp; privateGame() &amp;&amp; !playerReady()">
-                        <button class="btn btn-default" data-bind="event: {vclick: ready}">I am ready to play again!</button>
+                    <div data-bind="visible: gameOver()">
+                        <button class="btn btn-default" data-bind="event: {vclick: playAgain}">Play again</button>
                     </div>
                     <div data-bind="visible: weMustReveal()">
                         <span data-bind="text: stateMessage()"></span><br/><br/>

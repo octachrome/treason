@@ -19,9 +19,7 @@ function createNetPlayer(game, socket, playerName) {
         name: playerName || ('Player ' + playerId++),
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
-        onChatMessage: onChatMessage,
-        onAllPlayersReadyForNewGame: allPlayersReadyForNewGame,
-        isReady: false
+        onChatMessage: onChatMessage
     };
 
     try {
@@ -48,12 +46,6 @@ function createNetPlayer(game, socket, playerName) {
             type: type,
             continuation: continuation
         });
-    }
-
-    function allPlayersReadyForNewGame(gameName) {
-        socket.emit('recreated', {
-            gameName: gameName
-        })
     }
 
     var onCommand = function(data) {
@@ -84,14 +76,7 @@ function createNetPlayer(game, socket, playerName) {
         }
     };
 
-    var ready = function () {
-        if (gameProxy != null) {
-            player.isReady = true;
-        }
-    };
-
     socket.on('command', onCommand);
-    socket.on('ready', ready);
     socket.on('chat', sendChatMessage);
     socket.on('disconnect', onDisconnect);
     // If the player joins another game, leave this one.

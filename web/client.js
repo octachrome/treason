@@ -158,6 +158,10 @@ socket.on('game-error', function (data) {
     console.error(data);
 });
 
+function playAgain() {
+    // If we were playing a private game, rejoin the same one. Otherwise, join a new public game.
+    join(null, null, vm.gameUrl());
+}
 function join(form, event, gameName) {
     if (isInvalidPlayerName()) {
         return;
@@ -187,14 +191,6 @@ function create(form, event) {
             playerName: vm.playerName()
         });
     }, 500, true);
-}
-function ready(form, event) {
-    vm.playerReady(true);
-    socket.emit('ready', {
-        playerName: vm.playerName(),
-        gameName: vm.state.gameName(),
-        playerIdx: vm.state.playerIdx()
-    });
 }
 function isInvalidPlayerName() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {

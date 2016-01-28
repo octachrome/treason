@@ -45,8 +45,6 @@ function createAiPlayer(game, options) {
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
         onChatMessage: function() {},
-        onAllPlayersReadyForNewGame: function() {},
-        isReady: true,
         ai: true
     };
 
