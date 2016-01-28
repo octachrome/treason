@@ -1,32 +1,34 @@
 var expect = require('expect.js');
 
 var createGame = require('../game');
-var createTestPlayer = require('../test-util/test-player');
+var TestPlayers = require('../test-util/test-player');
 var shared = require('../web/shared');
 var stateNames = shared.states;
 
 describe('Game', function () {
     var game;
+    var testPlayers;
     var player0;
     var player1;
     var player2;
 
     beforeEach(function () {
         game = createGame();
-        player0 = createTestPlayer(game);
-        player1 = createTestPlayer(game);
-        return player1.getNextState();
+        testPlayers = new TestPlayers(game);
+        player0 = testPlayers.createTestPlayer();
+        player1 = testPlayers.createTestPlayer();
+        return testPlayers.waitForNewPlayers(player0, player1);
     });
 
     describe('When a player joins', function () {
-        var player3;
+        var player2;
 
         beforeEach(function () {
-            player3 = createTestPlayer(game);
+            player2 = testPlayers.createTestPlayer(game);
         });
 
         it('Then the game should be in state WAITING_FOR_PLAYERS', function () {
-            return player3.getNextState().then(function (state) {
+            return player2.getNextState().then(function (state) {
                 expect(state.state.name).to.be(stateNames.WAITING_FOR_PLAYERS);
             });
         });
@@ -34,8 +36,8 @@ describe('Game', function () {
 
     describe('Reveals', function () {
         beforeEach(function () {
-            player2 = createTestPlayer(game);
-            return player2.getNextState();
+            player2 = testPlayers.createTestPlayer(game);
+            return testPlayers.waitForNewPlayers(player2);
         });
 
         describe('Given a player is revealing an influence due to a failed ambassador challenge', function () {
@@ -47,7 +49,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'exchange',
                     playerToReveal: 1,
-                    message: 'incorrectly challenged'
+                    reason: 'incorrect-challenge'
                 });
             });
 
@@ -83,7 +85,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'exchange',
                     playerToReveal: 0,
-                    message: 'successfully challenged'
+                    reason: 'successful-challenge'
                 });
             });
 
@@ -113,14 +115,14 @@ describe('Game', function () {
         describe('Given a player is revealing an influence due to a failed assassin challenge', function () {
             beforeEach(function () {
                 game._test_setInfluence(0, 'assassin', 'captain');
-                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setInfluence(1, 'duke', 'ambassador');
                 game._test_setInfluence(2, 'duke', 'captain');
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
                     action: 'assassinate',
                     target: 1,
-                    message: 'incorrectly challenged',
+                    reason: 'incorrect-challenge',
                     playerToReveal: 2
                 });
             });
@@ -146,6 +148,23 @@ describe('Game', function () {
                         expect(state.state.target).to.be(1);
                     });
                 });
+
+                describe('When player1 allows the assassination', function () {
+                    beforeEach(function () {
+                        return testPlayers.consumeState(stateNames.FINAL_ACTION_RESPONSE).then(function () {
+                            player1.command({
+                                command: 'allow'
+                            });
+                        });
+                    });
+
+                    it('Then player1 should have to reveal an influence', function () {
+                        return player1.getNextState().then(function (state) {
+                            expect(state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                            expect(state.state.playerToReveal).to.be(1);
+                        });
+                    });
+                })
             });
         });
 
@@ -159,7 +178,7 @@ describe('Game', function () {
                     action: 'assassinate',
                     target: 1,
                     playerToReveal: 0,
-                    message: 'successfully challenged'
+                    reason: 'successful-challenge'
                 });
             });
 
@@ -197,7 +216,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'tax',
                     playerToReveal: 1,
-                    message: 'incorrectly challenged'
+                    reason: 'incorrect-challenge'
                 });
             });
 
@@ -241,7 +260,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'tax',
                     playerToReveal: 0,
-                    message: 'sucessfuly challenged'
+                    reason: 'sucessful-challenge'
                 });
             });
 
@@ -287,7 +306,7 @@ describe('Game', function () {
                     target: 1,
                     blockingRole: 'ambassador',
                     playerToReveal: 0,
-                    message: 'incorrectly challenged'
+                    reason: 'incorrect-challenge'
                 });
             });
 
@@ -332,7 +351,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'coup',
                     playerToReveal: 1,
-                    message: 'staged a coup'
+                    reason: 'coup'
                 });
             });
 
@@ -362,8 +381,8 @@ describe('Game', function () {
 
     describe('Disconnects', function () {
         beforeEach(function () {
-            player2 = createTestPlayer(game);
-            return player2.getNextState();
+            player2 = testPlayers.createTestPlayer(game);
+            return testPlayers.waitForNewPlayers(player2);
         });
 
         describe('Given player1 is revealing an influence due to a coup', function () {
@@ -375,7 +394,7 @@ describe('Game', function () {
                     playerIdx: 0,
                     action: 'coup',
                     playerToReveal: 1,
-                    message: 'staged a coup'
+                    reason: 'coup'
                 });
             });
 
@@ -411,9 +430,7 @@ describe('Game', function () {
 
             describe('When player1 leaves the game', function () {
                 beforeEach(function () {
-                    return player2.getNextState().then(function () {
-                        player1.leaveGame();
-                    });
+                    player1.leaveGame();
                 });
 
                 it('Then the turn should pass to player2', function () {

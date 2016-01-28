@@ -2,6 +2,7 @@
 
 var extend = require('extend');
 var randomGen = require('random-seed');
+var fs = require('fs');
 
 var shared = require('./web/shared');
 var stateNames = shared.states;
@@ -15,34 +16,25 @@ var actionsToRoles = {
     'exchange': 'ambassador'
 };
 
-var aiPlayerNames = [
-    'Frank',
-    'Bob',
-    'Stuart',
-    'Kevin',
-    'Phil',
-    'Pete',
-    'Carl',
-    'Dave',
-    'Steve',
-    'Tim',
-    'Mark',
-    'Jim',
-    'Tom',
-    'Joe',
-    'Ed',
-    'Ron',
-    'Gary',
-    'Eric',
-    'Walt',
-    'Mike'
-];
+// https://www.randomlists.com/random-first-names
+// http://listofrandomnames.com/
+// http://random-name-generator.info/
+var aiPlayerNames;
+
+fs.readFile(__dirname + '/names.txt', function(err, data) {
+    if (err) {
+        throw err;
+    }
+    aiPlayerNames = data.toString().split(/\r?\n/);
+});
 
 function createAiPlayer(game, options) {
     options = extend({
-        moveDelay: 0,
-        searchHorizon: 7,
-        chanceToBluff: 0.5
+        moveDelay: 0,           // How long the AI will "think" for before playing its move (ms)
+        moveDelaySpread: 0,     // How much randomness to apply to moveDelay (ms)
+        searchHorizon: 7,       // How many moves the AI will search ahead for an end-game
+        chanceToBluff: 0.5,     // Fraction of games in which the AI will bluff
+        chanceToChallenge: 0.1  // Fraction of turns in which the AI will challenge (not in the end-game)
     }, options);
 
     var rand = randomGen.create(options.randomSeed);
@@ -54,7 +46,8 @@ function createAiPlayer(game, options) {
         onHistoryEvent: onHistoryEvent,
         onChatMessage: function() {},
         onAllPlayersReadyForNewGame: function() {},
-        isReady: true
+        isReady: true,
+        ai: true
     };
 
     try {
@@ -73,13 +66,16 @@ function createAiPlayer(game, options) {
     // The last role to be claimed. Used when a challenge is issued, to track which role was challenged.
     var lastRoleClaim;
     var timeout = null;
+    // Roles that we have bluffed and then been called on - can no longer bluff these.
+    var calledBluffs = [];
 
     function onStateChange(s) {
         state = s;
         if (timeout != null) {
             clearTimeout(timeout);
         }
-        timeout = setTimeout(onStateChangeAsync, options.moveDelay);
+        var delay = rand.intBetween(options.moveDelay - options.moveDelaySpread, options.moveDelay + options.moveDelaySpread);
+        timeout = setTimeout(onStateChangeAsync, delay);
     }
 
     function onStateChangeAsync() {
@@ -113,6 +109,7 @@ function createAiPlayer(game, options) {
         } else if (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer) {
             respondToBlock();
         } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == state.playerIdx) {
+            updateCalledBluffs();
             revealLowestRanked();
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();
@@ -125,11 +122,13 @@ function createAiPlayer(game, options) {
             var playerIdx = match[1];
             var role = match[2];
             // If the player had previously claimed the role, this claim is no longer valid
-            delete claims[playerIdx][role];
+            if (claims[playerIdx]) {
+                delete claims[playerIdx][role];
+            }
         } else if (message.indexOf(' challenged') > 0) {
             // If a player was successfully challenged, any earlier claim was a bluff.
             // If a player was incorrectly challenged, they swap the role, so an earlier claim is no longer valid.
-            if (lastRoleClaim) {
+            if (lastRoleClaim && claims[lastRoleClaim.playerIdx]) {
                 delete claims[lastRoleClaim.playerIdx][lastRoleClaim.role];
             }
         }
@@ -195,19 +194,41 @@ function createAiPlayer(game, options) {
     }
 
     function shouldChallenge() {
-        if (!isEndGame()) {
-            return false;
-        }
+        // Cannot challenge after a failed challenge.
         if (state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
-            // Cannot challenge after a failed challenge.
             return false;
         }
-        if (state.state.action != 'tax' && state.state.action != 'steal' && state.state.action != 'assassinate') {
-            // Only challenge actions that could lead to a victory if not challenged.
+        // Only challenge actions that could lead to a victory if not challenged.
+        if (!actionIsWorthChallenging()) {
             return false;
         }
-        // Challenge if the opponent would otherwise win soon.
-        return simulate() < 0;
+        if (isEndGame()) {
+            var result = simulate();
+            // Challenge if the opponent would otherwise win soon.
+            if (result < 0) {
+                return true;
+            }
+            // Don't bother challenging if we're going to win anyway.
+            if (result > 0) {
+                return false;
+            }
+        }
+        // Challenge at random.
+        return rand.random() < options.chanceToChallenge;
+    }
+
+    function actionIsWorthChallenging() {
+        // Worth challenging anyone drawing tax.
+        if (state.state.action == 'tax') {
+            return true;
+        }
+        // Worth chalenging someone assassinating us or stealing from us,
+        // Or someone trying to block us from assassinating or stealing.
+        if ((state.state.action == 'steal' || state.state.action == 'assassinate') &&
+            (state.state.playerIdx == state.playerIdx || state.state.target == state.playerIdx)) {
+            return true;
+        }
+        return false;
     }
 
     function isEndGame() {
@@ -304,6 +325,8 @@ function createAiPlayer(game, options) {
                 } else if (actionName == 'assassinate') {
                     playAction('assassinate', assassinTarget());
                 }
+                // Now that we've bluffed, recalculate whether or not to bluff next time.
+                bluffChoice = rand.random() < options.chanceToBluff;
             } else {
                 // No bluffing.
                 if (influence.indexOf('assassin') < 0 ) {
@@ -318,11 +341,15 @@ function createAiPlayer(game, options) {
     }
 
     function shouldBluff(actionName) {
-        if (!bluffChoice) {
-            // We shall not bluff in this game.
+        var action = actions[actionName];
+        if (calledBluffs.indexOf(action.role) >= 0) {
+            // Don't bluff a role that we previously bluffed and got caught out on.
             return false;
         }
-        var action = actions[actionName];
+        if (!bluffChoice && !claims[state.playerIdx][action.role]) {
+            // We shall not bluff (unless we already claimed this role earlier).
+            return false;
+        }
         if (Object.keys(claims[state.playerIdx]).length > 2 && !claims[state.playerIdx][action.role]) {
             // We have already bluffed a different role: don't bluff any more.
             return false;
@@ -332,6 +359,7 @@ function createAiPlayer(game, options) {
             // If bluffing would win us the game, we will probably be challenged, so don't bluff.
             return false;
         } else {
+            // We will bluff.
             return true;
         }
     }
@@ -377,6 +405,19 @@ function createAiPlayer(game, options) {
         return roles;
     }
 
+    function updateCalledBluffs() {
+        // We are in reveal state.
+        if (state.state.reason = 'successful-challenge') {
+            if (state.state.target == state.playerIdx && state.state.blockingRole) {
+                // We bluffed a blocking role.
+                calledBluffs.push(state.state.blockingRole);
+            } else if (state.state.playerIdx == state.playerIdx && state.state.action) {
+                // We bluffed an action.
+                calledBluffs.push(actionsToRoles[state.state.action]);
+            }
+        }
+    }
+
     function revealLowestRanked() {
         var influence = ourInfluence();
         var i = rankedRoles.length;
@@ -388,7 +429,9 @@ function createAiPlayer(game, options) {
                     role: role
                 });
                 // Don't claim this role any more.
-                delete claims[state.playerIdx][role];
+                if (claims[state.playerIdx]) {
+                    delete claims[state.playerIdx][role];
+                }
                 return;
             }
         }

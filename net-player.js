@@ -1,3 +1,15 @@
+/*
+ * Copyright 2015 Christopher Brown
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
+ *
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to:
+ *     Creative Commons
+ *     PO Box 1866
+ *     Mountain View
+ *     CA 94042
+ *     USA
+ */
 'use strict';
 
 var playerId = 1;
@@ -60,10 +72,12 @@ function createNetPlayer(game, socket, playerName) {
         }
     };
 
-    var onDisconnect = function () {
+    var onDisconnect = function onDisconnect() {
         if (gameProxy != null) {
             socket.removeListener('command', onCommand);
             socket.removeListener('chat', sendChatMessage);
+            socket.removeListener('disconnect', onDisconnect);
+            socket.removeListener('join', onDisconnect);
             gameProxy.playerLeft();
             gameProxy = null;
             game = null;

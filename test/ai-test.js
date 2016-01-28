@@ -1,7 +1,7 @@
 var expect = require('expect.js');
 
 var createGame = require('../game');
-var createTestPlayer = require('../test-util/test-player');
+var TestPlayers = require('../test-util/test-player');
 var createAiPlayer = require('../ai-player');
 var shared = require('../web/shared');
 var stateNames = shared.states;
@@ -21,8 +21,9 @@ describe('AI', function () {
             chanceToBluff: 1,
             randomSeed: 1 // Make AI decisions predictably random.
         });
-        testPlayer = createTestPlayer(game);
-        return testPlayer.getNextState();
+        var testPlayers = new TestPlayers(game);
+        testPlayer = testPlayers.createTestPlayer();
+        return testPlayers.waitForNewPlayers(testPlayer);
     });
 
     describe('Given an AI with a duke vs an opponent with a captain', function () {
@@ -89,7 +90,7 @@ describe('AI', function () {
             it('Then the AI should bluff captain/ambassador', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.BLOCK_RESPONSE);
-                    expect(state.state.blockingRole).to.be('ambassador');
+                    expect(state.state.blockingRole).to.match(/captain|ambassador/);
                     expect(state.state.playerIdx).to.be(OPPONENT_IDX);
                 });
             });
@@ -188,11 +189,53 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should bluff duke and draw tax (random)', function () {
+            it('Then the AI should bluff captain (random)', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
                     expect(state.state.playerIdx).to.be(AI_IDX);
-                    expect(state.state.action).to.be('tax');
+                    expect(state.state.action).to.be('steal');
+                });
+            });
+        });
+
+        describe('When our captain bluff has previously been called', function () {
+            beforeEach(function () {
+                game._test_setTurnState({
+                    name: stateNames.REVEAL_INFLUENCE,
+                    playerIdx: AI_IDX,
+                    action: 'steal',
+                    target: OPPONENT_IDX,
+                    playerToReveal: AI_IDX,
+                    reason: 'successful-challenge'
+                }, true);
+
+                return testPlayer.getNextState().then(function (state) {
+                    expect(state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+
+                    return testPlayer.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                    });
+                });
+            });
+
+            describe('When it is the AI turn', function () {
+                beforeEach(function () {
+                    game._test_setTurnState({
+                        name: stateNames.START_OF_TURN,
+                        playerIdx: AI_IDX
+                    }, true);
+
+                    return testPlayer.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                    });
+                });
+
+                it('Then the AI should not bluff captain again', function () {
+                    return testPlayer.getNextState().then(function (state) {
+                        expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
+                        expect(state.state.playerIdx).to.be(AI_IDX);
+                        expect(state.state.action).not.to.be('steal');
+                    });
                 });
             });
         });
@@ -218,7 +261,7 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should exchange instead of bluffing a winning move', function () {
+            it('Then the AI should exchange instead of bluffing a winning move (because we will just get challenged)', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
                     expect(state.state.playerIdx).to.be(AI_IDX);

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Treason Coup</title>
+    <meta name="description" content="Play Coup online with your friends and against the AI">
 
     <link rel="stylesheet" href="lib/bootstrap-3.3.5-dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="client.css">
@@ -24,11 +25,12 @@
     <script src="version.js"></script>
 </head>
 <body>
+    <div class="banner" data-bind="visible: bannerVisible, html: bannerMessage"></div>
     <div class="container" data-bind="visible: !playing()">
+        <div class="row"><br/></div>
         <div class="row">
             <!-- Welcome screen -->
             <div class="col-xs-12">
-                <div class="alert alert-danger" role="alert" data-bind="text: welcomeMessage, visible: welcomeMessage"></div>
                 <h3>Treason Coup</h3>
                 <p data-bind="text: version"></p>
                 <!-- ko if: !needName() -->
@@ -47,6 +49,8 @@
                 </form>
                 <!-- /ko -->
                 <p><a href="rules.html" target="blank">How to play</a></p>
+                <p><span data-bind="visible: activeUsers"><span data-bind="text: activeUsers"></span> players are online</span></p>
+                <img src="feedback.png"></img>
             </div>
         </div>
     </div>
@@ -128,11 +132,10 @@
                         <i class="exchange"></i>
                         Choose <span data-bind="text: ourInfluenceCount()"></span> roles to keep:<br/>
                         <!-- ko foreach: state.state.exchangeOptions -->
-                            <span data-bind="text: $data"></span>
-                            <input type="checkbox" data-bind="attr: { 'data-role': $data }"/>
-                            <br/>
+                            <button class="btn" data-bind="text: $data, css: exchangeOptionClass($index()), event: {vclick: function() {toggleExchangeOption($index());}}"></button>
                         <!-- /ko -->
-                        <button class="btn btn-action btn-ambassador" data-bind="event: {vclick: exchange}">
+                        <br/>
+                        <button class="btn btn-action btn-ambassador" data-bind="enable: exchangeOptionsValid(), event: {vclick: exchange}">
                             <i class="exchange"></i>
                             <span>Exchange</span>
                         </button>
@@ -146,6 +149,7 @@
                         <i data-bind="css: state.state.action"></i>
                         <span data-bind="text: stateMessage()"></span><br/><br/>
                         <!-- ko if: !weAreAlive() -->
+                            <br/>
                             Waiting for blocks/challenges
                         <!-- /ko -->
                         <!-- ko if: weAreAlive() -->
@@ -177,6 +181,7 @@
                             Waiting for blocks
                         <!-- /ko -->
                         <!-- ko if: weCanBlock() -->
+                            Last chance to block<br/>
                             <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
                                 <i class="allow"></i>
                                 <span>Allow</span>
@@ -225,9 +230,9 @@
                     </div>
                     <div data-bind="visible: weMustReveal()">
                         <span data-bind="text: stateMessage()"></span><br/><br/>
-                        Must reveal an influence
+                        You must reveal an influence
                         <!-- ko foreach: ourInfluence() -->
-                        <button class="btn btn-xs" data-bind="text: role, css: buttonRoleClass(role()), visible: !revealed(), event: {vclick: reveal}"></button>
+                        <button class="btn" data-bind="text: role, css: buttonRoleClass(role()), visible: !revealed(), event: {vclick: reveal}"></button>
                         <!-- /ko -->
                     </div>
                     <div data-bind="visible: theyMustReveal()">

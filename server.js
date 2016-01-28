@@ -1,3 +1,15 @@
+/*
+ * Copyright 2015 Christopher Brown
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
+ *
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to:
+ *     Creative Commons
+ *     PO Box 1866
+ *     Mountain View
+ *     CA 94042
+ *     USA
+ */
 'use strict';
 
 var fs = require('fs');
@@ -39,8 +51,25 @@ var createNetPlayer = require('./net-player');
 
 var publicGames = [];
 var privateGames = {};
+var pending = [];
+var sockets = {};
+var TIMEOUT = 30 * 60 * 1000;
 
 io.on('connection', function (socket) {
+    var timestamp = new Date().getTime();
+    sockets[socket.id] = timestamp;
+    var activeUsers = 0;
+    for (var id in sockets) {
+        if (timestamp - sockets[id] > TIMEOUT) {
+            delete sockets[id];
+        } else {
+            activeUsers++;
+        }
+    }
+    socket.emit('hello', {
+        activeUsers: activeUsers
+    });
+
     socket.on('join', function (data) {
         reapPrivateGames();
 
@@ -97,7 +126,8 @@ io.on('connection', function (socket) {
                 game = createGame({
                     debug: argv.debug,
                     logger: winston,
-                    moveDelay: 1000 // For AI players
+                    moveDelay: 3000, // For AI players
+                    moveDelaySpread: 700
                 });
             }
         }
@@ -147,6 +177,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('disconnect', function () {
+        delete sockets[socket.id];
         socket.removeAllListeners();
         socket = null;
     })

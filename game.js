@@ -1,3 +1,15 @@
+/*
+ * Copyright 2015 Christopher Brown
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
+ *
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to:
+ *     Creative Commons
+ *     PO Box 1866
+ *     Mountain View
+ *     CA 94042
+ *     USA
+ */
 'use strict';
 
 var createAiPlayer = require('./ai-player');
@@ -197,7 +209,23 @@ module.exports = function createGame(options) {
         for (var k = 0; k < historySuffix.length; k++) {
             contHistory('player-left', historySuffix[k]);
         }
+        checkOnlyAiLeft();
         emitState();
+    }
+
+    function checkOnlyAiLeft() {
+        for (var i = 0; i < players.length; i++) {
+            if (players[i] && !players[i].ai) {
+                return;
+            }
+        }
+        destroyGame();
+    }
+
+    function destroyGame() {
+        debug('destroying game');
+        players = [];
+        proxies = [];
     }
 
     function afterPlayerDeath(playerIdx) {
@@ -305,7 +333,7 @@ module.exports = function createGame(options) {
             throw new GameException('Unknown player');
         }
         if (command.stateId != state.stateId) {
-            throw new GameException('Stale state');
+            throw new GameException('Stale state (' + command.stateId + '!=' + state.stateId + ')');
         }
         if (command.command == 'start') {
             start();
@@ -410,11 +438,11 @@ module.exports = function createGame(options) {
                     influence.revealed = true;
                     player.influenceCount--;
                     addHistoryEx(state.state.reason, state.state.continuation, '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
-                    if (state.state.message.indexOf('incorrectly challenged') >= 0) {
+                    if (state.state.reason == 'incorrect-challenge') {
                         if (afterIncorrectChallenge()) {
                             nextTurn();
                         }
-                    } else if (state.state.message.indexOf('successfully challenged') >= 0) {
+                    } else if (state.state.reason == 'successful-challenge') {
                         if (afterSuccessfulChallenge()) {
                             nextTurn();
                         }
@@ -525,19 +553,24 @@ module.exports = function createGame(options) {
             }
         } else if (state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
             if (state.state.playerIdx == playerIdx) {
-                throw new GameException('Cannot allow your own move');
+                throw new GameException('Cannot allow your own action');
             }
-            allows[playerIdx] = true;
-            if (everyoneAllows()) {
-                // Create a new history item if everyone allowed the initial action, with no other events.
-                var continuation = state.state.name != stateNames.ACTION_RESPONSE;
-                if (playAction(state.state.playerIdx, state.state, continuation)) {
-                    nextTurn();
+            if (state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
+                if (state.state.target != playerIdx) {
+                    throw new GameException('Only the targetted player can allow the action');
                 }
-                return true;
             } else {
-                return false;
+                allows[playerIdx] = true;
+                if (!everyoneAllows()) {
+                    return false;
+                }
             }
+            // Create a new history item if everyone allowed the initial action, with no other events.
+            var continuation = state.state.name != stateNames.ACTION_RESPONSE;
+            if (playAction(state.state.playerIdx, state.state, continuation)) {
+                nextTurn();
+            }
+            return true;
         } else {
             throw new GameException('Incorrect state');
         }

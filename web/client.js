@@ -1,8 +1,22 @@
+/*
+ * Copyright 2015 Christopher Brown
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
+ *
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to:
+ *     Creative Commons
+ *     PO Box 1866
+ *     Mountain View
+ *     CA 94042
+ *     USA
+ */
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
-    welcomeMessage: ko.observable(''),
+    activeUsers: ko.observable(),
+    bannerMessage: ko.observable(''),
     targetedAction: ko.observable(''),
     weAllowed: ko.observable(false),
+    chosenExchangeOptions: ko.observable({}),
     sidebar: ko.observable('chat'),
     history: ko.observableArray(),
     gameUrl: ko.observable(''),
@@ -30,6 +44,13 @@ vm.state = ko.mapping.fromJS({
 vm.playerName.subscribe(function (newName) {
     localStorageSet('playerName', newName);
 });
+vm.bannerVisible = ko.computed(function () {
+    return !playing() && vm.bannerMessage();
+});
+
+if (window.location.href.indexOf('amazonaws') >= 0) {
+    vm.bannerMessage('Update your bookmarks to <a href="http://coup.thebrown.net">http://coup.thebrown.net</a>');
+}
 
 $(window).on('hashchange load', function() {
     if (location.hash) {
@@ -61,7 +82,82 @@ ko.bindingHandlers.tooltip = {
         trigger: "click"
     }
 };
-var socket;
+var socket = io();
+socket.on('hello', function (data) {
+    vm.activeUsers(data.activeUsers);
+});
+socket.on('gamenotfound', function(data) {
+    vm.bannerMessage('Private game: "' + data.gameName + '" was not found. Redirecting you back to the lobby...');
+    vm.state.state.name(null);
+    vm.needName(false);
+    //Redirect to the root
+    setTimeout(function() {
+        window.location = window.location.protocol + '//' + window.location.host;
+    }, 3000);
+});
+socket.on('gameinprogress', function(data) {
+    vm.bannerMessage('The game: "' + data.gameName + '" is currently in progress.');
+    vm.state.state.name(null);
+    vm.needName(false);
+});
+socket.on('recreated', function(data) {
+    vm.playerReady(false);
+    join(null, null, data.gameName);
+});
+socket.on('disconnect', function () {
+    vm.bannerMessage('Disconnected');
+    $('#privateGameCreatedModal').modal('hide');//close the modal in case it was open when we disconnected
+    vm.state.state.name(null); // Opens the welcome screen.
+    vm.needName(false);
+});
+socket.on('state', function (data) {
+    ko.mapping.fromJS(data, vm.state);
+    vm.targetedAction('');
+    vm.weAllowed(false);
+    vm.chosenExchangeOptions({});
+    $('.activity').scrollTop(0);
+    $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
+    console.log(data);
+});
+socket.on('history', function (data) {
+    var items;
+    if (data.continuation && vm.history().length) {
+        // Collect related history items together.
+        items = vm.history()[0];
+    } else {
+        items = ko.observableArray();
+        vm.history.unshift(items);
+    }
+    items.push({
+        icon: data.type,
+        message: formatMessage(data.message)
+    });
+});
+socket.on('chat', function (data) {
+    var from;
+    if (data.from == vm.state.playerIdx()) {
+        from = 'You';
+    } else {
+        var player = vm.state.players()[data.from];
+        from = player ? player.name() : 'Unknown';
+    }
+    var html = '<b>' + from + ':</b> ' + data.message + '<br/>';
+    $('.chat').append(html);
+    $('.chat').scrollTop(10000);
+});
+socket.on('created', function(data) {
+    socket.emit('disconnect');
+    location.hash = data.gameName;
+    //if you created a private game, we show you the welcome modal
+    $('#privateGameCreatedModal').modal({})
+});
+socket.on('error', function (data) {
+    alert(data);
+});
+socket.on('game-error', function (data) {
+    console.error(data);
+});
+
 function join(form, event, gameName) {
     if (isInvalidPlayerName()) {
         return;
@@ -76,75 +172,6 @@ function join(form, event, gameName) {
     }
     vm.history([]);
     $('.chat').html('');
-    if (socket == null) {
-        // Re-use the same socket. Automatically reconnects if disconnected.
-        socket = io();
-
-        socket.on('gamenotfound', function(data) {
-            vm.welcomeMessage('Private game: "' + data.gameName + '" was not found. Redirecting you back to the lobby...');
-            vm.state.state.name(null);
-            vm.needName(false);
-            //Redirect to the root
-            setTimeout(function() {
-                window.location = window.location.protocol + '//' + window.location.host;
-            }, 3000);
-        });
-        socket.on('gameinprogress', function(data) {
-            vm.welcomeMessage('The game: "' + data.gameName + '" is currently in progress.');
-            vm.state.state.name(null);
-            vm.needName(false);
-        });
-        socket.on('recreated', function(data) {
-            vm.playerReady(false);
-            join(null, null, data.gameName);
-        });
-        socket.on('disconnect', function () {
-            vm.welcomeMessage('Disconnected');
-            $('#privateGameCreatedModal').modal('hide');//close the modal in case it was open when we disconnected
-            vm.state.state.name(null); // Opens the welcome screen.
-            vm.needName(false);
-        });
-        socket.on('state', function (data) {
-            ko.mapping.fromJS(data, vm.state);
-            vm.targetedAction('');
-            vm.weAllowed(false);
-            $('.activity').scrollTop(0);
-            $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
-            console.log(data);
-        });
-        socket.on('history', function (data) {
-            var items;
-            if (data.continuation && vm.history().length) {
-                // Collect related history items together.
-                items = vm.history()[0];
-            } else {
-                items = ko.observableArray();
-                vm.history.unshift(items);
-            }
-            items.push({
-                icon: data.type,
-                message: formatMessage(data.message)
-            });
-        });
-        socket.on('chat', function (data) {
-            var from;
-            if (data.from == vm.state.playerIdx()) {
-                from = 'You';
-            } else {
-                var player = vm.state.players()[data.from];
-                from = player ? player.name() : 'Unknown';
-            }
-            var html = '<b>' + from + ':</b> ' + data.message + '<br/>';
-            $('.chat').append(html);
-            $('.chat').scrollTop(10000);
-        });
-        socket.on('error', function (data) {
-            alert(data);
-        });
-        socket.on('game-error', function (data) {
-            console.error(data);
-        });
-    }
     socket.emit('join', {
         playerName: vm.playerName(),
         gameName: gameName
@@ -155,18 +182,6 @@ function create(form, event) {
         return;
     }
     _.debounce(new function() {
-        if (socket == null) {
-            socket = io();
-        }
-
-        socket.on('created', function(data) {
-            socket.emit('disconnect');
-            socket = null;
-            location.hash = data.gameName;
-            //if you created a private game, we show you the welcome modal
-            $('#privateGameCreatedModal').modal({})
-        });
-
         socket.emit('create', {
             gameName: vm.playerName(),
             playerName: vm.playerName()
@@ -379,18 +394,41 @@ function reveal(influence) {
         role: influence.role()
     });
 }
-function exchange() {
-    var checked = $('input:checked');
+function toggleExchangeOption(index) {
+    var options = vm.chosenExchangeOptions();
+    if (options[index]) {
+        delete options[index];
+    } else {
+        options[index] = vm.state.state.exchangeOptions()[index];
+    }
+    vm.chosenExchangeOptions(options);
+}
+function exchangeOptionClass(index) {
+    if (vm.chosenExchangeOptions()[index]) {
+        return buttonRoleClass(vm.state.state.exchangeOptions()[index]);
+    } else {
+        return 'btn-default';
+    }
+}
+function chosenExchangeOptions() {
     var roles = [];
-    checked.each(function (index, el) {
-        roles.push($(el).data('role'));
-    });
+    var options = vm.chosenExchangeOptions();
+    for (key in options) {
+        if (options[key]) {
+            roles.push(options[key]);
+        }
+    }
+    return roles;
+}
+function exchangeOptionsValid() {
+    return chosenExchangeOptions().length == ourInfluenceCount();
+}
+function exchange() {
+    var roles = chosenExchangeOptions();
     if (roles.length == ourInfluenceCount()) {
         command('exchange', {
             roles: roles
         });
-    } else {
-        alert('must choose ' + ourInfluenceCount() + ' roles');
     }
 }
 function formatMessage(message) {
