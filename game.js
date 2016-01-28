@@ -11,7 +11,8 @@
  *     USA
  */
 'use strict';
-
+var fs = require('fs');
+var rand = require('random-seed')();
 var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared');
 var actions = shared.actions;
@@ -28,6 +29,15 @@ var nextPlayerId = 1;
 
 var MIN_PLAYERS = 2;
 var MAX_PLAYERS = 6;
+
+var epithets;
+
+fs.readFile('epithets.txt', function(err, data) {
+    if (err) {
+        throw err;
+    }
+    epithets = data.toString().split(/\r?\n/);
+});
 
 module.exports = function createGame(options) {
     options = options || {};
@@ -123,7 +133,8 @@ module.exports = function createGame(options) {
         name = name || 'Anonymous';
         for (var i = 0; i < state.players.length; i++) {
             if (state.players[i].name == name) {
-                return playerName(name + ' (1)');
+                var epithet = epithets[rand(epithets.length)];
+                return playerName(name + ' ' + epithet);
             }
         }
         return name;
