@@ -20,8 +20,7 @@ vm = {
     sidebar: ko.observable('chat'),
     history: ko.observableArray(),
     gameUrl: ko.observable(''),
-    needName: ko.observable(false),
-    playerReady: ko.observable(false)
+    needName: ko.observable(false)
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -86,23 +85,10 @@ var socket = io();
 socket.on('hello', function (data) {
     vm.activeUsers(data.activeUsers);
 });
-socket.on('gamenotfound', function(data) {
-    vm.bannerMessage('Private game: "' + data.gameName + '" was not found. Redirecting you back to the lobby...');
-    vm.state.state.name(null);
-    vm.needName(false);
-    //Redirect to the root
-    setTimeout(function() {
-        window.location = window.location.protocol + '//' + window.location.host;
-    }, 3000);
-});
 socket.on('gameinprogress', function(data) {
     vm.bannerMessage('The game: "' + data.gameName + '" is currently in progress.');
     vm.state.state.name(null);
     vm.needName(false);
-});
-socket.on('recreated', function(data) {
-    vm.playerReady(false);
-    join(null, null, data.gameName);
 });
 socket.on('disconnect', function () {
     vm.bannerMessage('Disconnected');
@@ -208,9 +194,6 @@ function start() {
 }
 function addAi() {
     command('add-ai');
-}
-function playerIsReady() {
-    return vm.playerReady();
 }
 function weAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() == vm.state.playerIdx();

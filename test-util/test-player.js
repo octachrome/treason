@@ -35,9 +35,7 @@ function TestPlayers(game, opts) {
             name: playerName || ('player' + testPlayers.length),
             onStateChange: onStateChange,
             onHistoryEvent: onHistoryEvent,
-            onChatMessage: function() {},
-            onAllPlayersReadyForNewGame: function() {},
-            isReady: true
+            onChatMessage: function() {}
         };
 
         var gameProxy = game.playerJoined(player);
