@@ -11,7 +11,8 @@
  *     USA
  */
 'use strict';
-
+var fs = require('fs');
+var rand = require('random-seed')();
 var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared');
 var actions = shared.actions;
@@ -28,6 +29,15 @@ var nextPlayerId = 1;
 
 var MIN_PLAYERS = 2;
 var MAX_PLAYERS = 6;
+
+var epithets;
+
+fs.readFile('epithets.txt', function(err, data) {
+    if (err) {
+        throw err;
+    }
+    epithets = data.toString().split(/\r?\n/);
+});
 
 module.exports = function createGame(options) {
     options = options || {};
@@ -62,11 +72,18 @@ module.exports = function createGame(options) {
     game._test_resetAllows = resetAllows;
 
     function playerJoined(player) {
+        var isObserver = false;
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
-            throw new GameException('Cannot join game ' + gameId + ': it has started');
+            isObserver = true;
+            if (!state.gameName) {
+                throw new GameException('Cannot join game ' + gameId + ': it has started');
+            }
         }
         if (state.players.length >= MAX_PLAYERS) {
-            throw new GameException('Cannot join game ' + gameId + ': it is full');
+            isObserver = true;
+            if (!state.gameName) {
+                throw new GameException('Cannot join game ' + gameId + ': it is full');
+            }
         }
 
         var playerState = {
@@ -82,21 +99,32 @@ module.exports = function createGame(options) {
                     role: 'not dealt',
                     revealed: false
                 }
-            ]
+            ],
+            isObserver: isObserver
         };
+
+        if (isObserver) {
+            playerState.cash = 0;
+            playerState.influenceCount = 0;
+            playerState.influence = [];
+        }
+
         var playerIdx = state.players.length;
         state.players.push(playerState);
         players.push(player);
         state.numPlayers++;
 
-        if (state.numPlayers == MAX_PLAYERS) {
+        if (state.numPlayers === MAX_PLAYERS) {
             start();
         }
 
-        addHistory('player-joined', playerState.name + ' joined the game');
+        addHistory('player-joined', playerState.name + ' joined the game' +(isObserver ? ' as an observer': ''));
         emitState();
 
         var proxy = createGameProxy(playerIdx);
+        if (isObserver) {
+            proxy.command = new function() {};
+        }
         proxies.push(proxy);
         return proxy;
     }
@@ -105,7 +133,8 @@ module.exports = function createGame(options) {
         name = name || 'Anonymous';
         for (var i = 0; i < state.players.length; i++) {
             if (state.players[i].name == name) {
-                return playerName(name + ' (1)');
+                var epithet = epithets[rand(epithets.length)];
+                return playerName(name + ' ' + epithet);
             }
         }
         return name;
@@ -137,7 +166,7 @@ module.exports = function createGame(options) {
             throw new GameException('Unknown player disconnected');
         }
         var historySuffix = [];
-        if (state.state.name == stateNames.WAITING_FOR_PLAYERS) {
+        if (state.state.name == stateNames.WAITING_FOR_PLAYERS || player.isObserver) {
             state.players.splice(playerIdx, 1);
             players.splice(playerIdx, 1);
             proxies.splice(playerIdx, 1);
@@ -911,7 +940,7 @@ module.exports = function createGame(options) {
     }
 
     function canJoin() {
-        return state.state.name == stateNames.WAITING_FOR_PLAYERS;
+        return state.state.name == stateNames.WAITING_FOR_PLAYERS || state.gameName;
     }
 
     function sendChatMessage(playerIdx, message) {
