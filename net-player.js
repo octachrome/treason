@@ -64,13 +64,14 @@ function createNetPlayer(game, socket, playerName) {
         }
     };
 
-    var onDisconnect = function onDisconnect() {
+    var onDisconnect = function onDisconnect(data) {
+        var rejoined = data.gameName === gameProxy.getGameName();
         if (gameProxy != null) {
             socket.removeListener('command', onCommand);
             socket.removeListener('chat', sendChatMessage);
             socket.removeListener('disconnect', onDisconnect);
             socket.removeListener('join', onDisconnect);
-            gameProxy.playerLeft();
+            gameProxy.playerLeft(rejoined);
             gameProxy = null;
             game = null;
         }
