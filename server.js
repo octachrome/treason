@@ -157,7 +157,7 @@ io.on('connection', function (socket) {
 
 var adjectives;
 
-fs.readFile('adjectives.txt', function(err, data) {
+fs.readFile(__dirname + '/adjectives.txt', function(err, data) {
     if (err) {
         throw err;
     }

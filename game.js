@@ -32,7 +32,7 @@ var MAX_PLAYERS = 6;
 
 var epithets;
 
-fs.readFile('epithets.txt', function(err, data) {
+fs.readFile(__dirname + '/epithets.txt', function(err, data) {
     if (err) {
         throw err;
     }
