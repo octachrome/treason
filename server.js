@@ -14,6 +14,7 @@
 
 var fs = require('fs');
 var rand = require('random-seed')();
+var nomenclator = require('./nomenclator')();
 
 var argv = require('optimist')
     .usage('$0 [--debug] [--port <port>] [--log <logfile>]')
@@ -68,6 +69,12 @@ io.on('connection', function (socket) {
     }
     socket.emit('hello', {
         activeUsers: activeUsers
+    });
+
+    socket.on('hail', function (data) {
+        socket.emit('acknowledge', {
+            playerId: nomenclator.register(data.playerId, data.playerName)
+        });
     });
 
     socket.on('join', function (data) {

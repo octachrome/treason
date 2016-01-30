@@ -12,6 +12,7 @@
  */
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
+    playerId: ko.observable(localStorageGet('playerId') || ''),
     activeUsers: ko.observable(),
     bannerMessage: ko.observable(''),
     targetedAction: ko.observable(''),
@@ -82,6 +83,16 @@ ko.bindingHandlers.tooltip = {
     }
 };
 var socket = io();
+socket.on('connect', function() {
+    socket.emit('hail', {
+        playerName: vm.playerName(),
+        playerId: vm.playerId()
+    });
+    socket.on('acknowledge', function(data) {
+        vm.playerId(data.playerId);
+        localStorageSet('playerId', data.playerId);
+    });
+});
 socket.on('hello', function (data) {
     vm.activeUsers(data.activeUsers);
 });
