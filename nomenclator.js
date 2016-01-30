@@ -24,7 +24,7 @@ module.exports = function () {
     nomenclator.register = register;
 
     function register(id, name) {
-        var allocatedId;
+        var createEntry = false;
         debug('Player ' + name + ', registered with id ' + id);
 
         //claims to have an id
@@ -34,7 +34,7 @@ module.exports = function () {
                 if (err) {
                     //failed to find the player, recreate with new id
                     debug('Id ' +  id + ' not recognised, recreating' );
-                    id = crypto.randomBytes(32).toString('hex');
+                    createEntry = true;
                 } else {
                     //update the name if needed
                     if (doc.name != name) {
@@ -52,6 +52,10 @@ module.exports = function () {
                 }
             });
         } else {
+            createEntry = true;
+        }
+
+        if (createEntry) {
             //give new id
             id = crypto.randomBytes(32).toString('hex');
             db.save(id, {
