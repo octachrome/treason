@@ -4,24 +4,24 @@ var pr = require('promise-ring');
 
 var connection = new cradle.Connection();
 
-var nomenclator = pr.wrapAll(connection.database('players'));
-var gameStats = pr.wrapAll(connection.database('gamestats'));
-var playerStats = pr.wrapAll(connection.database('playerstats'));
+var nomenclatorDb = pr.wrapAll(connection.database('treason_players'));
+var gameStatsDb = pr.wrapAll(connection.database('treason_gamestats'));
+var playerStatsDb = pr.wrapAll(connection.database('treason_playerstats'));
 
 var ready = Promise.all([
-    nomenclator.exists().then(function (exists) {
+    nomenclatorDb.exists().then(function (exists) {
         if (!exists) {
-            return nomenclator.create();
+            return nomenclatorDb.create();
         }
     }),
-    gameStats.exists().then(function (exists) {
+    gameStatsDb.exists().then(function (exists) {
         if (!exists) {
-            return gameStats.create();
+            return gameStatsDb.create();
         }
     }),
-    playerStats.exists().then(function (exists) {
+    playerStatsDb.exists().then(function (exists) {
         if (!exists) {
-            return playerStats.create();
+            return playerStatsDb.create();
         }
     })
 ]);
@@ -39,11 +39,11 @@ module.exports = {
         //claims to have an id
         if (id) {
             //find the player
-            nomenclator.get(id)
+            nomenclatorDb.get(id)
                 .then(function (result) {
                     if (result.name != name) {
                         debug('Updating name of player ' + result.name + ' to ' + name);
-                        nomenclator.merge(id, {
+                        nomenclatorDb.merge(id, {
                             name: name
                         }).then(function (result) {
                             debug('Updated name of playerId ' + id);
@@ -64,7 +64,7 @@ module.exports = {
         if (createEntry) {
             //give new id
             id = crypto.randomBytes(32).toString('hex');
-            nomenclator.save(id, {
+            nomenclatorDb.save(id, {
                 name: name
             }).then(function (result) {
                 debug('Allocated new id ' + id + ' to player: ' + name);
@@ -72,15 +72,27 @@ module.exports = {
                 debug('Failed to save player');
                 debug(error);
             });
+        } else {
+            debug('Existing player '+ name +' logged in with id ' + id);
         }
 
         return id;
     },
-    recordGameStats: function (gameStats) {
-
+    recordGameData: function (gameData) {
+        gameStatsDb.save(gameData).then(function (result) {
+            debug('saved game data');
+        }).catch(function (error) {
+            debug('failed to save game data');
+            debug(error);
+        })
     },
-    recordPlayerStats: function (playerStats) {
-
+    recordPlayerData: function (playerData) {
+        playerStatsDb.save(playerData).then(function (result) {
+            debug('saved player data');
+        }).catch(function (error) {
+            debug('failed to save player data');
+            debug(error);
+        })
     }
 };
 
