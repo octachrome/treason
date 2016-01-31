@@ -162,22 +162,25 @@ function createAiPlayer(game, options) {
             return;
         }
 
-        if (shouldChallenge()) {
-            debug('challenging');
-            command({
-                command: 'challenge'
-            });
-            return;
-        }
+        // Don't bluff in the final action response - it will just get challlenged.
+        if (state.state.name == stateNames.ACTION_RESPONSE) {
+            if (shouldChallenge()) {
+                debug('challenging');
+                command({
+                    command: 'challenge'
+                });
+                return;
+            }
 
-        blockingRole = getBluffedBlockingRole();
-        if (blockingRole) {
-            debug('blocking (bluff)');
-            command({
-                command: 'block',
-                blockingRole: blockingRole
-            });
-            return;
+            blockingRole = getBluffedBlockingRole();
+            if (blockingRole) {
+                debug('blocking (bluff)');
+                command({
+                    command: 'block',
+                    blockingRole: blockingRole
+                });
+                return;
+            }
         }
 
         debug('allowing');
