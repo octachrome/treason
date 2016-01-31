@@ -69,11 +69,18 @@ module.exports = {
             }).then(function (result) {
                 debug('Allocated new id ' + id + ' to player: ' + name);
             }).catch(function (error) {
-                debug('Failed to save player, ' + error);
+                debug('Failed to save player');
+                debug(error);
             });
         }
 
         return id;
+    },
+    recordGameStats: function (gameStats) {
+
+    },
+    recordPlayerStats: function (playerStats) {
+
     }
 };
 
