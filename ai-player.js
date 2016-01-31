@@ -142,6 +142,16 @@ function createAiPlayer(game, options) {
 
     function respondToAction() {
         trackClaim(state.state.playerIdx, state.state.action);
+
+        if (state.state.action === 'steal' && aiPlayer.cash === 0) {
+            // If someone wants to steal nothing from us, go ahead.
+            debug('allowing');
+            command({
+                command: 'allow'
+            });
+            return;
+        }
+
         var blockingRole = getBlockingRole();
         if (blockingRole) {
             debug('blocking');
