@@ -210,7 +210,7 @@ module.exports = function createGame(options) {
 
     function checkOnlyAiLeft() {
         for (var i = 0; i < players.length; i++) {
-            if (players[i] && !players[i].ai) {
+            if (players[i] && players[i].type === 'human') {
                 return;
             }
         }
@@ -554,7 +554,7 @@ module.exports = function createGame(options) {
             }
             if (state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
                 if (state.state.target != playerIdx) {
-                    throw new GameException('Only the targetted player can allow the action');
+                    throw new GameException('Only the targeted player can allow the action');
                 }
             } else {
                 allows[playerIdx] = true;

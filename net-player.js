@@ -19,7 +19,8 @@ function createNetPlayer(game, socket, playerName) {
         name: playerName || ('Player ' + playerId++),
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
-        onChatMessage: onChatMessage
+        onChatMessage: onChatMessage,
+        type: 'human'
     };
 
     try {
