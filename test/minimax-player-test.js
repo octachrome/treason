@@ -633,5 +633,68 @@ describe('Minimax player', function () {
                 });
             });
         });
+
+        describe('Given that an opponent is exchanging', function () {
+            describe('Given that the opponent has one influence', function () {
+                beforeEach(function () {
+                    gameState.state.players[OPPONENT_1_IDX].influence[1].revealed = true;
+                    gameState.state.state = {
+                        name: stateNames.EXCHANGE,
+                        exchangeOptions: ['unknown', 'duke', 'captain']
+                    };
+                    gameState.currentPlayer = OPPONENT_1_IDX;
+                });
+
+                it('should include moves to choose each role', function () {
+                    var moves = player._test.getPossibleMoves(gameState);
+                    expect(moves).to.eql([
+                        {
+                            command: 'exchange',
+                            roles: ['unknown']
+                        },
+                        {
+                            command: 'exchange',
+                            roles: ['duke']
+                        },
+                        {
+                            command: 'exchange',
+                            roles: ['captain']
+                        }
+                    ]);
+                });
+            });
+        });
+
+        describe('Given that the opponent has two influences', function () {
+            beforeEach(function () {
+                gameState.state.state = {
+                    name: stateNames.EXCHANGE,
+                    exchangeOptions: ['unknown', 'unknown', 'duke', 'captain']
+                };
+                gameState.currentPlayer = OPPONENT_1_IDX;
+            });
+
+            it('should include moves to choose the unique combinations of roles', function () {
+                var moves = player._test.getPossibleMoves(gameState);
+                expect(moves).to.eql([
+                    {
+                        command: 'exchange',
+                        roles: ['unknown', 'unknown']
+                    },
+                    {
+                        command: 'exchange',
+                        roles: ['duke', 'unknown']
+                    },
+                    {
+                        command: 'exchange',
+                        roles: ['captain', 'unknown']
+                    },
+                    {
+                        command: 'exchange',
+                        roles: ['captain', 'duke']
+                    }
+                ]);
+            });
+        });
     });
 });
