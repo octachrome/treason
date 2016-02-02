@@ -85,7 +85,7 @@ function createMinimaxPlayer(game, options) {
         }
         else if (state.state.name === stateNames.ACTION_RESPONSE) {
             // A player can challenge, allow, or potentially block.
-            return [{command: 'challenge'}, {command: 'allow'}].concat(getPossibleBlockMoves(gameState));
+            return getPossibleBlockMoves(gameState).concat([{command: 'allow'}, {command: 'challenge'}]);
         }
         else if (state.state.name === stateNames.FINAL_ACTION_RESPONSE) {
             // A player has a final chance to block.
@@ -273,7 +273,7 @@ function createMinimaxPlayer(game, options) {
 
     return {
         _test: {
-            getPossibleActionMoves: getPossibleActionMoves,
+            getPossibleMoves: getPossibleMoves,
             setAiPlayerIdx: function (idx) {
                 aiPlayerIdx = idx;
             }
