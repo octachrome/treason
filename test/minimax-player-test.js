@@ -481,5 +481,157 @@ describe('Minimax player', function () {
                 ]);
             });
         });
+
+        describe('Given that the minimax player is exchanging', function () {
+            describe('Given that the minimax player has one influence', function () {
+                beforeEach(function () {
+                    gameState.state.players[AI_IDX].influence = [
+                        {
+                            role: 'duke',
+                            revealed: false
+                        },
+                        {
+                            role: 'captain',
+                            revealed: true
+                        }
+                    ];
+                });
+
+                describe('Given that all the available roles are different', function () {
+                    beforeEach(function () {
+                        gameState.state.state = {
+                            name: stateNames.EXCHANGE,
+                            exchangeOptions: ['duke', 'ambassador', 'contessa']
+                        };
+                        gameState.currentPlayer = AI_IDX;
+                    });
+
+                    it('should include moves to choose each possible role', function () {
+                        var moves = player._test.getPossibleMoves(gameState);
+                        expect(moves).to.eql([
+                            {
+                                command: 'exchange',
+                                roles: ['duke']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['ambassador']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['contessa']
+                            }
+                        ]);
+                    });
+                });
+
+                describe('Given that there are duplicate roles', function () {
+                    beforeEach(function () {
+                        gameState.state.state = {
+                            name: stateNames.EXCHANGE,
+                            exchangeOptions: ['duke', 'ambassador', 'duke']
+                        };
+                        gameState.currentPlayer = AI_IDX;
+                    });
+
+                    it('should include moves to choose each unique role', function () {
+                        var moves = player._test.getPossibleMoves(gameState);
+                        expect(moves).to.eql([
+                            {
+                                command: 'exchange',
+                                roles: ['duke']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['ambassador']
+                            }
+                        ]);
+                    });
+                });
+            });
+
+            describe('Given that the minimax player has two influences', function () {
+                beforeEach(function () {
+                    gameState.state.players[AI_IDX].influence = [
+                        {
+                            role: 'duke',
+                            revealed: false
+                        },
+                        {
+                            role: 'captain',
+                            revealed: false
+                        }
+                    ];
+                });
+
+                describe('Given that all the available roles are different', function () {
+                    beforeEach(function () {
+                        gameState.state.state = {
+                            name: stateNames.EXCHANGE,
+                            exchangeOptions: ['duke', 'captain', 'ambassador', 'contessa']
+                        };
+                        gameState.currentPlayer = AI_IDX;
+                    });
+
+                    it('should include moves to choose each possible combination of roles', function () {
+                        var moves = player._test.getPossibleMoves(gameState);
+                        expect(moves).to.eql([
+                            {
+                                command: 'exchange',
+                                roles: ['captain', 'duke']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['ambassador', 'duke']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['contessa', 'duke']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['ambassador', 'captain']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['captain', 'contessa']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['ambassador', 'contessa']
+                            }
+                        ]);
+                    });
+                });
+
+                describe('Given that there are duplicate roles', function () {
+                    beforeEach(function () {
+                        gameState.state.state = {
+                            name: stateNames.EXCHANGE,
+                            exchangeOptions: ['duke', 'ambassador', 'duke', 'ambassador']
+                        };
+                        gameState.currentPlayer = AI_IDX;
+                    });
+
+                    it('should include moves to choose the unique combinations of roles', function () {
+                        var moves = player._test.getPossibleMoves(gameState);
+                        expect(moves).to.eql([
+                            {
+                                command: 'exchange',
+                                roles: ['ambassador', 'duke']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['duke', 'duke']
+                            },
+                            {
+                                command: 'exchange',
+                                roles: ['ambassador', 'ambassador']
+                            }
+                        ]);
+                    });
+                });
+            });
+        });
     });
 });

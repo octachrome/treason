@@ -230,19 +230,19 @@ function createMinimaxPlayer(game, options) {
                     }
                 }
             }
-            rolesets = lodash.uniqWith(rolesets, function (a, b) {
-                return lodash.isEqual(a.sort(), b.sort());
-            });
         }
         else {
             // Impossible.
             rolesets = [];
         }
+        rolesets = lodash.uniqWith(rolesets, function (a, b) {
+            return lodash.isEqual(a.sort(), b.sort());
+        });
         return rolesets.map(function (roles) {
             return {
                 command: 'exchange',
-                roles: [roles]
-            }
+                roles: roles
+            };
         });
     }
 
