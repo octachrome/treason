@@ -1,3 +1,15 @@
+/*
+ * Copyright 2015 Christopher Brown
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
+ *
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to:
+ *     Creative Commons
+ *     PO Box 1866
+ *     Mountain View
+ *     CA 94042
+ *     USA
+ */
 var lodash = require('lodash');
 var Minimax = require('./minimax');
 var shared = require('./web/shared');
@@ -119,7 +131,7 @@ function createMinimaxPlayer(game, options) {
             for (i = 0; i < state.players.length; i++) {
                 if (i !== gameState.currentPlayer && countInfluence(state.players[i]) > 0) {
                     moves.push({
-                        command: 'action',
+                        command: 'play-action',
                         action: 'coup',
                         target: i
                     });
@@ -135,7 +147,7 @@ function createMinimaxPlayer(game, options) {
             for (i = 0; i < state.players.length; i++) {
                 if (i !== gameState.currentPlayer && countInfluence(state.players[i]) > 0) {
                     moves.push({
-                            command: 'action',
+                            command: 'play-action',
                         action: 'assassinate',
                         target: i
                     });
@@ -146,26 +158,26 @@ function createMinimaxPlayer(game, options) {
         for (i = 0; i < state.players.length; i++) {
             if (i !== gameState.currentPlayer && countInfluence(state.players[i]) > 0) {
                 moves.push({
-                    command: 'action',
+                    command: 'play-action',
                     action: 'steal',
                     target: i
                 });
             }
         }
         moves.push({
-            command: 'action',
+            command: 'play-action',
             action: 'tax'
         });
         moves.push({
-            command: 'action',
+            command: 'play-action',
             action: 'exchange'
         });
         moves.push({
-            command: 'action',
+            command: 'play-action',
             action: 'income'
         });
         moves.push({
-            command: 'action',
+            command: 'play-action',
             action: 'foreign-aid'
         });
         return moves;
@@ -247,6 +259,7 @@ function createMinimaxPlayer(game, options) {
     }
 
     function applyMove(gameState, move) {
+        
     }
 
     function getLivePlayers(state) {

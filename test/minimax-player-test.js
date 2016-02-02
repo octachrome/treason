@@ -67,24 +67,24 @@ describe('Minimax player', function () {
                     var moves = player._test.getPossibleMoves(gameState)
                     expect(moves).to.eql([
                         {
-                            command: 'action',
+                            command: 'play-action',
                             action: 'steal',
                             target: OPPONENT_1_IDX
                         },
                         {
-                            command: 'action',
+                            command: 'play-action',
                             action: 'tax'
                         },
                         {
-                            command: 'action',
+                            command: 'play-action',
                             action: 'exchange'
                         },
                         {
-                            command: 'action',
+                            command: 'play-action',
                             action: 'income'
                         },
                         {
-                            command: 'action',
+                            command: 'play-action',
                             action: 'foreign-aid'
                         }
                     ]);
@@ -117,39 +117,39 @@ describe('Minimax player', function () {
                         var moves = player._test.getPossibleMoves(gameState)
                         expect(moves).to.eql([
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'assassinate',
                                 target: OPPONENT_1_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'assassinate',
                                 target: OPPONENT_2_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'steal',
                                 target: OPPONENT_1_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'steal',
                                 target: OPPONENT_2_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'tax'
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'exchange'
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'income'
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'foreign-aid'
                             }
                         ]);
@@ -165,49 +165,49 @@ describe('Minimax player', function () {
                         var moves = player._test.getPossibleMoves(gameState)
                         expect(moves).to.eql([
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'coup',
                                 target: OPPONENT_1_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'coup',
                                 target: OPPONENT_2_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'assassinate',
                                 target: OPPONENT_1_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'assassinate',
                                 target: OPPONENT_2_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'steal',
                                 target: OPPONENT_1_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'steal',
                                 target: OPPONENT_2_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'tax'
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'exchange'
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'income'
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'foreign-aid'
                             }
                         ]);
@@ -223,12 +223,12 @@ describe('Minimax player', function () {
                         var moves = player._test.getPossibleMoves(gameState)
                         expect(moves).to.eql([
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'coup',
                                 target: OPPONENT_1_IDX
                             },
                             {
-                                command: 'action',
+                                command: 'play-action',
                                 action: 'coup',
                                 target: OPPONENT_2_IDX
                             }
