@@ -93,7 +93,7 @@ function createMinimaxPlayer(game, options) {
         }
         else if (state.state.name === stateNames.BLOCK_RESPONSE) {
             // An action has been blocked and a player has an opportunity to challenge.
-            return [{command: 'challenge'}, {command: 'allow'}];
+            return [{command: 'allow'}, {command: 'challenge'}];
         }
         else if (state.state.name === stateNames.REVEAL_INFLUENCE) {
             // A player must reveal an influence.
@@ -135,7 +135,7 @@ function createMinimaxPlayer(game, options) {
             for (i = 0; i < state.players.length; i++) {
                 if (i !== gameState.currentPlayer && countInfluence(state.players[i]) > 0) {
                     moves.push({
-                        command: 'action',
+                            command: 'action',
                         action: 'assassinate',
                         target: i
                     });
@@ -195,10 +195,10 @@ function createMinimaxPlayer(game, options) {
             var moves = [];
             var influence = gameState.state.players[aiPlayerIdx].influence;
             for (var i = 0; i < influence.length; i++) {
-                if (!influence.revealed) {
+                if (!influence[i].revealed) {
                     moves.push({
                         command: 'reveal',
-                        role: influence.role
+                        role: influence[i].role
                     });
                 }
             }
@@ -207,7 +207,7 @@ function createMinimaxPlayer(game, options) {
             // Doesn't matter which influence gets revealed because we don't know them.
             return [{
                 command: 'reveal',
-                role: 'unknown'
+                role: 0
             }];
         }
     }

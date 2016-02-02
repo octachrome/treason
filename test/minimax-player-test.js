@@ -349,5 +349,137 @@ describe('Minimax player', function () {
                 });
             });
         });
+
+        describe('Given it is the final chance to respond to a player\'s action', function () {
+            beforeEach(function () {
+                gameState.state.state = {
+                    name: stateNames.FINAL_ACTION_RESPONSE
+                };
+                gameState.state.players.push({
+                    cash: 0,
+                    influence: [
+                        {
+                            role: 'unknown',
+                            revealed: false
+                        },
+                        {
+                            role: 'unknown',
+                            revealed: false
+                        }
+                    ]
+                });
+            });
+
+            describe('Given that an opponent is trying to assassinate the current player', function () {
+                beforeEach(function () {
+                    gameState.state.state.action = 'assassinate';
+                    gameState.state.state.target = AI_IDX;
+                    gameState.currentPlayer = AI_IDX;
+                });
+
+                it('should include only a move to block the assassination', function () {
+                    var moves = player._test.getPossibleMoves(gameState);
+                    expect(moves).to.eql([
+                        {
+                            command: 'block',
+                            blockingRole: 'contessa'
+                        }
+                    ]);
+                });
+            });
+        });
+
+        describe('Given that a move has been blocked', function () {
+            beforeEach(function () {
+                gameState.state.state = {
+                    name: stateNames.BLOCK_RESPONSE
+                };
+                gameState.state.players.push({
+                    cash: 0,
+                    influence: [
+                        {
+                            role: 'unknown',
+                            revealed: false
+                        },
+                        {
+                            role: 'unknown',
+                            revealed: false
+                        }
+                    ]
+                });
+            });
+
+            describe('Given that an opponent is trying to assassinate another opponent', function () {
+                beforeEach(function () {
+                    gameState.state.state.action = 'assassinate';
+                    gameState.state.state.target = OPPONENT_1_IDX;
+                    gameState.currentPlayer = AI_IDX;
+                });
+
+                it('should include moves to allow and to challenge the block', function () {
+                    var moves = player._test.getPossibleMoves(gameState);
+                    expect(moves).to.eql([
+                        {
+                            command: 'allow'
+                        },
+                        {
+                            command: 'challenge'
+                        }
+                    ]);
+                });
+            });
+        });
+
+        describe('Given that the minimax player must reveal an influence', function () {
+            beforeEach(function () {
+                gameState.state.players[AI_IDX].influence = [
+                    {
+                        role: 'duke',
+                        revealed: false
+                    },
+                    {
+                        role: 'captain',
+                        revealed: false
+                    }
+                ];
+                gameState.state.state = {
+                    name: stateNames.REVEAL_INFLUENCE
+                };
+                gameState.currentPlayer = AI_IDX;
+            });
+
+            it('should include moves to reveal each possible role', function () {
+                var moves = player._test.getPossibleMoves(gameState);
+                expect(moves).to.eql([
+                    {
+                        command: 'reveal',
+                        role: 'duke'
+                    },
+                    {
+                        command: 'reveal',
+                        role: 'captain'
+                    }
+                ]);
+            });
+        });
+
+        describe('Given that an opponent must reveal an influence', function () {
+            beforeEach(function () {
+                gameState.state.state = {
+                    name: stateNames.REVEAL_INFLUENCE
+                };
+                gameState.currentPlayer = OPPONENT_1_IDX;
+            });
+
+            it('should include a single move to reveal, since we cannot distinguish between an opponent\'s influences', function () {
+                var moves = player._test.getPossibleMoves(gameState);
+                expect(moves).to.eql([
+                    {
+                        command: 'reveal',
+                        role: 0
+                    }
+                ]);
+            });
+        });
     });
 });
