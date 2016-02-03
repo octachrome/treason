@@ -84,17 +84,15 @@ ko.bindingHandlers.tooltip = {
 };
 var socket = io();
 socket.on('connect', function() {
-    socket.emit('hail', {
-        playerName: vm.playerName(),
-        playerId: vm.playerId()
-    });
-    socket.on('acknowledge', function(data) {
+    socket.on('handshake', function(data) {
+        vm.activeUsers(data.activeUsers);
         vm.playerId(data.playerId);
         localStorageSet('playerId', data.playerId);
     });
-});
-socket.on('hello', function (data) {
-    vm.activeUsers(data.activeUsers);
+    socket.emit('registerplayer', {
+        playerName: vm.playerName(),
+        playerId: vm.playerId()
+    });
 });
 socket.on('gameinprogress', function(data) {
     vm.bannerMessage('The game: "' + data.gameName + '" is currently in progress.');

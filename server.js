@@ -67,13 +67,11 @@ io.on('connection', function (socket) {
             activeUsers++;
         }
     }
-    socket.emit('hello', {
-        activeUsers: activeUsers
-    });
 
-    socket.on('hail', function (data) {
+    socket.on('registerplayer', function (data) {
         dataAccess.register(data.playerId, data.playerName).then(function (playerId) {
-            socket.emit('acknowledge', {
+            socket.emit('handshake', {
+                activeUsers: activeUsers,
                 playerId: playerId
             });
             socket.playerId = playerId;
