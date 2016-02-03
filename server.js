@@ -72,9 +72,11 @@ io.on('connection', function (socket) {
     });
 
     socket.on('hail', function (data) {
+        var playerId = dataAccess.register(data.playerId, data.playerName);
         socket.emit('acknowledge', {
-            playerId: dataAccess.register(data.playerId, data.playerName)
+            playerId: playerId
         });
+        socket.playerId = playerId;
     });
 
     socket.on('join', function (data) {
