@@ -208,7 +208,7 @@ module.exports = function createGame(options) {
 
     function checkOnlyAiLeft() {
         for (var i = 0; i < players.length; i++) {
-            if (players[i] && players[i].type === 'human') {
+            if (players[i] && (players[i].type || 'human') === 'human') {
                 return;
             }
         }
