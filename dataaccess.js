@@ -24,75 +24,72 @@ var ready = Promise.all([
             return playerStatsDb.create();
         }
     })
-]);
-
-ready.catch(function (err) {
-    console.err('Stats failed to initialize:');
-    console.err(err);
+]).then(function() {
+    debug('All databases initialized');
+}).catch(function(error) {
+    debug('Failed to initialize database(s)');
+    debug(error);
 });
 
 module.exports = {
     register: function (id, name) {
-        var createEntry = false;
-        debug('Player ' + name + ', trying to register with id ' + id);
+        return ready.then(function() {
+            debug('Player ' + name + ', trying to register with id ' + id);
 
-        //claims to have an id
-        if (id) {
-            //find the player
-            nomenclatorDb.get(id)
+            return nomenclatorDb.get(id)
                 .then(function (result) {
                     if (result.name != name) {
                         debug('Updating name of player ' + result.name + ' to ' + name);
                         nomenclatorDb.merge(id, {
                             name: name
                         }).then(function (result) {
-                            debug('Updated name of playerId ' + id);
+                            debug('Updated name of playerId ' + id + ' to ' + name);
                         }).catch(function (error) {
                             debug('Failed to update player.');
                             debug(error);
                         });
                     }
-                }).catch(function (error) {
-                //failed to find the player, recreate with new id
-                debug('Id ' + id + ' not recognised, recreating');
-                createEntry = true;
-            });
-        } else {
-            createEntry = true;
-        }
+                    debug('Existing player ' + name + ' logged in with id ' + id);
+                })
+                .catch(function (error) {
+                    //failed to find the player, recreate with new id
+                    debug('Id ' + id + ' not recognised, recreating');
+                    id = crypto.randomBytes(32).toString('hex');
 
-        if (createEntry) {
-            //give new id
-            id = crypto.randomBytes(32).toString('hex');
-            nomenclatorDb.save(id, {
-                name: name
-            }).then(function (result) {
-                debug('Allocated new id ' + id + ' to player: ' + name);
-            }).catch(function (error) {
-                debug('Failed to save player');
-                debug(error);
-            });
-        } else {
-            debug('Existing player '+ name +' logged in with id ' + id);
-        }
-
-        return id;
+                    debug('Saving new id ' + id + ' for player ' + name);
+                    return nomenclatorDb.save(id, {
+                        name: name
+                    }).then(function (result) {
+                        debug('Allocated new id ' + id + ' to player: ' + name);
+                    }).catch(function (error) {
+                        debug('Failed to save player');
+                        debug(error);
+                    });
+                })
+                .then(function() {
+                    return id;
+                });
+        });
     },
     recordGameData: function (gameData) {
-        gameStatsDb.save(gameData).then(function (result) {
-            debug('saved game data');
-        }).catch(function (error) {
-            debug('failed to save game data');
-            debug(error);
-        })
+        return ready.then(function () {
+            return gameStatsDb.save(gameData).then(function (result) {
+                debug('saved game data');
+            }).catch(function (error) {
+                debug('failed to save game data');
+                debug(error);
+            });
+        });
     },
     recordPlayerData: function (playerData) {
-        playerStatsDb.save(playerData).then(function (result) {
-            debug('saved player data');
-        }).catch(function (error) {
-            debug('failed to save player data');
-            debug(error);
-        })
+        return ready.then(function () {
+            playerStatsDb.save(playerData).then(function (result) {
+                debug('saved player data');
+            }).catch(function (error) {
+                debug('failed to save player data');
+                debug(error);
+            });
+        });
     }
 };
 
