@@ -419,9 +419,9 @@ describe('Game', function () {
                 game._test_setTurnState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: 0,
-                    action: 'tax'
+                    action: 'tax',
+                    allowed: [true, false, false]
                 });
-                game._test_resetAllows(0);
 
                 player2.command({
                     command: 'allow'

@@ -56,7 +56,6 @@ module.exports = function createGame(options) {
     };
 
     var players = [];
-    var allows = [];
     var proxies = [];
 
     var deck = buildDeck();
@@ -69,7 +68,6 @@ module.exports = function createGame(options) {
     game._test_setInfluence = _test_setInfluence;
     game._test_setCash = _test_setCash;
     game._test_setDeck = _test_setDeck;
-    game._test_resetAllows = resetAllows;
 
     function playerJoined(player) {
         var isObserver = false;
@@ -194,7 +192,7 @@ module.exports = function createGame(options) {
                     } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx) {
                         nextTurn();
                     } else if ((state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.BLOCK_RESPONSE)
-                        && !allows[playerIdx]) {
+                        && !state.state.allowed[playerIdx]) {
                         allow(playerIdx);
                     }
                 }
@@ -390,9 +388,9 @@ module.exports = function createGame(options) {
                     playerIdx: playerIdx,
                     action: command.action,
                     target: command.target,
-                    message: message
+                    message: message,
+                    allowed: initAllowed(playerIdx)
                 });
-                resetAllows(playerIdx);
             }
 
         } else if (command.command == 'challenge') {
@@ -486,9 +484,9 @@ module.exports = function createGame(options) {
                 action: state.state.action,
                 target: playerIdx,
                 blockingRole: command.blockingRole,
-                message: format('{%d} attempted to block with ' + command.blockingRole, playerIdx)
+                message: format('{%d} attempted to block with ' + command.blockingRole, playerIdx),
+                allowed: initAllowed(playerIdx)
             });
-            resetAllows(playerIdx);
 
         } else if (command.command == 'allow') {
             if (player.influenceCount == 0) {
@@ -540,8 +538,8 @@ module.exports = function createGame(options) {
             if (state.state.target == playerIdx) {
                 throw new GameException('Cannot allow your own block');
             }
-            allows[playerIdx] = true;
-            if (everyoneAllows()) {
+            state.state.allowed[playerIdx] = true;
+            if (everyoneAllowed()) {
                 contHistory('block', '{%d} blocked with %s', state.state.target, state.state.blockingRole);
                 nextTurn();
                 return true;
@@ -557,8 +555,8 @@ module.exports = function createGame(options) {
                     throw new GameException('Only the targeted player can allow the action');
                 }
             } else {
-                allows[playerIdx] = true;
-                if (!everyoneAllows()) {
+                state.state.allowed[playerIdx] = true;
+                if (!everyoneAllowed()) {
                     return false;
                 }
             }
@@ -623,19 +621,20 @@ module.exports = function createGame(options) {
         return array;
     }
 
-    function resetAllows(initiatingPlayerIdx) {
-        allows = [];
+    function initAllowed(initiatingPlayerIdx) {
+        var allowed = [];
         // The player who took the action does not need to allow it.
-        allows[initiatingPlayerIdx] = true;
+        allowed[initiatingPlayerIdx] = true;
+        return allowed;
     }
 
-    function everyoneAllows() {
+    function everyoneAllowed() {
         for (var i = 0; i < state.numPlayers; i++) {
             if (state.players[i].influenceCount == 0) {
                 // We don't care whether dead players allowed the action.
                 continue;
             }
-            if (!allows[i]) {
+            if (!state.state.allowed[i]) {
                 return false;
             }
         }
