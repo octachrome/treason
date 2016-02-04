@@ -81,9 +81,9 @@ module.exports = {
             });
         });
     },
-    recordPlayerData: function (playerData) {
+    recordPlayerData: function (playerId, playerData) {
         return ready.then(function () {
-            playerStatsDb.save(playerData).then(function (result) {
+            return playerStatsDb.save(playerId, playerData).then(function (result) {
                 debug('saved player data');
             }).catch(function (error) {
                 debug('failed to save player data');
