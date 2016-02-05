@@ -15,6 +15,7 @@ var fs = require('fs');
 var rand = require('random-seed')();
 var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared');
+var dataAccess = require('./dataaccess');
 var actions = shared.actions;
 var stateNames = shared.states;
 
@@ -55,6 +56,15 @@ module.exports = function createGame(options) {
         }
     };
 
+    var gameStats = {
+        players: 0,
+        onlyHumans: true,
+        playerRank: [],
+        bluffs: 0,
+        challenges: 0,
+        moves: 0
+    };
+
     var players = [];
     var allows = [];
     var proxies = [];
@@ -71,7 +81,7 @@ module.exports = function createGame(options) {
     game._test_setDeck = _test_setDeck;
     game._test_resetAllows = resetAllows;
 
-    function playerJoined(player) {
+    function playerJoined(player, playerId) {
         var isObserver = false;
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
             isObserver = true;
@@ -100,14 +110,19 @@ module.exports = function createGame(options) {
                     revealed: false
                 }
             ],
-            isObserver: isObserver
+            isObserver: isObserver,
+            playerId: playerId
         };
 
         if (isObserver) {
             playerState.cash = 0;
             playerState.influenceCount = 0;
             playerState.influence = [];
+        } else {
+            gameStats.players++;
         }
+
+        gameStats.onlyHumans = playerId && gameStats.onlyHumans;
 
         var playerIdx = state.players.length;
         state.players.push(playerState);
@@ -153,7 +168,7 @@ module.exports = function createGame(options) {
         };
         proxy.getGameName = function () {
             return state.gameName;
-        }
+        };
         return proxy;
     }
 
@@ -225,6 +240,8 @@ module.exports = function createGame(options) {
     }
 
     function afterPlayerDeath(playerIdx) {
+        gameStats.playerRank.push(state.players[playerIdx].playerId);
+        console.log('player ' + state.players[playerIdx].playerId + ' lost');
         addHistory('player-died', '{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
@@ -245,6 +262,13 @@ module.exports = function createGame(options) {
             setState({
                 name: stateNames.GAME_WON,
                 playerIdx: winnerIdx
+            });
+            gameStats.playerRank.push(state.players[winnerIdx].playerId);
+            console.log('player ' + state.players[winnerIdx].playerId + ' won');
+            dataAccess.recordGameData(gameStats).then(function() {
+                dataAccess.getPlayerWins(winnerIdx).then(function(result) {
+                    console.log('player ' + winnerIdx  + ' has won ' + result + ' times');
+                })
             });
             game.emit('end');
             return true;
