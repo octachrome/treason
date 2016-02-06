@@ -1,21 +1,18 @@
 var expect = require('expect.js');
-var createMinimaxPlayer = require('../minimax-player');
+var MinimaxCoup = require('../minimax-coup');
 var shared = require('../web/shared');
 var stateNames = shared.states;
-
-var fakeGame = {
-    playerJoined: function () {}
-};
 
 var AI_IDX = 0;
 var OPPONENT_1_IDX = 1;
 var OPPONENT_2_IDX = 2;
 
 describe('Minimax player', function () {
-    var player, gameState;
+    var minimaxCoup, gameState;
 
     beforeEach(function () {
-        player = createMinimaxPlayer(fakeGame);
+        minimaxCoup = new MinimaxCoup(AI_IDX);
+
         gameState = {
             livePlayers: [true, true],
             currentPlayer: AI_IDX,
@@ -53,7 +50,6 @@ describe('Minimax player', function () {
                 playerIdx: AI_IDX
             }
         };
-        player._test.setAiPlayerIdx(AI_IDX);
     });
 
     describe('Possible moves', function () {
@@ -66,7 +62,7 @@ describe('Minimax player', function () {
 
             describe('Given the minimax player has one opponent and no cash', function () {
                 it('should enumerate the zero-cost actions in priority order', function () {
-                    var moves = player._test.getPossibleMoves(gameState)
+                    var moves = minimaxCoup.getPossibleMoves(gameState)
                     expect(moves).to.eql([
                         {
                             command: 'play-action',
@@ -117,7 +113,7 @@ describe('Minimax player', function () {
                     });
 
                     it('should include assassinate actions', function () {
-                        var moves = player._test.getPossibleMoves(gameState)
+                        var moves = minimaxCoup.getPossibleMoves(gameState)
                         expect(moves).to.eql([
                             {
                                 command: 'play-action',
@@ -165,7 +161,7 @@ describe('Minimax player', function () {
                     });
 
                     it('should include coup actions', function () {
-                        var moves = player._test.getPossibleMoves(gameState)
+                        var moves = minimaxCoup.getPossibleMoves(gameState)
                         expect(moves).to.eql([
                             {
                                 command: 'play-action',
@@ -223,7 +219,7 @@ describe('Minimax player', function () {
                     });
 
                     it('should only include coup actions', function () {
-                        var moves = player._test.getPossibleMoves(gameState)
+                        var moves = minimaxCoup.getPossibleMoves(gameState)
                         expect(moves).to.eql([
                             {
                                 command: 'play-action',
@@ -270,7 +266,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should include a move to block the assassination, followed by one to allow and one to challenge', function () {
-                    var moves = player._test.getPossibleMoves(gameState);
+                    var moves = minimaxCoup.getPossibleMoves(gameState);
                     expect(moves).to.eql([
                         {
                             command: 'block',
@@ -294,7 +290,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should not include any blocking moves', function () {
-                    var moves = player._test.getPossibleMoves(gameState);
+                    var moves = minimaxCoup.getPossibleMoves(gameState);
                     expect(moves).to.eql([
                         {
                             command: 'allow'
@@ -314,7 +310,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should include the moves to block the steal', function () {
-                    var moves = player._test.getPossibleMoves(gameState);
+                    var moves = minimaxCoup.getPossibleMoves(gameState);
                     expect(moves).to.eql([
                         {
                             command: 'block',
@@ -341,7 +337,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should not include any blocking moves; only allow and challenge', function () {
-                    var moves = player._test.getPossibleMoves(gameState);
+                    var moves = minimaxCoup.getPossibleMoves(gameState);
                     expect(moves).to.eql([
                         {
                             command: 'allow'
@@ -383,7 +379,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should include only a move to block the assassination', function () {
-                    var moves = player._test.getPossibleMoves(gameState);
+                    var moves = minimaxCoup.getPossibleMoves(gameState);
                     expect(moves).to.eql([
                         {
                             command: 'block',
@@ -423,7 +419,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should include moves to allow and to challenge the block', function () {
-                    var moves = player._test.getPossibleMoves(gameState);
+                    var moves = minimaxCoup.getPossibleMoves(gameState);
                     expect(moves).to.eql([
                         {
                             command: 'allow'
@@ -455,7 +451,7 @@ describe('Minimax player', function () {
             });
 
             it('should include moves to reveal each possible role', function () {
-                var moves = player._test.getPossibleMoves(gameState);
+                var moves = minimaxCoup.getPossibleMoves(gameState);
                 expect(moves).to.eql([
                     {
                         command: 'reveal',
@@ -478,7 +474,7 @@ describe('Minimax player', function () {
             });
 
             it('should include a single move to reveal, since we cannot distinguish between an opponent\'s influences', function () {
-                var moves = player._test.getPossibleMoves(gameState);
+                var moves = minimaxCoup.getPossibleMoves(gameState);
                 expect(moves).to.eql([
                     {
                         command: 'reveal',
@@ -514,7 +510,7 @@ describe('Minimax player', function () {
                     });
 
                     it('should include moves to choose each possible role', function () {
-                        var moves = player._test.getPossibleMoves(gameState);
+                        var moves = minimaxCoup.getPossibleMoves(gameState);
                         expect(moves).to.eql([
                             {
                                 command: 'exchange',
@@ -542,7 +538,7 @@ describe('Minimax player', function () {
                     });
 
                     it('should include moves to choose each unique role', function () {
-                        var moves = player._test.getPossibleMoves(gameState);
+                        var moves = minimaxCoup.getPossibleMoves(gameState);
                         expect(moves).to.eql([
                             {
                                 command: 'exchange',
@@ -581,7 +577,7 @@ describe('Minimax player', function () {
                     });
 
                     it('should include moves to choose each possible combination of roles', function () {
-                        var moves = player._test.getPossibleMoves(gameState);
+                        var moves = minimaxCoup.getPossibleMoves(gameState);
                         expect(moves).to.eql([
                             {
                                 command: 'exchange',
@@ -621,7 +617,7 @@ describe('Minimax player', function () {
                     });
 
                     it('should include moves to choose the unique combinations of roles', function () {
-                        var moves = player._test.getPossibleMoves(gameState);
+                        var moves = minimaxCoup.getPossibleMoves(gameState);
                         expect(moves).to.eql([
                             {
                                 command: 'exchange',
@@ -654,7 +650,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should include moves to choose each role', function () {
-                    var moves = player._test.getPossibleMoves(gameState);
+                    var moves = minimaxCoup.getPossibleMoves(gameState);
                     expect(moves).to.eql([
                         {
                             command: 'exchange',
@@ -683,7 +679,7 @@ describe('Minimax player', function () {
             });
 
             it('should include moves to choose the unique combinations of roles', function () {
-                var moves = player._test.getPossibleMoves(gameState);
+                var moves = minimaxCoup.getPossibleMoves(gameState);
                 expect(moves).to.eql([
                     {
                         command: 'exchange',
@@ -722,7 +718,7 @@ describe('Minimax player', function () {
                     var newStates;
 
                     beforeEach(function () {
-                        newStates = player._test.applyMove(gameState, {
+                        newStates = minimaxCoup.applyMove(gameState, {
                             command: 'challenge'
                         });
                     });
@@ -805,7 +801,7 @@ describe('Minimax player', function () {
                     var newStates;
 
                     beforeEach(function () {
-                        newStates = player._test.applyMove(gameState, {
+                        newStates = minimaxCoup.applyMove(gameState, {
                             command: 'challenge'
                         });
                     });
@@ -884,7 +880,7 @@ describe('Minimax player', function () {
                     var newStates;
 
                     beforeEach(function () {
-                        newStates = player._test.applyMove(gameState, {
+                        newStates = minimaxCoup.applyMove(gameState, {
                             command: 'challenge'
                         });
                     });
@@ -965,7 +961,7 @@ describe('Minimax player', function () {
                     var newStates;
 
                     beforeEach(function () {
-                        newStates = player._test.applyMove(gameState, {
+                        newStates = minimaxCoup.applyMove(gameState, {
                             command: 'challenge'
                         });
                     });
@@ -1060,7 +1056,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should be that player\'s turn to move', function () {
-                    expect(player._test.whoseTurn(gameState.state)).to.be(3);
+                    expect(minimaxCoup.whoseTurn(gameState.state)).to.be(3);
                 });
             });
 
@@ -1076,7 +1072,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should be the attacked player\'s turn to move', function () {
-                    expect(player._test.whoseTurn(gameState.state)).to.be(1);
+                    expect(minimaxCoup.whoseTurn(gameState.state)).to.be(1);
                 });
 
                 describe('Given the attacked player has already allowed', function () {
@@ -1085,7 +1081,7 @@ describe('Minimax player', function () {
                     });
 
                     it('should be the first player\'s turn to move', function () {
-                        expect(player._test.whoseTurn(gameState.state)).to.be(0);
+                        expect(minimaxCoup.whoseTurn(gameState.state)).to.be(0);
                     });
                 });
             });
@@ -1101,7 +1097,7 @@ describe('Minimax player', function () {
                 });
 
                 it('should be the first player\'s turn to respond', function () {
-                    expect(player._test.whoseTurn(gameState.state)).to.be(0);
+                    expect(minimaxCoup.whoseTurn(gameState.state)).to.be(0);
                 });
 
                 describe('Given the first player has already allowed', function () {
@@ -1110,7 +1106,7 @@ describe('Minimax player', function () {
                     });
 
                     it('should be the second player\'s turn to move', function () {
-                        expect(player._test.whoseTurn(gameState.state)).to.be(1);
+                        expect(minimaxCoup.whoseTurn(gameState.state)).to.be(1);
                     });
                 });
             });
