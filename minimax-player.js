@@ -17,11 +17,22 @@ var shared = require('./web/shared');
 var stateNames = shared.states;
 var actions = shared.actions;
 
+var ROLE_VALUES = {
+    'captain': 9,
+    'duke': 8,
+    'assassin': 7,
+    'ambassador': 6,
+    'contessa': 5,
+    'unknown': 7    // The average value of an influence.
+};
+var CASH_VALUE = 1; // The value of each unit of cash.
+var DEATH_PENALTY = -100000; // The penalty for being dead.
+
 function createMinimaxPlayer(game, options) {
     var player = {
         name: 'Minimax',
         onStateChange: onStateChange,
-        onHistoryEvent: onHistoryEvent,
+        onHistoryEvent: function () {},
         onChatMessage: function() {},
         type: 'minimax'
     };
@@ -86,10 +97,33 @@ function createMinimaxPlayer(game, options) {
         });
     }
 
-    function onHistoryEvent() {
+    function evaluate(gameState, playerIdx) {
+        var value = evaluateSingle(gameState, playerIdx);
+        if (value === 0) {
+            return DEATH_PENALTY;
+        }
+        else {
+            // Subtract all other player's scores.
+            for (var i = 0; i < gameState.state.players.length; i++) {
+                if (i !=== playerIdx) {
+                    value -= evaluateSingle(gameState, i);
+                }
+            }
+        }
     }
 
-    function evaluate(gameState, playerIdx) {
+    function evaluateSingle(gameState, playerIdx) {
+        var player = gameState.state.players[playerIdx];
+        if (player.influenceCount === 0) {
+            return 0;
+        }
+        var value = player.cash * CASH_VALUE;
+        player.influence.forEach(function (influence) {
+            if (!influence.revealed) {
+                value += ROLE_VALUES[influence.role];
+            }
+        });
+        return value;
     }
 
     /**
