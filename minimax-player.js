@@ -12,6 +12,7 @@
  */
 var lodash = require('lodash');
 var Minimax = require('./minimax');
+var createGameCore = require('./game-core');
 var shared = require('./web/shared');
 var stateNames = shared.states;
 var actions = shared.actions;
@@ -37,6 +38,12 @@ function createMinimaxPlayer(game, options) {
         evaluate: evaluate,
         getPossibleMoves: getPossibleMoves,
         applyMove: applyMove
+    });
+
+    var gameCore = createGameCore({
+        drawRole: function () {
+            return 'unknown';
+        }
     });
 
     var aiPlayerIdx;
@@ -129,7 +136,7 @@ function createMinimaxPlayer(game, options) {
         if (player.cash >= 7) {
             // Enumerate the player's possible coup targets.
             for (i = 0; i < state.players.length; i++) {
-                if (i !== gameState.currentPlayer && countInfluence(state.players[i]) > 0) {
+                if (i !== gameState.currentPlayer && countInfluences(state.players[i]) > 0) {
                     moves.push({
                         command: 'play-action',
                         action: 'coup',
@@ -145,7 +152,7 @@ function createMinimaxPlayer(game, options) {
         if (player.cash >= 3) {
             // Enumerate the player's possible assassination targets.
             for (i = 0; i < state.players.length; i++) {
-                if (i !== gameState.currentPlayer && countInfluence(state.players[i]) > 0) {
+                if (i !== gameState.currentPlayer && countInfluences(state.players[i]) > 0) {
                     moves.push({
                             command: 'play-action',
                         action: 'assassinate',
@@ -156,7 +163,7 @@ function createMinimaxPlayer(game, options) {
         }
         // Enumerate the player's possible steal targets.
         for (i = 0; i < state.players.length; i++) {
-            if (i !== gameState.currentPlayer && countInfluence(state.players[i]) > 0) {
+            if (i !== gameState.currentPlayer && countInfluences(state.players[i]) > 0) {
                 moves.push({
                     command: 'play-action',
                     action: 'steal',
@@ -203,29 +210,17 @@ function createMinimaxPlayer(game, options) {
     }
 
     function getPossibleRevealMoves(gameState) {
-        if (gameState.currentPlayer === aiPlayerIdx) {
-            var moves = [];
-            var influence = gameState.state.players[aiPlayerIdx].influence;
-            for (var i = 0; i < influence.length; i++) {
-                if (!influence[i].revealed) {
-                    moves.push({
-                        command: 'reveal',
-                        role: influence[i].role
-                    });
-                }
-            }
-            return moves;
-        } else {
-            // Doesn't matter which influence gets revealed because we don't know them.
-            return [{
+        var influences = getInfluences(gameState.state.players[gameState.currentPlayer]);
+        return lodash.uniq(influences).map(function (role) {
+            return {
                 command: 'reveal',
-                role: 0
-            }];
-        }
+                role: role
+            };
+        });
     }
 
     function getPossibleExchangeMoves(gameState) {
-        var count = countInfluence(gameState.state.players[gameState.currentPlayer]);
+        var count = countInfluences(gameState.state.players[gameState.currentPlayer]);
         var exchangeOptions = gameState.state.state.exchangeOptions;
         var rolesets;
         if (count === 1) {
@@ -259,34 +254,174 @@ function createMinimaxPlayer(game, options) {
     }
 
     function applyMove(gameState, move) {
-        
+        var oldStateName = gameState.state.state.name;
+        var newState, newPlayer, i;
+
+        if (move.command === 'challenge') {
+            var challengedPlayer, challengedRole;
+            if (gameState.state.state.name === stateNames.ACTION_RESPONSE || gameState.state.state.name === stateNames.FINAL_ACTION_RESPONSE) {
+                challengedPlayer = gameState.state.state.playerIdx;
+                challengedRole = actions[gameState.state.state.action].role;
+            }
+            else if (gameState.state.state.name === stateNames.BLOCK_RESPONSE) {
+                challengedPlayer = gameState.state.state.target;
+                challengedRole = gameState.state.state.blockingRole;
+            }
+            else {
+                throw new Error('Illegal state');
+            }
+
+            // todo: optimize on the first turn if the AI knows the challenge outcome (no opponent choices further up the tree)
+
+            // Set all the roles to 'unknown' - the challenge will be correct by default.
+            var correctChallengePreState = lodash.cloneDeep(gameState.state);
+            correctChallengePreState.players[challengedPlayer].influence.forEach(function (influence) {
+                if (!influence.revealed) {
+                    influence.role = 'unknown';
+                }
+            });
+
+            // Grant the player the role to force the challenge to be incorrect.
+            var incorrectChallengePreState = lodash.cloneDeep(gameState.state);
+            incorrectChallengePreState.players[challengedPlayer].influence.forEach(function (influence) {
+                if (!influence.revealed) {
+                    influence.role = challengedRole;
+                }
+            });
+
+            var correctChallengePostState = gameCore.applyCommand(correctChallengePreState, gameState.currentPlayer, move);
+            var incorrectChallengePostState = gameCore.applyCommand(incorrectChallengePreState, gameState.currentPlayer, move);
+
+            var correctChallengeLikelihood, incorrectChallengeLikelihood, correctChallengeLikelihoodAi, incorrectChallengeLikelihoodAi;
+
+            var influences = getInfluences(gameState.state.players[challengedPlayer]);
+            if (influences.length === 2) {
+                // Simple probability of being dealt a given role.
+                correctChallengeLikelihood = 0.36;
+                incorrectChallengeLikelihood = 0.64;
+            }
+            else if (influences.length === 1) {
+                // Simple probability of having any one of five possible roles.
+                correctChallengeLikelihood = 0.2;
+                incorrectChallengeLikelihood = 0.8;
+            }
+            else {
+                throw new Error('Illegal state');
+            }
+
+            if (challengedPlayer === aiPlayerIdx) {
+                var hasRole = influences.indexOf(challengedRole) > -1;
+                if (hasRole) {
+                    correctChallengeLikelihoodAi = 0;
+                    incorrectChallengeLikelihoodAi = 1;
+                }
+                else {
+                    correctChallengeLikelihoodAi = 1;
+                    incorrectChallengeLikelihoodAi = 0;
+                }
+            }
+
+            return [
+                {
+                    likelihood: correctChallengeLikelihood,
+                    likelihoodAi: correctChallengeLikelihoodAi,
+                    state: correctChallengePostState,
+                    currentPlayer: whoseTurn(correctChallengePostState, oldStateName),
+                    livePlayers: getLivePlayers(correctChallengePostState)
+                },
+                {
+                    likelihood: incorrectChallengeLikelihood,
+                    likelihoodAi: incorrectChallengeLikelihoodAi,
+                    state: incorrectChallengePostState,
+                    currentPlayer: whoseTurn(incorrectChallengePostState, oldStateName),
+                    livePlayers: getLivePlayers(incorrectChallengePostState)
+                }
+            ];
+        } else {
+            newState = gameCore.applyCommand(gameState.state, gameState.currentPlayer, move);
+            return {
+                state: newState,
+                currentPlayer: whoseTurn(newState, oldStateName),
+                livePlayers: getLivePlayers(newState)
+            };
+        }
+    }
+
+    function whoseTurn(newState, oldStateName) {
+        if (newState.state.name === stateNames.START_OF_TURN) {
+            return newState.state.playerIdx;
+        }
+        else if (newState.state.name === stateNames.ACTION_RESPONSE ||
+            newState.state.name === stateNames.BLOCK_RESPONSE) {
+
+            if (newState.state.name !== oldStateName) {
+                if (newState.state.name === stateNames.ACTION_RESPONSE &&
+                    newState.state.target != null) {
+                    // The target should play first because they are most likely to respond.
+                    return newState.state.target;
+                }
+                else if (newState.state.name === stateNames.BLOCK_RESPONSE) {
+                    // The player whose action is blocked should play first because they are most likely to respond.
+                    return newState.state.playerIdx;
+                }
+            }
+            // Pick the first player who can respond.
+            for (i = 0; i < newState.state.allowed.length; i++) {
+                if (!newState.state.allowed[i]) {
+                    return i;
+                }
+            }
+            throw new Error('Illegal state');
+        }
+        else if (newState.state.name === stateNames.FINAL_ACTION_RESPONSE) {
+            // The target of the action is the only player who can play.
+            return newState.state.target;
+        }
+        else if (newState.state.name === stateNames.GAME_WON) {
+            // No one can play once the game is over.
+            return null;
+        }
+        else if (newState.state.name === stateNames.EXCHANGE) {
+            return newState.state.playerIdx;
+        }
+        else if (newState.state.name === stateNames.REVEAL_INFLUENCE) {
+            return newState.state.playerToReveal;
+        }
+        else {
+            throw new Error('Illegal state');
+        }
     }
 
     function getLivePlayers(state) {
         var live = [];
         for (var i = 0; i < state.players.length; i++) {
             var player = state.players[i];
-            var hasInfluence = countInfluence(player) > 0;
+            var hasInfluence = countInfluences(player) > 0;
             live.push(hasInfluence);
         }
     }
 
-    function countInfluence(player) {
+    function countInfluences(player) {
+        return getInfluences(player).length;
+    }
+
+    function getInfluences(player) {
         if (player.isObserver) {
-            return 0;
+            return [];
         }
-        var count = 0;
+        var roles = [];
         for (var i = 0; i < player.influence.length; i++) {
             if (!player.influence[i].revealed) {
-                count++;
+                roles.push(player.influence[i].role);
             }
         }
-        return count;
+        return roles;
     }
 
     return {
         _test: {
             getPossibleMoves: getPossibleMoves,
+            applyMove: applyMove,
             setAiPlayerIdx: function (idx) {
                 aiPlayerIdx = idx;
             }

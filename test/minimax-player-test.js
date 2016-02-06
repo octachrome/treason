@@ -32,7 +32,8 @@ describe('Minimax player', function () {
                                 role: 'ambassador',
                                 revealed: false
                             }
-                        ]
+                        ],
+                        influenceCount: 2
                     },
                     {
                         cash: 0,
@@ -44,8 +45,9 @@ describe('Minimax player', function () {
                             {
                                 role: 'unknown',
                                 revealed: false
-                            }
-                        ]
+                            },
+                        ],
+                        influenceCount: 2
                     }
                 ],
                 playerIdx: AI_IDX
@@ -104,7 +106,8 @@ describe('Minimax player', function () {
                                 role: 'unknown',
                                 revealed: false
                             }
-                        ]
+                        ],
+                        influenceCount: 2
                     });
                 });
 
@@ -254,7 +257,8 @@ describe('Minimax player', function () {
                             role: 'unknown',
                             revealed: false
                         }
-                    ]
+                    ],
+                    influenceCount: 2
                 });
             });
 
@@ -366,7 +370,8 @@ describe('Minimax player', function () {
                             role: 'unknown',
                             revealed: false
                         }
-                    ]
+                    ],
+                    influenceCount: 2
                 });
             });
 
@@ -405,7 +410,8 @@ describe('Minimax player', function () {
                             role: 'unknown',
                             revealed: false
                         }
-                    ]
+                    ],
+                    influenceCount: 2
                 });
             });
 
@@ -476,7 +482,7 @@ describe('Minimax player', function () {
                 expect(moves).to.eql([
                     {
                         command: 'reveal',
-                        role: 0
+                        role: 'unknown'
                     }
                 ]);
             });
@@ -495,6 +501,7 @@ describe('Minimax player', function () {
                             revealed: true
                         }
                     ];
+                    gameState.state.players[AI_IDX].influenceCount = 1;
                 });
 
                 describe('Given that all the available roles are different', function () {
@@ -638,6 +645,7 @@ describe('Minimax player', function () {
             describe('Given that the opponent has one influence', function () {
                 beforeEach(function () {
                     gameState.state.players[OPPONENT_1_IDX].influence[1].revealed = true;
+                    gameState.state.players[OPPONENT_1_IDX].influenceCount = 1;
                     gameState.state.state = {
                         name: stateNames.EXCHANGE,
                         exchangeOptions: ['unknown', 'duke', 'captain']
@@ -694,6 +702,334 @@ describe('Minimax player', function () {
                         roles: ['captain', 'duke']
                     }
                 ]);
+            });
+        });
+    });
+
+    describe('Apply move', function () {
+        describe('Challenges', function () {
+            describe('Given an opponent tried to exchange with two influences', function () {
+                beforeEach(function () {
+                    gameState.state.state = {
+                        name: stateNames.ACTION_RESPONSE,
+                        playerIdx: OPPONENT_1_IDX,
+                        action: 'exchange'
+                    };
+                    gameState.currentPlayer = AI_IDX;
+                });
+
+                describe('When the AI challenges the exchange', function () {
+                    var newStates;
+
+                    beforeEach(function () {
+                        newStates = player._test.applyMove(gameState, {
+                            command: 'challenge'
+                        });
+                    });
+
+                    it('should evaluate both possibilities: correct and incorrect', function () {
+                        expect(newStates).to.be.an('array');
+                    });
+
+                    describe('For the correct challenge', function () {
+                        var newState;
+
+                        beforeEach(function () {
+                            newState = newStates[0];
+                        });
+
+                        it('should be a 36% chance of the challenge being correct', function () {
+                            expect(newState.likelihood).to.be(0.36);
+                        });
+
+                        it('should not have a different likelihood for the AI player', function () {
+                            expect(newState.likelihoodAi).to.be(undefined);
+                        });
+
+                        it('should be in reveal state', function () {
+                            expect(newState.state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                        });
+
+                        it('should be the opponent\'s turn to reveal', function () {
+                            expect(newState.state.state.playerToReveal).to.be(OPPONENT_1_IDX);
+                        });
+
+                        it('should be the opponent\'s turn to choose a move', function () {
+                            expect(newState.currentPlayer).to.be(OPPONENT_1_IDX);
+                        });
+                    });
+
+                    describe('For the incorrect challenge', function () {
+                        var newState;
+
+                        beforeEach(function () {
+                            newState = newStates[1];
+                        });
+
+                        it('should be a 64% chance of the challenge being incorrect', function () {
+                            expect(newState.likelihood).to.be(0.64);
+                        });
+
+                        it('should not have a different likelihood for the AI player', function () {
+                            expect(newState.likelihoodAi).to.be(undefined);
+                        });
+
+                        it('should be in reveal state', function () {
+                            expect(newState.state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                        });
+
+                        it('should be the AI\'s turn to reveal', function () {
+                            expect(newState.state.state.playerToReveal).to.be(AI_IDX);
+                        });
+
+                        it('should be the AI\'s turn to choose a move', function () {
+                            expect(newState.currentPlayer).to.be(AI_IDX);
+                        });
+                    });
+                });
+            });
+
+            describe('Given an opponent tried to exchange with one influence', function () {
+                beforeEach(function () {
+                    gameState.state.state = {
+                        name: stateNames.ACTION_RESPONSE,
+                        playerIdx: OPPONENT_1_IDX,
+                        action: 'exchange'
+                    };
+                    gameState.state.players[OPPONENT_1_IDX].influence[0].revealed = true;
+                    gameState.state.players[OPPONENT_1_IDX].influenceCount = 1;
+                    gameState.currentPlayer = AI_IDX;
+                });
+
+                describe('When the AI challenges the exchange', function () {
+                    var newStates;
+
+                    beforeEach(function () {
+                        newStates = player._test.applyMove(gameState, {
+                            command: 'challenge'
+                        });
+                    });
+
+                    it('should evaluate both possibilities: correct and incorrect', function () {
+                        expect(newStates).to.be.an('array');
+                    });
+
+                    describe('For the correct challenge', function () {
+                        var newState;
+
+                        beforeEach(function () {
+                            newState = newStates[0];
+                        });
+
+                        it('should be a 20% chance of the challenge being correct', function () {
+                            expect(newState.likelihood).to.be(0.2);
+                        });
+
+                        it('should not have a different likelihood for the AI player', function () {
+                            expect(newState.likelihoodAi).to.be(undefined);
+                        });
+
+                        it('should be in game won state', function () {
+                            expect(newState.state.state.name).to.be(stateNames.GAME_WON);
+                        });
+
+                        it('should be nobody\'s turn to choose a move', function () {
+                            expect(newState.currentPlayer).to.be(null);
+                        });
+                    });
+
+                    describe('For the incorrect challenge', function () {
+                        var newState;
+
+                        beforeEach(function () {
+                            newState = newStates[1];
+                        });
+
+                        it('should be a 80% chance of the challenge being incorrect', function () {
+                            expect(newState.likelihood).to.be(0.8);
+                        });
+
+                        it('should not have a different likelihood for the AI player', function () {
+                            expect(newState.likelihoodAi).to.be(undefined);
+                        });
+
+                        it('should be in reveal state', function () {
+                            expect(newState.state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                        });
+
+                        it('should be the AI\'s turn to reveal', function () {
+                            expect(newState.state.state.playerToReveal).to.be(AI_IDX);
+                        });
+
+                        it('should be the AI\'s turn to choose a move', function () {
+                            expect(newState.currentPlayer).to.be(AI_IDX);
+                        });
+                    });
+                });
+            });
+
+            describe('Given an opponent tried to block a steal with two influences', function () {
+                beforeEach(function () {
+                    gameState.state.state = {
+                        name: stateNames.BLOCK_RESPONSE,
+                        playerIdx: AI_IDX,
+                        action: 'steal',
+                        target: OPPONENT_1_IDX,
+                        blockingRole: 'ambassador'
+                    };
+                    gameState.currentPlayer = AI_IDX;
+                });
+
+                describe('When the AI challenges the block', function () {
+                    var newStates;
+
+                    beforeEach(function () {
+                        newStates = player._test.applyMove(gameState, {
+                            command: 'challenge'
+                        });
+                    });
+
+                    it('should evaluate both possibilities: correct and incorrect', function () {
+                        expect(newStates).to.be.an('array');
+                    });
+
+                    describe('For the correct challenge', function () {
+                        var newState;
+
+                        beforeEach(function () {
+                            newState = newStates[0];
+                        });
+
+                        it('should be a 36% chance of the challenge being correct', function () {
+                            expect(newState.likelihood).to.be(0.36);
+                        });
+
+                        it('should not have a different likelihood for the AI player', function () {
+                            expect(newState.likelihoodAi).to.be(undefined);
+                        });
+
+                        it('should be in reveal state', function () {
+                            expect(newState.state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                        });
+
+                        it('should be the opponent\'s turn to reveal', function () {
+                            expect(newState.state.state.playerToReveal).to.be(OPPONENT_1_IDX);
+                        });
+
+                        it('should be the opponent\'s turn to choose a move', function () {
+                            expect(newState.currentPlayer).to.be(OPPONENT_1_IDX);
+                        });
+                    });
+
+                    describe('For the incorrect challenge', function () {
+                        var newState;
+
+                        beforeEach(function () {
+                            newState = newStates[1];
+                        });
+
+                        it('should be a 64% chance of the challenge being incorrect', function () {
+                            expect(newState.likelihood).to.be(0.64);
+                        });
+
+                        it('should not have a different likelihood for the AI player', function () {
+                            expect(newState.likelihoodAi).to.be(undefined);
+                        });
+
+                        it('should be in reveal state', function () {
+                            expect(newState.state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                        });
+
+                        it('should be the AI\'s turn to reveal', function () {
+                            expect(newState.state.state.playerToReveal).to.be(AI_IDX);
+                        });
+
+                        it('should be the AI\'s turn to choose a move', function () {
+                            expect(newState.currentPlayer).to.be(AI_IDX);
+                        });
+                    });
+                });
+            });
+
+            describe('Given an opponent tried to exchange with two influences', function () {
+                beforeEach(function () {
+                    gameState.state.state = {
+                        name: stateNames.ACTION_RESPONSE,
+                        playerIdx: AI_IDX,
+                        action: 'exchange'
+                    };
+                    gameState.currentPlayer = OPPONENT_1_IDX;
+                });
+
+                describe('When the AI challenges the exchange', function () {
+                    var newStates;
+
+                    beforeEach(function () {
+                        newStates = player._test.applyMove(gameState, {
+                            command: 'challenge'
+                        });
+                    });
+
+                    it('should evaluate both possibilities: correct and incorrect', function () {
+                        expect(newStates).to.be.an('array');
+                    });
+
+                    describe('For the correct challenge', function () {
+                        var newState;
+
+                        beforeEach(function () {
+                            newState = newStates[0];
+                        });
+
+                        it('should be a 36% chance of the challenge being correct', function () {
+                            expect(newState.likelihood).to.be(0.36);
+                        });
+
+                        it('should be a 0% chance of the challenge being correct, from the AI\'s point of view', function () {
+                            expect(newState.likelihoodAi).to.be(0);
+                        });
+
+                        it('should be in reveal state', function () {
+                            expect(newState.state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                        });
+
+                        it('should be the opponent\'s turn to reveal', function () {
+                            expect(newState.state.state.playerToReveal).to.be(AI_IDX);
+                        });
+
+                        it('should be the opponent\'s turn to choose a move', function () {
+                            expect(newState.currentPlayer).to.be(AI_IDX);
+                        });
+                    });
+
+                    describe('For the incorrect challenge', function () {
+                        var newState;
+
+                        beforeEach(function () {
+                            newState = newStates[1];
+                        });
+
+                        it('should be a 64% chance of the challenge being incorrect', function () {
+                            expect(newState.likelihood).to.be(0.64);
+                        });
+
+                        it('should be a 100% chance of the challenge being incorrect, from the AI\'s point of view', function () {
+                            expect(newState.likelihoodAi).to.be(1);
+                        });
+
+                        it('should be in reveal state', function () {
+                            expect(newState.state.state.name).to.be(stateNames.REVEAL_INFLUENCE);
+                        });
+
+                        it('should be the AI\'s turn to reveal', function () {
+                            expect(newState.state.state.playerToReveal).to.be(OPPONENT_1_IDX);
+                        });
+
+                        it('should be the AI\'s turn to choose a move', function () {
+                            expect(newState.currentPlayer).to.be(OPPONENT_1_IDX);
+                        });
+                    });
+                });
             });
         });
     });
