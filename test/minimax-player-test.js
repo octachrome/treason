@@ -1032,5 +1032,88 @@ describe('Minimax player', function () {
                 });
             });
         });
+
+        describe('Whose turn to play', function () {
+            beforeEach(function () {
+                gameState.state.players.push({
+                    cash: 0,
+                    influence: [
+                        {
+                            role: 'unknown',
+                            revealed: false
+                        },
+                        {
+                            role: 'unknown',
+                            revealed: false
+                        }
+                    ],
+                    influenceCount: 2
+                });
+            })
+
+            describe('At the start of a player\'s turn', function () {
+                beforeEach(function () {
+                    gameState.state.state = {
+                        name: stateNames.START_OF_TURN,
+                        playerIdx: 3
+                    };
+                });
+
+                it('should be that player\'s turn to move', function () {
+                    expect(player._test.whoseTurn(gameState.state)).to.be(3);
+                });
+            });
+
+            describe('When a player has made an action against another player', function () {
+                beforeEach(function () {
+                    gameState.state.state = {
+                        name: stateNames.ACTION_RESPONSE,
+                        playerIdx: 2,
+                        action: 'assassinate',
+                        target: 1,
+                        allowed: [false, false, true]
+                    };
+                });
+
+                it('should be the attacked player\'s turn to move', function () {
+                    expect(player._test.whoseTurn(gameState.state)).to.be(1);
+                });
+
+                describe('Given the attacked player has already allowed', function () {
+                    beforeEach(function () {
+                        gameState.state.state.allowed = [false, true, true];
+                    });
+
+                    it('should be the first player\'s turn to move', function () {
+                        expect(player._test.whoseTurn(gameState.state)).to.be(0);
+                    });
+                });
+            });
+
+            describe('When a player has made an action that does not attack a player', function () {
+                beforeEach(function () {
+                    gameState.state.state = {
+                        name: stateNames.ACTION_RESPONSE,
+                        playerIdx: 2,
+                        action: 'tax',
+                        allowed: [false, false, false]
+                    };
+                });
+
+                it('should be the first player\'s turn to respond', function () {
+                    expect(player._test.whoseTurn(gameState.state)).to.be(0);
+                });
+
+                describe('Given the first player has already allowed', function () {
+                    beforeEach(function () {
+                        gameState.state.state.allowed = [true, false, true];
+                    });
+
+                    it('should be the second player\'s turn to move', function () {
+                        expect(player._test.whoseTurn(gameState.state)).to.be(1);
+                    });
+                });
+            });
+        });
     });
 });

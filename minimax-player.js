@@ -356,11 +356,13 @@ function createMinimaxPlayer(game, options) {
 
             if (newState.state.name !== oldStateName) {
                 if (newState.state.name === stateNames.ACTION_RESPONSE &&
-                    newState.state.target != null) {
+                    newState.state.target != null &&
+                    !newState.state.allowed[newState.state.target]) {
                     // The target should play first because they are most likely to respond.
                     return newState.state.target;
                 }
-                else if (newState.state.name === stateNames.BLOCK_RESPONSE) {
+                else if (newState.state.name === stateNames.BLOCK_RESPONSE &&
+                    !newState.state.allowed[newState.state.playerIdx]) {
                     // The player whose action is blocked should play first because they are most likely to respond.
                     return newState.state.playerIdx;
                 }
@@ -422,6 +424,7 @@ function createMinimaxPlayer(game, options) {
         _test: {
             getPossibleMoves: getPossibleMoves,
             applyMove: applyMove,
+            whoseTurn: whoseTurn,
             setAiPlayerIdx: function (idx) {
                 aiPlayerIdx = idx;
             }
