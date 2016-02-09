@@ -56,14 +56,7 @@ module.exports = function createGame(options) {
         }
     };
 
-    var gameStats = {
-        players: 0,
-        onlyHumans: true,
-        playerRank: [],
-        bluffs: 0,
-        challenges: 0,
-        moves: 0
-    };
+    var gameStats = dataAccess.constructGameStats();
 
     var players = [];
     var allows = [];
@@ -240,8 +233,7 @@ module.exports = function createGame(options) {
     }
 
     function afterPlayerDeath(playerIdx) {
-        gameStats.playerRank.push(state.players[playerIdx].playerId);
-        console.log('player ' + state.players[playerIdx].playerId + ' lost');
+        gameStats.playerRank.unshift(state.players[playerIdx].playerId);
         addHistory('player-died', '{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
@@ -263,11 +255,11 @@ module.exports = function createGame(options) {
                 name: stateNames.GAME_WON,
                 playerIdx: winnerIdx
             });
-            gameStats.playerRank.push(state.players[winnerIdx].playerId);
-            console.log('player ' + state.players[winnerIdx].playerId + ' won');
+            var playerId = state.players[winnerIdx].playerId;
+            gameStats.playerRank.unshift(playerId);
             dataAccess.recordGameData(gameStats).then(function() {
-                dataAccess.getPlayerWins(winnerIdx).then(function(result) {
-                    console.log('player ' + winnerIdx  + ' has won ' + result + ' times');
+                dataAccess.getPlayerWins(playerId).then(function(result) {
+                    debug('player ' + playerId  + ' has won ' + result + ' times');
                 })
             });
             game.emit('end');
