@@ -105,12 +105,20 @@ module.exports = {
             });
         });
     },
-    getPlayerWins: function (playerId) {
+    getPlayerWins: function (playerId, options) {
         return ready.then(function () {
             return treasonDb.view('games/player_wins', {key: playerId} ).then(function (result) {
                 var wins = 0;
                 result.forEach(function (row) {
-                    wins++;
+                    if (options) {
+                        if (options.humanOnly && row.onlyHumans) {
+                            wins++;
+                        } else if (!options.humanOnly) {
+                            wins++;
+                        }
+                    } else {
+                        wins++;
+                    }
                 });
                 return wins;
             }).catch(function (error) {
