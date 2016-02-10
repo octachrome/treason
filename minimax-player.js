@@ -62,24 +62,25 @@ function createMinimaxPlayer(game, options) {
             return;
         }
 
-        if (minimax === null) {
-            minimax = new Minimax(new MinimaxCoup(aiPlayerIdxIdx));
-
+        if (!minimax) {
+            minimax = new Minimax(new MinimaxCoup(aiPlayerIdx));
         }
 
-        var command = minimax.getBestMove({
-            livePlayers: getLivePlayers(state),
-            state.state.playerIdx: state.playerIdx, // In the minimax state it is always our 'turn', which might just mean our turn to block, etc.
-            state: state
-        });
-
-        command.stateId = state.stateId;
-
         try {
+            var command = minimax.getBestMove({
+                currentPlayer: aiPlayerIdx, // In the minimax state it is always our 'turn', which might just mean our turn to block, etc.
+                state: state,
+            });
+            command.stateId = state.stateId;
             gameProxy.command(command);
-        } catch(e) {
-            console.error(e);
-            console.error(e.stack);
+        }
+        catch (e) {
+            if (e.stack) {
+                console.error(e.stack);
+            }
+            else {
+                console.error(e);
+            }
         }
     }
 }

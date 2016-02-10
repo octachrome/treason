@@ -25,6 +25,7 @@ var ROLE_VALUES = {
     'unknown': 7    // The average value of an influence.
 };
 var CASH_VALUE = 1; // The value of each unit of cash.
+var WIN_VALUE = 100000; // The value of winning.
 var DEATH_PENALTY = -100000; // The penalty for being dead.
 
 function MinimaxCoup(aiPlayerIdx) {
@@ -34,46 +35,9 @@ function MinimaxCoup(aiPlayerIdx) {
         }
     });
 
-    function onStateChange(state) {
-        aiPlayerIdx = state.playerIdx;
-        aiPlayer = state.players[aiPlayerIdx];
-        currentPlayer = state.players[state.state.playerIdx];
-        targetPlayer = state.players[state.state.target];
-
-        if (state.state.name === stateNames.START_OF_TURN && currentPlayer === aiPlayer) {
-            // Start of our turn.
-        }
-        else if (state.state.name === stateNames.ACTION_RESPONSE && aiPlayer !== currentPlayer) {
-            // We can respond to an action:
-            //   We may be targeted and be able to block or challenge.
-            //   We may not be targeted and only be able to challenge.
-        }
-        else if (state.state.name === stateNames.FINAL_ACTION_RESPONSE && aiPlayer === targetPlayer) {
-            // We have a final chance to block an action against us.
-        }
-        else if (state.state.name === stateNames.BLOCK_RESPONSE && aiPlayer !== targetPlayer) {
-            // Our action or another player's action has been blocked and we have an opportunity to challenge.
-        }
-        else if (state.state.name === stateNames.REVEAL_INFLUENCE && state.state.playerToReveal === state.playerIdx) {
-            // We need to reveal an influence.
-        }
-        else if (state.state.name === stateNames.EXCHANGE && currentPlayer === aiPlayer) {
-            // We must choose which roles to exchange.
-        }
-        else {
-            // We should not respond to this state.
-            return;
-        }
-
-        minimax.getBestMove({
-            livePlayers: getLivePlayers(state),
-            currentPlayer: state.playerIdx, // In the minimax state it is always our 'turn', which might just mean our turn to block.
-            state: state
-        });
-    }
-
     function evaluate(gameState, playerIdx) {
         var value = evaluateSingle(gameState, playerIdx);
+        var othersAlive;
         if (value === 0) {
             return DEATH_PENALTY;
         }
@@ -81,9 +45,16 @@ function MinimaxCoup(aiPlayerIdx) {
             // Subtract all other player's scores.
             for (var i = 0; i < gameState.state.players.length; i++) {
                 if (i !== playerIdx) {
+                    othersAlive = true;
                     value -= evaluateSingle(gameState, i);
                 }
             }
+        }
+        if (!othersAlive) {
+            return WIN_VALUE;
+        }
+        else {
+            return value;
         }
     }
 
@@ -95,6 +66,10 @@ function MinimaxCoup(aiPlayerIdx) {
         var value = player.cash * CASH_VALUE;
         player.influence.forEach(function (influence) {
             if (!influence.revealed) {
+                var v = ROLE_VALUES[influence.role];
+                if (isNaN(v)) {
+                    console.log('*'+influence.role)
+                }
                 value += ROLE_VALUES[influence.role];
             }
         });
@@ -113,7 +88,12 @@ function MinimaxCoup(aiPlayerIdx) {
         }
         else if (state.state.name === stateNames.ACTION_RESPONSE) {
             // A player can challenge, allow, or potentially block.
-            return getPossibleBlockMoves(gameState).concat([{command: 'allow'}, {command: 'challenge'}]);
+            var moves = getPossibleBlockMoves(gameState);
+            moves.push({command: 'allow'});
+            if (actions[state.state.action].role) {
+                moves.push({command: 'challenge'});
+            }
+            return moves;
         }
         else if (state.state.name === stateNames.FINAL_ACTION_RESPONSE) {
             // A player has a final chance to block.

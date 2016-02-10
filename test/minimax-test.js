@@ -1,0 +1,3 @@
+describe('Minimax system', function () {
+    
+});

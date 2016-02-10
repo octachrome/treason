@@ -75,7 +75,7 @@ module.exports = function createGameCore(options) {
 
         if (command.command == 'play-action') {
             if (state.state.name != stateNames.START_OF_TURN) {
-                throw new GameException('Incorrect state');
+                throw new GameException('Cannot play action in state ' + state.state.name);
             }
             if (state.state.playerIdx != playerIdx) {
                 throw new GameException('Not your turn');
@@ -151,12 +151,12 @@ module.exports = function createGameCore(options) {
                 challenge(playerIdx, state.state.target, state.state.blockingRole);
 
             } else {
-                throw new GameException('Incorrect state');
+                throw new GameException('Cannot challenge in state ' + state.state.name);
             }
 
         } else if (command.command == 'reveal') {
             if (state.state.name != stateNames.REVEAL_INFLUENCE) {
-                throw new GameException('Incorrect state');
+                throw new GameException('Cannot reveal in state ' + state.state.name);
             }
             if (state.state.playerToReveal != playerIdx) {
                 throw new GameException('Not your turn to reveal an influence');
@@ -189,7 +189,7 @@ module.exports = function createGameCore(options) {
                 throw new GameException('Dead players cannot block');
             }
             if (state.state.name != stateNames.ACTION_RESPONSE && state.state.name != stateNames.FINAL_ACTION_RESPONSE) {
-                throw new GameException('Incorrect state');
+                throw new GameException('Cannot block in state ' + state.state.name);
             }
             action = actions[state.state.action];
             if (!action) {
@@ -235,7 +235,7 @@ module.exports = function createGameCore(options) {
 
         } else if (command.command == 'exchange') {
             if (state.state.name != stateNames.EXCHANGE) {
-                throw new GameException('Incorrect state');
+                throw new GameException('Cannot exchange in state ' + state.state.name);
             }
             if (state.state.playerIdx != playerIdx) {
                 throw new GameException('Not your turn');
@@ -302,7 +302,7 @@ module.exports = function createGameCore(options) {
             }
             return state;
         } else {
-            throw new GameException('Incorrect state');
+            throw new GameException('Cannot allow in state ' + state.state.name);
         }
     }
 
@@ -357,7 +357,7 @@ module.exports = function createGameCore(options) {
     }
 
     function initAllowed(initiatingPlayerIdx) {
-        var allowed = [];
+        var allowed = state.players.map(function () {return false;});
         // The player who took the action does not need to allow it.
         allowed[initiatingPlayerIdx] = true;
         return allowed;

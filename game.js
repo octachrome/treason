@@ -14,6 +14,7 @@
 var fs = require('fs');
 var rand = require('random-seed')();
 var createAiPlayer = require('./ai-player');
+var createMinimaxPlayer = require('./minimax-player');
 var shared = require('./web/shared');
 var actions = shared.actions;
 var stateNames = shared.states;
@@ -311,7 +312,7 @@ module.exports = function createGame(options) {
 
     function start() {
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
-            throw new GameException('Incorrect state');
+            throw new GameException('Cannot start game in state ' + state.state.name);
         }
         if (state.numPlayers >= MIN_PLAYERS) {
             for (var j = 0; j < state.players[0].influence.length; j++) {
@@ -319,7 +320,7 @@ module.exports = function createGame(options) {
                     state.players[i].influence[j].role = deck.pop();
                 }
             }
-            var firstPlayer = Math.floor(Math.random() * state.numPlayers);
+            var firstPlayer = (options.firstPlayer != null) ? options.firstPlayer : Math.floor(Math.random() * state.numPlayers);
             setState({
                 name: stateNames.START_OF_TURN,
                 playerIdx: firstPlayer
@@ -343,9 +344,9 @@ module.exports = function createGame(options) {
 
         } else if (command.command == 'add-ai') {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
-                throw new GameException('Incorrect state');
+                throw new GameException('Cannot add AI player in state ' + state.state.name);
             }
-            createAiPlayer(game, options);
+            createMinimaxPlayer(game, options);
 
         } else {
             var newState = gameCore.applyCommand(state, playerIdx, command);
