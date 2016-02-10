@@ -48,6 +48,9 @@
                     <input type="hidden" data-bind="value: gameUrl()" name="privateGameName"/>
                 </form>
                 <!-- /ko -->
+                <!-- ko if: !needName() -->
+                <p><button class="btn btn-default" data-bind="click: showRankings">Show player rankings</button></p>
+                <!-- /ko -->
                 <p><a href="rules.html" target="blank">How to play</a></p>
                 <p><span data-bind="visible: activeUsers"><span data-bind="text: activeUsers"></span> players are online</span></p>
                 <img src="feedback.png"></img>

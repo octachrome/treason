@@ -156,11 +156,17 @@ io.on('connection', function (socket) {
         });
     });
 
+    socket.on('showrankings', function () {
+        dataAccess.getPlayerRankings().then(function (result) {
+            socket.emit('rankings', result);
+        });
+    });
+
     socket.on('disconnect', function () {
         delete sockets[socket.id];
         socket.removeAllListeners();
         socket = null;
-    })
+    });
 });
 
 var adjectives;

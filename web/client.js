@@ -21,7 +21,8 @@ vm = {
     sidebar: ko.observable('chat'),
     history: ko.observableArray(),
     gameUrl: ko.observable(''),
-    needName: ko.observable(false)
+    needName: ko.observable(false),
+    rankings: ko.observable({})
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -186,6 +187,16 @@ function create(form, event) {
             playerName: vm.playerName()
         });
     }, 500, true);
+}
+
+function showRankings(form, event) {
+    socket.on('rankings', function (data) {
+        vm.rankings(data);
+    });
+
+    _.debounce(new function() {
+        socket.emit('showrankings');
+    }, 2000, true);//consider a "fetching rankings" spinner?
 }
 function isInvalidPlayerName() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
