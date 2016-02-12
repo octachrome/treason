@@ -6,17 +6,15 @@ var pr = require('promise-ring');
 var connection = new cradle.Connection();
 var treasonDb = pr.wrapAll(connection.database('treason_db'));
 
-var ready = Promise.all([
-    treasonDb.exists().then(function (exists) {
-        if (!exists) {
-            return treasonDb.create();
-        }
-    })
-]).then(function() {
+var ready = treasonDb.exists().then(function (exists) {
+    if (!exists) {
+        return treasonDb.create();
+    }
+}).then(function() {
     debug('All databases initialized');
 }).then(function() {
     debug('Initializing views');
-    treasonDb.save('_design/games', {
+    return treasonDb.save('_design/games', {
         all_games: {
             map: function (document) {
                 if (document.players && document.playerRank) {
@@ -40,6 +38,7 @@ var ready = Promise.all([
             }
         }
     });
+}).then(function() {
     debug('Finished initializing views, databases ready');
 }).catch(function(error) {
     debug('Failed to initialize database(s)');
@@ -54,7 +53,7 @@ var register = function (id, name) {
             .then(function (result) {
                 if (result.name != name) {
                     debug('Updating name of player ' + result.name + ' to ' + name);
-                    treasonDb.merge(id, {
+                    return treasonDb.merge(id, {
                         name: name
                     }).then(function (result) {
                         debug('Updated name of playerId ' + id + ' to ' + name);
@@ -63,6 +62,8 @@ var register = function (id, name) {
                         debug(error);
                     });
                 }
+            })
+            .then(function () {
                 debug('Existing player ' + name + ' logged in with id ' + id);
             })
             .catch(function (error) {
