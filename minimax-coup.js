@@ -37,39 +37,24 @@ function MinimaxCoup(aiPlayerIdx) {
 
     function evaluate(gameState, playerIdx) {
         var value = evaluateSingle(gameState, playerIdx);
-        var othersAlive;
-        if (value === 0) {
-            return DEATH_PENALTY;
-        }
-        else {
-            // Subtract all other player's scores.
-            for (var i = 0; i < gameState.state.players.length; i++) {
-                if (i !== playerIdx) {
-                    othersAlive = true;
-                    value -= evaluateSingle(gameState, i);
-                }
+        // Subtract all other player's scores.
+        for (var i = 0; i < gameState.state.players.length; i++) {
+            if (i !== playerIdx) {
+                othersAlive = true;
+                value -= evaluateSingle(gameState, i);
             }
         }
-        if (!othersAlive) {
-            return WIN_VALUE;
-        }
-        else {
-            return value;
-        }
+        return value;
     }
 
     function evaluateSingle(gameState, playerIdx) {
         var player = gameState.state.players[playerIdx];
         if (player.influenceCount === 0) {
-            return 0;
+            return DEATH_PENALTY;
         }
         var value = player.cash * CASH_VALUE;
         player.influence.forEach(function (influence) {
             if (!influence.revealed) {
-                var v = ROLE_VALUES[influence.role];
-                if (isNaN(v)) {
-                    console.log('*'+influence.role)
-                }
                 value += ROLE_VALUES[influence.role];
             }
         });

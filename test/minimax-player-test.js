@@ -1,81 +1,94 @@
 var expect = require('expect.js');
 
-var createGame = require('../game');
-var TestPlayers = require('../test-util/test-player');
-var createMinimaxPlayer = require('../minimax-player');
+var Minimax = require('../minimax');
+var MinimaxCoup = require('../minimax-coup');
 var shared = require('../web/shared');
 var stateNames = shared.states;
 
-var MINIMAX_IDX = 0;
+var AI_IDX = 0;
 var OPPONENT_IDX = 1;
 
 describe('Minimax player', function () {
-    var game;
-    var minimaxPlayer;
-    var testPlayer;
+    var minimax, gameState;
 
-    this.timeout(5000);
+    beforeEach(function () {
+        minimax = new Minimax(new MinimaxCoup(AI_IDX));
 
-    describe('Given the opponent player plays first', function () {
+        gameState = {
+            players: [
+                {
+                    cash: 0,
+                    influence: [
+                        {
+                            role: 'ambassador',
+                            revealed: false
+                        },
+                        {
+                            role: 'ambassador',
+                            revealed: false
+                        }
+                    ],
+                    influenceCount: 2
+                },
+                {
+                    cash: 0,
+                    influence: [
+                        {
+                            role: 'unknown',
+                            revealed: false
+                        },
+                        {
+                            role: 'unknown',
+                            revealed: false
+                        },
+                    ],
+                    influenceCount: 2
+                }
+            ],
+            playerIdx: AI_IDX
+        };
+    });
+
+    function getBestMove() {
+        return minimax.getBestMove({
+            currentPlayer: AI_IDX,
+            state: gameState
+        });
+    }
+
+    describe('Given the AI can win by couping', function () {
         beforeEach(function () {
-            game = createGame({
-                firstPlayer: OPPONENT_IDX
-            });
-            minimaxPlayer = createMinimaxPlayer(game);
-            var testPlayers = new TestPlayers(game);
-            testPlayer = testPlayers.createTestPlayer();
-            return testPlayers.waitForNewPlayers(testPlayer).then(function () {
-                testPlayer.command({
-                    command: 'start'
-                });
-            });
+            gameState.players[AI_IDX].cash = 8;
+            gameState.players[OPPONENT_IDX].influence[0].revealed = true;
+            gameState.players[OPPONENT_IDX].influenceCount = 1;
+            gameState.state = {
+                name: stateNames.START_OF_TURN,
+                playerIdx: AI_IDX
+            };
         });
 
-        describe('When opponent draws tax', function () {
-            beforeEach(function () {
-                return testPlayer.getNextState().then(function (state) {
-                    testPlayer.command({
-                        command: 'play-action',
-                        action: 'tax',
-                        stateId: state.stateId
-                    });
-                    return testPlayer.getNextState();
-                });
-            });
-
-            it('should allow', function () {
-                return testPlayer.getNextState().then(function (state) {
-                    expect(state.state.name).to.be(stateNames.START_OF_TURN);
-                    expect(state.players[MINIMAX_IDX].influenceCount).to.be(2);
-                    expect(state.players[OPPONENT_IDX].influenceCount).to.be(2);
-                    expect(state.players[OPPONENT_IDX].cash).to.be(5);
-                });
-            });
+        it('should coup', function () {
+            var command = getBestMove();
+            expect(command.command).to.be('play-action');
+            expect(command.action).to.be('coup');
         });
     });
 
-    describe('Given the minimax player plays first', function () {
+    describe('Given the AI would die if challenged', function () {
         beforeEach(function () {
-            game = createGame({
-                firstPlayer: MINIMAX_IDX
-            });
-            minimaxPlayer = createMinimaxPlayer(game);
-            var testPlayers = new TestPlayers(game);
-            testPlayer = testPlayers.createTestPlayer();
-            return testPlayers.waitForNewPlayers(testPlayer).then(function () {
-                testPlayer.command({
-                    command: 'start'
-                });
-            });
+            gameState.players[AI_IDX].cash = 0;
+            gameState.players[AI_IDX].influence[0].revealed = true;
+            gameState.players[AI_IDX].influenceCount = 1;
+            gameState.players[OPPONENT_IDX].cash = 7;
+            gameState.state = {
+                name: stateNames.START_OF_TURN,
+                playerIdx: AI_IDX
+            };
         });
 
-        it('should attempt to draw tax', function () {
-            return testPlayer.getNextState().then(function (state) {
-                return testPlayer.getNextState();
-            }).then(function (state) {
-                expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
-                expect(state.state.action).to.be('tax');
-            });
+        it('should not claim a role it does not have', function () {
+            var command = getBestMove();
+            console.log(command);
         });
     });
 });
