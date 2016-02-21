@@ -175,3 +175,9 @@ div.chat {
     background: #fdd;
     text-align: center;
 }
+.tweets {
+    width: 400px;
+}
+.feedback {
+    vertical-align: 5px;
+}
