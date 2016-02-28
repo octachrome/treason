@@ -45,6 +45,7 @@ app.get('/', function (req, res) {
 });
 
 var server = app.listen(argv.port);
+dataAccess.setDebug(argv.debug);
 
 var io = require('socket.io')(server);
 var createGame = require('./game');

@@ -56,6 +56,8 @@ module.exports = function createGame(options) {
         }
     };
 
+    dataAccess.setDebug(options.debug);
+
     var gameStats = dataAccess.constructGameStats();
 
     var players = [];

@@ -6,6 +6,8 @@ var pr = require('promise-ring');
 var connection = new cradle.Connection();
 var treasonDb = pr.wrapAll(connection.database('treason_db'));
 
+var debugMode = false;
+
 var ready = treasonDb.exists().then(function (exists) {
     if (!exists) {
         return treasonDb.create();
@@ -14,30 +16,33 @@ var ready = treasonDb.exists().then(function (exists) {
     debug('All databases initialized');
 }).then(function() {
     debug('Initializing views');
-    return treasonDb.save('_design/games', {
-        all_games: {
-            map: function (document) {
-                if (document.players && document.playerRank) {
-                    emit(null, document);
+    if (debugMode) {
+        debug('Recreating views because of debug mode');
+        return treasonDb.save('_design/games', {
+            all_games: {
+                map: function (document) {
+                    if (document.players && document.playerRank) {
+                        emit(null, document);
+                    }
+                }
+            },
+            player_wins: {
+                map: function (document) {
+                    if (document.players && document.playerRank) {
+                        emit(document.playerRank[0], document);
+                    }
+                }
+            },
+            all_players: {
+                map: function (document) {
+                    //This sucks, fix it, so easy to get collisions
+                    if (document.name) {
+                        emit(null, document);
+                    }
                 }
             }
-        },
-        player_wins: {
-            map: function (document) {
-                if (document.players && document.playerRank) {
-                    emit(document.playerRank[0], document);
-                }
-            }
-        },
-        all_players: {
-            map: function (document) {
-                //This sucks, fix it, so easy to get collisions
-                if (document.name) {
-                    emit(null, document);
-                }
-            }
-        }
-    });
+        });
+    }
 }).then(function() {
     debug('Finished initializing views, databases ready');
 }).catch(function(error) {
@@ -184,9 +189,16 @@ module.exports = {
     recordGameData: recordGameData,
     getPlayerWins: getPlayerWins,
     getAllPlayers: getAllPlayers,
-    getPlayerRankings: getPlayerRankings
+    getPlayerRankings: getPlayerRankings,
+    setDebug: setDebug
 };
 
+function setDebug(debug) {
+    debugMode = debug;
+}
+
 function debug(message) {
-    console.log(message);
+    if (debugMode) {
+        console.log(message);
+    }
 }
