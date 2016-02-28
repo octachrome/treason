@@ -54,6 +54,10 @@ var register = function (id, name) {
     return ready.then(function() {
         debug('Player ' + name + ', trying to register with id ' + id);
 
+        if (!id) {
+            id = -1;
+        }
+
         return treasonDb.get(id)
             .then(function (result) {
                 if (result.name != name) {
@@ -172,17 +176,46 @@ var buildPlayerWin = function (player) {
     });
 };
 
-var getPlayerRankings = function (options) {
+var getPlayerRankings = function (playerId) {
+    var playerRanksToReturn = 10;
     return ready.then(function () {
         return getAllPlayers().then(function (players) {
             return Promise.all(players.map(buildPlayerWin)).then(function (playerStats) {
                 playerStats.sort(function(first, second) {
-                    return second.winsHuman - first.winsHuman;
+                    var result = second.winsHuman - first.winsHuman;
+                    if (result == 0) {
+                        return second.wins - first.wins;
+                    } else {
+                        return result;
+                    }
                 });
                 var rank = 1;
                 playerStats.forEach(function (player) {
                     player.rank = rank++;
                 });
+
+                if (playerId) {
+                    var myRankings = [];
+                    var playerAdded = false;
+                    var playersBelowPlayerRank = 0;
+                    playerStats.foreach(function (player) {
+                        if (playerAdded) {
+                            playersBelowPlayerRank++;
+                            if (playersBelowPlayerRank >= playerRanksToReturn/2 && myRankings.length > playerRanksToReturn - 1) {
+                                return;
+                            }
+                        }
+                        myRankings.push(player);
+                        if (player.playerId === playerId) {
+                            playerAdded = true;
+                        }
+                    });
+
+                    playerStats = myRankings.splice(myRankings.length - playerRanksToReturn, playerRanksToReturn);
+                } else {
+                    playerStats = playerStats.splice(0, playerRanksToReturn);
+                }
+
                 return playerStats;
             });
         });
