@@ -49,14 +49,14 @@
                 </form>
                 <!-- /ko -->
                 <!-- ko if: !needName() -->
-                <p><button class="btn btn-default" data-bind="click: showRankings">Show player rankings</button></p>
+                <p><button class="btn btn-default" data-bind="click: showRankings, text: rankButtonText"></button></p>
                 <!-- /ko -->
                 <p><a href="rules.html" target="blank">How to play</a></p>
                 <p><span data-bind="visible: activeUsers"><span data-bind="text: activeUsers"></span> players are online</span></p>
                 <img src="feedback.png"></img>
             </div>
             <div class="col-xs-6">
-                <h3>Rankings</h3>
+                <h3><span data-bind="text: showingGlobalRank() ? 'Global ' : 'Personal '"></span>Rankings</h3>
 
                 <div class="table-responsive">
                     <table class="table">

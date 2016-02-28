@@ -22,7 +22,9 @@ vm = {
     history: ko.observableArray(),
     gameUrl: ko.observable(''),
     needName: ko.observable(false),
-    rankings: ko.observable({})
+    rankings: ko.observable({}),
+    rankButtonText: ko.observable('Show my rankings'),
+    showingGlobalRank: ko.observable(true)
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -153,6 +155,9 @@ socket.on('error', function (data) {
 socket.on('game-error', function (data) {
     console.error(data);
 });
+socket.on('rankings', function (data) {
+    vm.rankings(data);
+});
 
 function playAgain() {
     // If we were playing a private game, rejoin the same one. Otherwise, join a new public game.
@@ -188,15 +193,18 @@ function create(form, event) {
         });
     }, 500, true);
 }
-
 function showRankings(form, event) {
-    socket.on('rankings', function (data) {
-        vm.rankings(data);
-    });
-
     _.debounce(new function() {
-        socket.emit('showrankings');
-    }, 2000, true);//consider a "fetching rankings" spinner?
+        if (vm.showingGlobalRank()) {
+            vm.showingGlobalRank(false);
+            vm.rankButtonText('Show global rankings');
+            socket.emit('showrankings');
+        } else {
+            vm.showingGlobalRank(true);
+            vm.rankButtonText('Show my rankings');
+            socket.emit('showmyrank');
+        }
+    }, 2000, true);
 }
 function isInvalidPlayerName() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
