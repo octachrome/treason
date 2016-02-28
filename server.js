@@ -172,7 +172,7 @@ io.on('connection', function (socket) {
 
     socket.on('showmyrank', function () {
         dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
-            socket.emit('showrankings', result);
+            socket.emit('rankings', result);
         });
     });
 
