@@ -177,7 +177,7 @@ var getPlayerRankings = function (options) {
         return getAllPlayers().then(function (players) {
             return Promise.all(players.map(buildPlayerWin)).then(function (playerStats) {
                 playerStats.sort(function(first, second) {
-                    return second.wins - first.wins;
+                    return second.winsHuman - first.winsHuman;
                 });
                 var rank = 1;
                 playerStats.forEach(function (player) {
