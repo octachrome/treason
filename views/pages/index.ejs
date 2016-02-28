@@ -59,7 +59,7 @@
                 <h3><span data-bind="text: showingGlobalRank() ? 'Global ' : 'Personal '"></span>Rankings</h3>
 
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-striped">
                         <thead>
                             <tr>
                                 <th>Rank</th>
@@ -71,12 +71,12 @@
                         </thead>
                         <tbody>
                         <!-- ko foreach: rankings() -->
-                            <tr>
-                                <td><span data-bind="text: $data.rank"></span></td>
-                                <td><span data-bind="text: $data.playerName"></span></td>
-                                <td><span data-bind="text: $data.wins"></span></td>
-                                <td><span data-bind="text: $data.winsHuman"></span></td>
-                                <td><span data-bind="text: $data.winsAI"></span></td>
+                            <tr data-bind="css: $data.isPlayer ? 'success' : ''">
+                                <td data-bind="text: $data.rank"></td>
+                                <td data-bind="text: $data.playerName"></td>
+                                <td data-bind="text: $data.wins"></td>
+                                <td data-bind="text: $data.winsHuman"></td>
+                                <td data-bind="text: $data.winsAI"></td>
                             </tr>
                         <!-- /ko -->
                         </tbody>

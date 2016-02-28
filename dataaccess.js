@@ -219,6 +219,9 @@ var getPlayerRankings = function (playerId) {
                 }
 
                 playerStats.forEach(function(player) {
+                    if (playerId == player.playerId) {
+                        player.isPlayer = true;
+                    }
                     delete player.playerId;
                 });
 
