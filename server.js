@@ -53,12 +53,8 @@ var createNetPlayer = require('./net-player');
 
 var publicGames = [];
 var privateGames = {};
-var globalRankings = [];
-var pending = [];
 var sockets = {};
 var TIMEOUT = 30 * 60 * 1000;
-
-updateGlobalRankings();
 
 io.on('connection', function (socket) {
     var timestamp = new Date().getTime();
@@ -72,7 +68,10 @@ io.on('connection', function (socket) {
         }
     }
 
-    socket.emit('rankings', globalRankings);
+    //Emit the global rankings upon connect
+    dataAccess.getPlayerRankings().then(function (result) {
+        socket.emit('rankings', result);
+    });
 
     socket.on('registerplayer', function (data) {
         dataAccess.register(data.playerId, data.playerName).then(function (playerId) {
@@ -134,9 +133,6 @@ io.on('connection', function (socket) {
             // The game is not yet full; still open for more players.
             publicGames.push(game);
         }
-        game.once('end', function () {
-            updateGlobalRankings();
-        });
     }
 
     function createPrivateGame(gameName) {
@@ -149,7 +145,6 @@ io.on('connection', function (socket) {
         });
         privateGames[gameName] = game;
         game.once('end', function () {
-            updateGlobalRankings();
             delete privateGames[gameName];
         });
         return game;
@@ -167,7 +162,9 @@ io.on('connection', function (socket) {
     });
 
     socket.on('showrankings', function () {
-        socket.emit('rankings', globalRankings);
+        dataAccess.getPlayerRankings().then(function (result) {
+            socket.emit('rankings', result);
+        });
     });
 
     socket.on('showmyrank', function () {
@@ -209,10 +206,4 @@ function randomGameName(playerName) {
         }
         i++;
     }
-}
-
-function updateGlobalRankings() {
-    dataAccess.getPlayerRankings().then(function (rankings) {
-        globalRankings = rankings;
-    });
 }

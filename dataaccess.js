@@ -8,14 +8,17 @@ var treasonDb = pr.wrapAll(connection.database('treason_db'));
 
 var debugMode = false;
 
+var globalPlayerRankings = [];
+var playerRanksToReturn = 10;
+
 var ready = treasonDb.exists().then(function (exists) {
     if (!exists) {
         return treasonDb.create();
     }
 }).then(function() {
-    debug('All databases initialized');
+    debug('All databases initialised');
 }).then(function() {
-    debug('Initializing views');
+    debug('Initialising views');
     if (debugMode) {
         debug('Recreating views because of debug mode');
         return treasonDb.save('_design/games', {
@@ -44,11 +47,13 @@ var ready = treasonDb.exists().then(function (exists) {
         });
     }
 }).then(function() {
-    debug('Finished initializing views, databases ready');
+    debug('Finished initialising views, databases ready');
 }).catch(function(error) {
-    debug('Failed to initialize database(s)');
+    debug('Failed to initialise database(s)');
     debug(error);
 });
+
+updatePlayerRankings();
 
 var register = function (id, name) {
     return ready.then(function() {
@@ -116,6 +121,7 @@ var recordGameData = function (gameData) {
     return ready.then(function () {
         return treasonDb.save(gameData).then(function (result) {
             debug('saved game data');
+            updatePlayerRankings();
         }).catch(function (error) {
             debug('failed to save game data');
             debug(error);
@@ -178,7 +184,44 @@ var buildPlayerWin = function (player) {
 };
 
 var getPlayerRankings = function (playerId) {
-    var playerRanksToReturn = 10;
+    return ready.then(function () {
+        var playerStats;
+        if (playerId) {
+            var myRankings = [];
+            var playerAdded = false;
+            var playersBelowPlayerRank = 0;
+            for (var i = 0; i < globalPlayerRankings.length; i++) {
+                var player = globalPlayerRankings[i];
+                if (playerAdded) {
+                    playersBelowPlayerRank++;
+                    if (playersBelowPlayerRank >= playerRanksToReturn / 2 && myRankings.length > playerRanksToReturn - 1) {
+                        break;
+                    }
+                }
+                myRankings.push(player);
+                if (player.playerId === playerId) {
+                    playerAdded = true;
+                }
+            }
+
+            playerStats = myRankings.splice(myRankings.length - playerRanksToReturn, playerRanksToReturn);
+
+            playerStats.forEach(function (player) {
+                if (playerId == player.playerId) {
+                    player.isPlayer = true;
+                }
+                delete player.playerId;
+            });
+
+            return playerStats;
+        } else {
+            playerStats = globalPlayerRankings.slice(0);
+            return playerStats.splice(0, playerRanksToReturn);
+        }
+    });
+};
+
+function updatePlayerRankings() {
     return ready.then(function () {
         return getAllPlayers().then(function (players) {
             return Promise.all(players.map(buildPlayerWin)).then(function (playerStats) {
@@ -195,41 +238,15 @@ var getPlayerRankings = function (playerId) {
                     player.rank = rank++;
                 });
 
-                if (playerId) {
-                    var myRankings = [];
-                    var playerAdded = false;
-                    var playersBelowPlayerRank = 0;
-                    for (var i = 0; i < playerStats.length; i++) {
-                        var player = playerStats[i];
-                        if (playerAdded) {
-                            playersBelowPlayerRank++;
-                            if (playersBelowPlayerRank >= playerRanksToReturn/2 && myRankings.length > playerRanksToReturn - 1) {
-                                break;
-                            }
-                        }
-                        myRankings.push(player);
-                        if (player.playerId === playerId) {
-                            playerAdded = true;
-                        }
-                    }
+                debug('Refreshing player rankings, fetched ranks for ' + playerStats.length + ' players');
 
-                    playerStats = myRankings.splice(myRankings.length - playerRanksToReturn, playerRanksToReturn);
-                } else {
-                    playerStats = playerStats.splice(0, playerRanksToReturn);
-                }
-
-                playerStats.forEach(function(player) {
-                    if (playerId == player.playerId) {
-                        player.isPlayer = true;
-                    }
-                    delete player.playerId;
-                });
+                globalPlayerRankings = playerStats;
 
                 return playerStats;
             });
         });
     });
-};
+}
 
 module.exports = {
     register: register,
