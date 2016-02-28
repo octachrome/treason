@@ -145,7 +145,7 @@ var getPlayerWins = function (playerId) {
     });
 };
 
-var getAllPlayers = function (options) {
+var getAllPlayers = function () {
     return ready.then(function () {
         return treasonDb.view('games/all_players').then(function (result) {
             var players = [];
@@ -168,6 +168,7 @@ var buildPlayerWin = function (player) {
         return getPlayerWins(player.playerId).then(function (wins) {
             return {
                 playerName: player.playerName,
+                playerId: player.playerId,
                 wins: wins.wins,
                 winsAI: wins.winsAI,
                 winsHuman: wins.wins - wins.winsAI
@@ -198,23 +199,28 @@ var getPlayerRankings = function (playerId) {
                     var myRankings = [];
                     var playerAdded = false;
                     var playersBelowPlayerRank = 0;
-                    playerStats.foreach(function (player) {
+                    for (var i = 0; i < playerStats.length; i++) {
+                        var player = playerStats[i];
                         if (playerAdded) {
                             playersBelowPlayerRank++;
                             if (playersBelowPlayerRank >= playerRanksToReturn/2 && myRankings.length > playerRanksToReturn - 1) {
-                                return;
+                                break;
                             }
                         }
                         myRankings.push(player);
                         if (player.playerId === playerId) {
                             playerAdded = true;
                         }
-                    });
+                    }
 
                     playerStats = myRankings.splice(myRankings.length - playerRanksToReturn, playerRanksToReturn);
                 } else {
                     playerStats = playerStats.splice(0, playerRanksToReturn);
                 }
+
+                playerStats.forEach(function(player) {
+                    delete player.playerId;
+                });
 
                 return playerStats;
             });

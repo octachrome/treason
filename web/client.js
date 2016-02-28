@@ -198,11 +198,11 @@ function showRankings(form, event) {
         if (vm.showingGlobalRank()) {
             vm.showingGlobalRank(false);
             vm.rankButtonText('Show global rankings');
-            socket.emit('showrankings');
+            socket.emit('showmyrank');
         } else {
             vm.showingGlobalRank(true);
             vm.rankButtonText('Show my rankings');
-            socket.emit('showmyrank');
+            socket.emit('showrankings');
         }
     }, 2000, true);
 }
