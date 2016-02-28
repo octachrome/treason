@@ -119,22 +119,21 @@ var recordGameData = function (gameData) {
     });
 };
 
-var getPlayerWins = function (playerId, options) {
+var getPlayerWins = function (playerId) {
     return ready.then(function () {
         return treasonDb.view('games/player_wins', {key: playerId} ).then(function (result) {
             var wins = 0;
+            var winsAI = 0;
             result.forEach(function (row) {
-                if (options) {
-                    if (options.humanOnly && row.onlyHumans) {
-                        wins++;
-                    } else if (!options.humanOnly) {
-                        wins++;
-                    }
-                } else {
-                    wins++;
+                wins++;
+                if (!row.onlyHumans) {
+                    winsAI++;
                 }
             });
-            return wins;
+            return {
+                wins: wins,
+                winsAI: winsAI
+            };
         }).catch(function (error) {
             debug('failed to look up player wins');
             debug(error);
@@ -165,7 +164,9 @@ var buildPlayerWin = function (player) {
         return getPlayerWins(player.playerId).then(function (wins) {
             return {
                 playerName: player.playerName,
-                wins: wins
+                wins: wins.wins,
+                winsAI: wins.winsAI,
+                winsHuman: wins.wins - wins.winsAI
             };
         });
     });
@@ -174,10 +175,15 @@ var buildPlayerWin = function (player) {
 var getPlayerRankings = function (options) {
     return ready.then(function () {
         return getAllPlayers().then(function (players) {
-            var stats = [];
             return Promise.all(players.map(buildPlayerWin)).then(function (playerStats) {
-                stats.push(playerStats);
-                return stats;
+                playerStats.sort(function(first, second) {
+                    return second.wins - first.wins;
+                });
+                var rank = 1;
+                playerStats.forEach(function (player) {
+                    player.rank = rank++;
+                });
+                return playerStats;
             });
         });
     });

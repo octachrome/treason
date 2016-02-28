@@ -30,7 +30,7 @@
         <div class="row"><br/></div>
         <div class="row">
             <!-- Welcome screen -->
-            <div class="col-xs-12">
+            <div class="col-xs-4">
                 <h3>Treason Coup</h3>
                 <p data-bind="text: version"></p>
                 <!-- ko if: !needName() -->
@@ -54,6 +54,34 @@
                 <p><a href="rules.html" target="blank">How to play</a></p>
                 <p><span data-bind="visible: activeUsers"><span data-bind="text: activeUsers"></span> players are online</span></p>
                 <img src="feedback.png"></img>
+            </div>
+            <div class="col-xs-6">
+                <h3>Rankings</h3>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Wins</th>
+                                <th>Wins (Human)</th>
+                                <th>Wins (AI)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <!-- ko foreach: rankings() -->
+                            <tr>
+                                <td><span data-bind="text: $data.rank"></span></td>
+                                <td><span data-bind="text: $data.playerName"></span></td>
+                                <td><span data-bind="text: $data.wins"></span></td>
+                                <td><span data-bind="text: $data.winsHuman"></span></td>
+                                <td><span data-bind="text: $data.winsAI"></span></td>
+                            </tr>
+                        <!-- /ko -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
