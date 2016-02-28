@@ -198,7 +198,8 @@ var getPlayerRankings = function (playerId) {
                         break;
                     }
                 }
-                myRankings.push(player);
+                //Object.assign would have been great here.
+                myRankings.push(assign(player));
                 if (player.playerId === playerId) {
                     playerAdded = true;
                 }
@@ -266,4 +267,14 @@ function debug(message) {
     if (debugMode) {
         console.log(message);
     }
+}
+
+function assign(source) {
+    var destination = {};
+    for(var i in source) {
+        if(source.hasOwnProperty(i)) {
+            destination[i] = source[i];
+        }
+    }
+    return destination;
 }
