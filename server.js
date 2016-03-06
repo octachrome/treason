@@ -80,6 +80,11 @@ io.on('connection', function (socket) {
                 playerId: playerId
             });
             socket.playerId = playerId;
+
+            //Now that we know who you are, we can highlight you in the rankings
+            dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
+                socket.emit('rankings', result);
+            });
         });
     });
 
@@ -162,13 +167,13 @@ io.on('connection', function (socket) {
     });
 
     socket.on('showrankings', function () {
-        dataAccess.getPlayerRankings().then(function (result) {
+        dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
             socket.emit('rankings', result);
         });
     });
 
     socket.on('showmyrank', function () {
-        dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
+        dataAccess.getPlayerRankings(socket.playerId, true).then(function (result) {
             socket.emit('rankings', result);
         });
     });

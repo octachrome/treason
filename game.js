@@ -259,13 +259,7 @@ module.exports = function createGame(options) {
             });
             var playerId = state.players[winnerIdx].playerId;
             gameStats.playerRank.unshift(playerId);
-            dataAccess.recordGameData(gameStats).then(function() {
-                if (options.debug) {
-                    dataAccess.getPlayerWins(playerId).then(function (result) {
-                        debug('player ' + playerId + ' has won ' + result + ' times');
-                    });
-                }
-            });
+            dataAccess.recordGameData(gameStats);
             game.emit('end');
             return true;
         } else {

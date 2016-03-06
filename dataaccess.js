@@ -8,7 +8,7 @@ var treasonDb = pr.wrapAll(connection.database('treason_db'));
 
 var debugMode = false;
 
-var globalPlayerRankings = [];
+var stats;
 var playerRanksToReturn = 10;
 
 var ready = treasonDb.exists().then(function (exists) {
@@ -22,24 +22,66 @@ var ready = treasonDb.exists().then(function (exists) {
     if (debugMode) {
         debug('Recreating views because of debug mode');
         return treasonDb.save('_design/games', {
-            all_games: {
-                map: function (document) {
-                    if (document.players && document.playerRank) {
-                        emit(null, document);
+            by_winner: {
+                map: function (doc) {
+                    if (doc.type === 'game' && doc.playerRank) {
+                        emit(doc.playerRank[0]);
+                    }
+                },
+                reduce: function (keys, values, rereduce) {
+                    if (rereduce) {
+                        return sum(values);
+                    }
+                    else {
+                        return values.length;
                     }
                 }
             },
-            player_wins: {
-                map: function (document) {
-                    if (document.players && document.playerRank) {
-                        emit(document.playerRank[0], document);
+            by_winner_ai: {
+                map: function (doc) {
+                    if (doc.type === 'game' && doc.playerRank && !doc.onlyHumans) {
+                        emit(doc.playerRank[0]);
+                    }
+                },
+                reduce: function (keys, values, rereduce) {
+                    if (rereduce) {
+                        return sum(values);
+                    }
+                    else {
+                        return values.length;
+                    }
+                }
+            },
+            by_player: {
+                map: function (doc) {
+                    if (doc.type === 'game' && doc.playerRank) {
+                        doc.playerRank.forEach(function (player) {
+                            if (player) {
+                                //Ignore AI players
+                                emit(player);
+                            }
+                        });
+                    }
+                },
+                reduce: function (keys, values, rereduce) {
+                    if (rereduce) {
+                        return sum(values);
+                    }
+                    else {
+                        return values.length;
                     }
                 }
             },
             all_players: {
                 map: function (document) {
-                    //This sucks, fix it, so easy to get collisions
-                    if (document.name) {
+                    if (document.type === 'player') {
+                        emit(null, document);
+                    }
+                }
+            },
+            all_games: {
+                map: function (document) {
+                    if (document.type === 'game') {
                         emit(null, document);
                     }
                 }
@@ -53,7 +95,7 @@ var ready = treasonDb.exists().then(function (exists) {
     debug(error);
 });
 
-updatePlayerRankings();
+calculateAllStats();
 
 var register = function (id, name) {
     return ready.then(function() {
@@ -87,6 +129,7 @@ var register = function (id, name) {
 
                 debug('Saving new id ' + id + ' for player ' + name);
                 return treasonDb.save(id, {
+                    type: 'player',
                     name: name
                 }).then(function (result) {
                     debug('Allocated new id ' + id + ' to player: ' + name);
@@ -110,6 +153,7 @@ var constructGameStats = function() {
     return {
         players: 0,
         onlyHumans: true,
+        type: 'game',
         playerRank: [],
         bluffs: 0,
         challenges: 0,
@@ -121,31 +165,9 @@ var recordGameData = function (gameData) {
     return ready.then(function () {
         return treasonDb.save(gameData).then(function (result) {
             debug('saved game data');
-            updatePlayerRankings();
+            calculateAllStats();
         }).catch(function (error) {
             debug('failed to save game data');
-            debug(error);
-        });
-    });
-};
-
-var getPlayerWins = function (playerId) {
-    return ready.then(function () {
-        return treasonDb.view('games/player_wins', {key: playerId} ).then(function (result) {
-            var wins = 0;
-            var winsAI = 0;
-            result.forEach(function (row) {
-                wins++;
-                if (!row.onlyHumans) {
-                    winsAI++;
-                }
-            });
-            return {
-                wins: wins,
-                winsAI: winsAI
-            };
-        }).catch(function (error) {
-            debug('failed to look up player wins');
             debug(error);
         });
     });
@@ -169,83 +191,112 @@ var getAllPlayers = function () {
     });
 };
 
-var buildPlayerWin = function (player) {
+var getPlayerRankings = function (playerId, showPersonalRank) {
     return ready.then(function () {
-        return getPlayerWins(player.playerId).then(function (wins) {
-            return {
-                playerName: player.playerName,
-                playerId: player.playerId,
-                wins: wins.wins,
-                winsAI: wins.winsAI,
-                winsHuman: wins.wins - wins.winsAI
-            };
+        var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
+            return id2.rank - id1.rank;
         });
-    });
-};
+        var playerStats = [];
 
-var getPlayerRankings = function (playerId) {
-    return ready.then(function () {
-        var playerStats;
-        if (playerId) {
+        if (showPersonalRank && playerId) {
+            debug('Getting player rankings for player ' + playerId);
             var myRankings = [];
             var playerAdded = false;
             var playersBelowPlayerRank = 0;
-            for (var i = 0; i < globalPlayerRankings.length; i++) {
-                var player = globalPlayerRankings[i];
+            for (var i = 0; i < sortedPlayerIds.length; i++) {
+                var sortedPlayerId = sortedPlayerIds[i];
                 if (playerAdded) {
                     playersBelowPlayerRank++;
                     if (playersBelowPlayerRank >= playerRanksToReturn / 2 && myRankings.length > playerRanksToReturn - 1) {
                         break;
                     }
                 }
-                //Object.assign would have been great here.
-                myRankings.push(assign(player));
-                if (player.playerId === playerId) {
+
+                var rankedPlayerStats = assign(stats[sortedPlayerId]);
+                rankedPlayerStats.playerId = sortedPlayerId;
+                myRankings.push(rankedPlayerStats);
+                if (sortedPlayerId === playerId) {
                     playerAdded = true;
                 }
             }
 
             playerStats = myRankings.splice(myRankings.length - playerRanksToReturn, playerRanksToReturn);
-
-            playerStats.forEach(function (player) {
-                if (playerId == player.playerId) {
-                    player.isPlayer = true;
-                }
-                delete player.playerId;
-            });
-
-            return playerStats;
         } else {
-            playerStats = globalPlayerRankings.slice(0);
-            return playerStats.splice(0, playerRanksToReturn);
+            debug('Getting global player rankings');
+            for (var j = 0; j < playerRanksToReturn; j++) {
+                if (stats[sortedPlayerIds[j]]) {
+                    var rankedTopPlayerStats = assign(stats[sortedPlayerIds[j]]);
+                    rankedTopPlayerStats.playerId = sortedPlayerIds[j];
+                    playerStats.push(rankedTopPlayerStats);
+                } else {
+                    //There are less than 10-20 players registered in the ranks in this case
+                    break;
+                }
+            }
         }
+
+        playerStats.forEach(function (player) {
+            if (playerId && playerId == player.playerId) {
+                player.isPlayer = true;
+            }
+            delete player.playerId;
+        });
+
+        return playerStats;
     });
 };
 
-function updatePlayerRankings() {
-    return ready.then(function () {
-        return getAllPlayers().then(function (players) {
-            return Promise.all(players.map(buildPlayerWin)).then(function (playerStats) {
-                playerStats.sort(function(first, second) {
-                    var result = second.winsHuman - first.winsHuman;
-                    if (result == 0) {
-                        return second.wins - first.wins;
-                    } else {
-                        return result;
-                    }
-                });
-                var rank = 1;
-                playerStats.forEach(function (player) {
-                    player.rank = rank++;
-                });
-
-                debug('Refreshing player rankings, fetched ranks for ' + playerStats.length + ' players');
-
-                globalPlayerRankings = playerStats;
-
-                return playerStats;
-            });
+function calculateAllStats() {
+    debug('Calculating stats for every player');
+    stats = {};
+    return Promise.all([
+        treasonDb.view('games/by_winner', {reduce: true, group: true}),
+        treasonDb.view('games/by_winner_ai', {reduce: true, group: true}),
+        treasonDb.view('games/by_player', {reduce: true, group: true}),
+        treasonDb.view('games/all_players')
+    ]).then(function (results) {
+        var games = results[2];
+        games.forEach(function (playerId, gameCount) {
+            stats[playerId] = {
+                games: gameCount,
+                rank: 0,
+                playerName: '',
+                wins: 0,
+                winsAI: 0,
+                percent: 0
+            };
         });
+        var totalWins = results[0];
+        totalWins.forEach(function (playerId, winCount) {
+            stats[playerId].wins = winCount;
+            stats[playerId].percent = Math.floor(100 * winCount / stats[playerId].games);
+        });
+        var winsAI = results[1];
+        winsAI.forEach(function (playerId, winCount) {
+            stats[playerId].winsAI = winCount;
+        });
+
+        var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
+            var first = stats[id1];
+            var second = stats[id2];
+            var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
+            if (result == 0) {
+                return second.wins - first.wins;
+            } else {
+                return result;
+            }
+        });
+
+        var rank = 1;
+        for (var i = 0; i < sortedPlayerIds.length; i++) {
+            stats[sortedPlayerIds[i]].rank = rank++;
+        }
+
+        var players = results[3];
+        for (var j = 0; j < players.length; j++) {
+            var player = players[j];
+            stats[player.id].playerName = player.value.name;
+        }
     });
 }
 
@@ -253,8 +304,6 @@ module.exports = {
     register: register,
     constructGameStats: constructGameStats,
     recordGameData: recordGameData,
-    getPlayerWins: getPlayerWins,
-    getAllPlayers: getAllPlayers,
     getPlayerRankings: getPlayerRankings,
     setDebug: setDebug
 };
@@ -270,6 +319,7 @@ function debug(message) {
 }
 
 function assign(source) {
+    //Object.assign would have been great here.
     var destination = {};
     for(var i in source) {
         if(source.hasOwnProperty(i)) {
