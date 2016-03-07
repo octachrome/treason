@@ -296,7 +296,9 @@ function calculateAllStats() {
             var players = results[3];
             for (var j = 0; j < players.length; j++) {
                 var player = players[j];
-                stats[player.id].playerName = player.value.name;
+                if (stats[player.id]) {
+                    stats[player.id].playerName = player.value.name;
+                }
             }
             debug('Finished calculating all stats')
         }).catch(function (error) {
