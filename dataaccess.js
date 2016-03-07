@@ -85,6 +85,35 @@ var ready = treasonDb.exists().then(function (exists) {
                         emit(null, document);
                     }
                 }
+            },
+            by_winner_complex: {
+                map: function (doc) {
+                    if (doc.type === 'game' && doc.playerRank && doc.playerRank[0]) {
+                        emit(doc.playerRank[0], doc.onlyHumans);
+                    }
+                },
+                reduce: function (keys, values, rereduce) {
+                    var stats = {
+                        wins: 0,
+                        winsAI: 0
+                    };
+
+                    if (rereduce) {
+                        for (var i = 0; i < values.length; i++) {
+                            stats.wins += values[i].wins;
+                            stats.winsAI += values[i].winsAI;
+                        }
+                        return stats;
+                    }
+
+                    stats.wins = values.length;
+                    values.forEach(function(value) {
+                        if (!value) {
+                            stats.winsAI++;
+                        }
+                    });
+                    return stats;
+                }
             }
         });
     }
@@ -329,7 +358,7 @@ function createTestData() {
             for (var g = 0; g < 100; g++) {
                 var playerRank = [];
                 for (var p = 0, len = 2 + randomInteger(0, 2); p < len; p++) {
-                    playerRank.push(playerIds[randomInteger(0, playerIds.length)]);
+                    playerRank.push(playerIds[randomInteger(0, playerIds.length - 1)]);
                 }
 
                 var game = constructGameStats();
@@ -353,7 +382,7 @@ function name() {
     var name = 'AI-';
     var chars = "abcdefghijklmnopqrstuvwxyz";
     for (var i = 0; i < 8; i++) {
-        name += chars.charAt(randomInteger(0, chars.length));
+        name += chars.charAt(randomInteger(0, chars.length - 1));
     }
     return name;
 }
