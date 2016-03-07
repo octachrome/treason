@@ -24,7 +24,7 @@ var ready = treasonDb.exists().then(function (exists) {
         return treasonDb.save('_design/games', {
             by_winner: {
                 map: function (doc) {
-                    if (doc.type === 'game' && doc.playerRank) {
+                    if (doc.type === 'game' && doc.playerRank && doc.playerRank[0]) {
                         emit(doc.playerRank[0]);
                     }
                 },
@@ -39,7 +39,7 @@ var ready = treasonDb.exists().then(function (exists) {
             },
             by_winner_ai: {
                 map: function (doc) {
-                    if (doc.type === 'game' && doc.playerRank && !doc.onlyHumans) {
+                    if (doc.type === 'game' && doc.playerRank && !doc.onlyHumans && doc.playerRank[0]) {
                         emit(doc.playerRank[0]);
                     }
                 },
@@ -194,7 +194,7 @@ var getAllPlayers = function () {
 var getPlayerRankings = function (playerId, showPersonalRank) {
     return ready.then(function () {
         var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
-            return id2.rank - id1.rank;
+            return stats[id1].rank - stats[id2].rank;
         });
         var playerStats = [];
 
@@ -248,56 +248,112 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
 
 function calculateAllStats() {
     debug('Calculating stats for every player');
-    stats = {};
-    return Promise.all([
-        treasonDb.view('games/by_winner', {reduce: true, group: true}),
-        treasonDb.view('games/by_winner_ai', {reduce: true, group: true}),
-        treasonDb.view('games/by_player', {reduce: true, group: true}),
-        treasonDb.view('games/all_players')
-    ]).then(function (results) {
-        var games = results[2];
-        games.forEach(function (playerId, gameCount) {
-            stats[playerId] = {
-                games: gameCount,
-                rank: 0,
-                playerName: '',
-                wins: 0,
-                winsAI: 0,
-                percent: 0
-            };
-        });
-        var totalWins = results[0];
-        totalWins.forEach(function (playerId, winCount) {
-            stats[playerId].wins = winCount;
-            stats[playerId].percent = Math.floor(100 * winCount / stats[playerId].games);
-        });
-        var winsAI = results[1];
-        winsAI.forEach(function (playerId, winCount) {
-            stats[playerId].winsAI = winCount;
-        });
+    return ready.then(function () {
+        stats = {};
+        return Promise.all([
+            treasonDb.view('games/by_winner', {reduce: true, group: true}),
+            treasonDb.view('games/by_winner_ai', {reduce: true, group: true}),
+            treasonDb.view('games/by_player', {reduce: true, group: true}),
+            treasonDb.view('games/all_players')
+        ]).then(function (results) {
+            var games = results[2];
+            games.forEach(function (playerId, gameCount) {
+                stats[playerId] = {
+                    games: gameCount,
+                    rank: 0,
+                    playerName: '',
+                    wins: 0,
+                    winsAI: 0,
+                    percent: 0
+                };
+            });
+            var totalWins = results[0];
+            totalWins.forEach(function (playerId, winCount) {
+                stats[playerId].wins = winCount;
+                stats[playerId].percent = Math.floor(100 * winCount / stats[playerId].games);
+            });
+            var winsAI = results[1];
+            winsAI.forEach(function (playerId, winCount) {
+                stats[playerId].winsAI = winCount;
+            });
 
-        var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
-            var first = stats[id1];
-            var second = stats[id2];
-            var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
-            if (result == 0) {
-                return second.wins - first.wins;
-            } else {
-                return result;
+            var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
+                var first = stats[id1];
+                var second = stats[id2];
+                var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
+                if (result == 0) {
+                    return second.wins - first.wins;
+                } else {
+                    return result;
+                }
+            });
+
+            var rank = 1;
+            for (var i = 0; i < sortedPlayerIds.length; i++) {
+                stats[sortedPlayerIds[i]].rank = rank++;
             }
+
+            var players = results[3];
+            for (var j = 0; j < players.length; j++) {
+                var player = players[j];
+                stats[player.id].playerName = player.value.name;
+            }
+            debug('Finished calculating all stats')
+        }).catch(function (error) {
+            debug('Failed to calculate all stats');
+            debug(error);
         });
-
-        var rank = 1;
-        for (var i = 0; i < sortedPlayerIds.length; i++) {
-            stats[sortedPlayerIds[i]].rank = rank++;
-        }
-
-        var players = results[3];
-        for (var j = 0; j < players.length; j++) {
-            var player = players[j];
-            stats[player.id].playerName = player.value.name;
-        }
     });
+}
+
+function createTestData() {
+    var playerIds = [];
+    ready.then(function () {
+        var registerPromises = [];
+        for (var i = 0; i < 20; i++) {
+            registerPromises.push(register(i, name()));
+        }
+
+        Promise.all(registerPromises).then(function (result) {
+            result.forEach(function(player) {
+                playerIds.push(player);
+            });
+        }).then(function () {
+            var gamePromises = [];
+            for (var g = 0; g < 100; g++) {
+                var playerRank = [];
+                for (var p = 0, len = 2 + randomInteger(0, 2); p < len; p++) {
+                    playerRank.push(playerIds[randomInteger(0, playerIds.length)]);
+                }
+
+                var game = constructGameStats();
+
+                game.playerRank = playerRank;
+                game.players = playerRank.length;
+                game.onlyHumans = true;
+
+                gamePromises.push(recordGameData(game));
+            }
+            return Promise.all(gamePromises);
+        });
+    }).then(function () {
+        debug('Finished creating test data');
+    });
+}
+
+//createTestData();
+
+function name() {
+    var name = 'AI-';
+    var chars = "abcdefghijklmnopqrstuvwxyz";
+    for (var i = 0; i < 8; i++) {
+        name += chars.charAt(randomInteger(0, chars.length));
+    }
+    return name;
+}
+
+function randomInteger(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 module.exports = {
