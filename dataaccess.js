@@ -104,6 +104,10 @@ var register = function (id, name) {
         if (!id) {
             id = -1;
         }
+        if (!name) {
+            debug('Player given a dummy name');
+            name = "JohnDoe";
+        }
 
         return treasonDb.get(id)
             .then(function (result) {
