@@ -250,8 +250,8 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
 };
 
 function calculateAllStats() {
-    debug('Calculating stats for every player');
     return ready.then(function () {
+        debug('Calculating stats for every player');
         stats = {};
         return Promise.all([
             treasonDb.view('games/by_winner', {reduce: true, group: true}),
@@ -269,6 +269,7 @@ function calculateAllStats() {
                     percent: 0
                 };
             });
+
             var wins = results[0];
             wins.forEach(function (playerId, winStats) {
                 stats[playerId].wins = winStats.wins;
