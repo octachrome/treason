@@ -25,31 +25,30 @@ var ready = treasonDb.exists().then(function (exists) {
             by_winner: {
                 map: function (doc) {
                     if (doc.type === 'game' && doc.playerRank && doc.playerRank[0]) {
-                        emit(doc.playerRank[0]);
+                        emit(doc.playerRank[0], doc.onlyHumans);
                     }
                 },
                 reduce: function (keys, values, rereduce) {
+                    var stats = {
+                        wins: 0,
+                        winsAI: 0
+                    };
+
                     if (rereduce) {
-                        return sum(values);
+                        for (var i = 0; i < values.length; i++) {
+                            stats.wins += values[i].wins;
+                            stats.winsAI += values[i].winsAI;
+                        }
+                        return stats;
                     }
-                    else {
-                        return values.length;
-                    }
-                }
-            },
-            by_winner_ai: {
-                map: function (doc) {
-                    if (doc.type === 'game' && doc.playerRank && !doc.onlyHumans && doc.playerRank[0]) {
-                        emit(doc.playerRank[0]);
-                    }
-                },
-                reduce: function (keys, values, rereduce) {
-                    if (rereduce) {
-                        return sum(values);
-                    }
-                    else {
-                        return values.length;
-                    }
+
+                    stats.wins = values.length;
+                    values.forEach(function(value) {
+                        if (!value) {
+                            stats.winsAI++;
+                        }
+                    });
+                    return stats;
                 }
             },
             by_player: {
@@ -84,35 +83,6 @@ var ready = treasonDb.exists().then(function (exists) {
                     if (document.type === 'game') {
                         emit(null, document);
                     }
-                }
-            },
-            by_winner_complex: {
-                map: function (doc) {
-                    if (doc.type === 'game' && doc.playerRank && doc.playerRank[0]) {
-                        emit(doc.playerRank[0], doc.onlyHumans);
-                    }
-                },
-                reduce: function (keys, values, rereduce) {
-                    var stats = {
-                        wins: 0,
-                        winsAI: 0
-                    };
-
-                    if (rereduce) {
-                        for (var i = 0; i < values.length; i++) {
-                            stats.wins += values[i].wins;
-                            stats.winsAI += values[i].winsAI;
-                        }
-                        return stats;
-                    }
-
-                    stats.wins = values.length;
-                    values.forEach(function(value) {
-                        if (!value) {
-                            stats.winsAI++;
-                        }
-                    });
-                    return stats;
                 }
             }
         });
@@ -285,11 +255,10 @@ function calculateAllStats() {
         stats = {};
         return Promise.all([
             treasonDb.view('games/by_winner', {reduce: true, group: true}),
-            treasonDb.view('games/by_winner_ai', {reduce: true, group: true}),
             treasonDb.view('games/by_player', {reduce: true, group: true}),
             treasonDb.view('games/all_players')
         ]).then(function (results) {
-            var games = results[2];
+            var games = results[1];
             games.forEach(function (playerId, gameCount) {
                 stats[playerId] = {
                     games: gameCount,
@@ -300,14 +269,11 @@ function calculateAllStats() {
                     percent: 0
                 };
             });
-            var totalWins = results[0];
-            totalWins.forEach(function (playerId, winCount) {
-                stats[playerId].wins = winCount;
-                stats[playerId].percent = Math.floor(100 * winCount / stats[playerId].games);
-            });
-            var winsAI = results[1];
-            winsAI.forEach(function (playerId, winCount) {
-                stats[playerId].winsAI = winCount;
+            var wins = results[0];
+            wins.forEach(function (playerId, winStats) {
+                stats[playerId].wins = winStats.wins;
+                stats[playerId].winsAI = winStats.winsAI;
+                stats[playerId].percent = Math.floor(100 * winStats.wins / stats[playerId].games);
             });
 
             var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
@@ -326,7 +292,7 @@ function calculateAllStats() {
                 stats[sortedPlayerIds[i]].rank = rank++;
             }
 
-            var players = results[3];
+            var players = results[2];
             for (var j = 0; j < players.length; j++) {
                 var player = players[j];
                 if (stats[player.id]) {
