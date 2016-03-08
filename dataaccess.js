@@ -282,7 +282,11 @@ function calculateAllStats() {
                 var second = stats[id2];
                 var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
                 if (result == 0) {
-                    return second.wins - first.wins;
+                    result = second.wins - first.wins;
+                    if (result == 0) {
+                        return second.percent - first.percent;
+                    }
+                    return result;
                 } else {
                     return result;
                 }
