@@ -158,6 +158,8 @@ var constructGameStats = function() {
         onlyHumans: true,
         type: 'game',
         playerRank: [],
+        gameStarted: new Date().getTime(),
+        gameFinished: 0,
         bluffs: 0,
         challenges: 0,
         moves: 0
@@ -166,6 +168,7 @@ var constructGameStats = function() {
 
 var recordGameData = function (gameData) {
     return ready.then(function () {
+        gameData.gameFinished = new Date().getTime();
         return treasonDb.save(gameData).then(function (result) {
             debug('saved game data');
             calculateAllStats();
