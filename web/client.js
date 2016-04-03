@@ -113,6 +113,13 @@ socket.on('state', function (data) {
     if (weAreInState('start-of-turn')) {
         ion.sound.play('snap');
     }
+    if (weAreAlive()) {
+        if (theyAreInState('action-response')
+            || theyAreInState('final-action-response') && weCanBlock()
+            || theyAreTargeted('block-response')) {
+            ion.sound.play('glass');
+        }
+    }
     vm.targetedAction('');
     vm.weAllowed(false);
     vm.chosenExchangeOptions({});
