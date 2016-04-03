@@ -196,6 +196,15 @@ module.exports = function createGame(options) {
                         influence[j].revealed = true;
                     }
                 }
+                if (player.playerId) {
+                    //Record the stats on the game
+                    gameStats.playerDisconnect.unshift(player.playerId);
+                    //Record the stats individually, in case the game does not finish
+                    //Should not be recorded if the player is the last human player
+                    if (!onlyAiLeft()) {
+                        dataAccess.recordPlayerDisconnect(player.playerId);
+                    }
+                }
                 player.influenceCount = 0;
                 var end = checkForGameEnd();
                 if (!end) {
@@ -214,17 +223,19 @@ module.exports = function createGame(options) {
         for (var k = 0; k < historySuffix.length; k++) {
             contHistory('player-left', historySuffix[k]);
         }
-        checkOnlyAiLeft();
+        if (onlyAiLeft()) {
+            destroyGame();
+        }
         emitState();
     }
 
-    function checkOnlyAiLeft() {
+    function onlyAiLeft() {
         for (var i = 0; i < players.length; i++) {
             if (players[i] && !players[i].ai) {
-                return;
+                return false;
             }
         }
-        destroyGame();
+        return true;
     }
 
     function destroyGame() {

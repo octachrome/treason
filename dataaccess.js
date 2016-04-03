@@ -158,6 +158,7 @@ var constructGameStats = function() {
         onlyHumans: true,
         type: 'game',
         playerRank: [],
+        playerDisconnect: [],
         gameStarted: new Date().getTime(),
         gameFinished: 0,
         bluffs: 0,
@@ -176,6 +177,25 @@ var recordGameData = function (gameData) {
             debug('failed to save game data');
             debug(error);
         });
+    });
+};
+
+var recordPlayerDisconnect = function (playerId) {
+    return ready.then(function () {
+        return treasonDb.get(playerId)
+            .then(function (result) {
+                if (result) {
+                    debug('Updating disconnects for player: ' + playerId);
+                    return treasonDb.merge(playerId, {
+                        disconnects: 1 + (result.disconnects ? result.disconnects : 0)
+                    }).then(function (result) {
+                        debug('Updated disconnect count of player: ' + playerId);
+                    }).catch(function (error) {
+                        debug('Failed to update player.');
+                        debug(error);
+                    });
+                }
+            });
     });
 };
 
@@ -319,6 +339,7 @@ module.exports = {
     register: register,
     constructGameStats: constructGameStats,
     recordGameData: recordGameData,
+    recordPlayerDisconnect: recordPlayerDisconnect,
     getPlayerRankings: getPlayerRankings,
     setDebug: setDebug
 };
