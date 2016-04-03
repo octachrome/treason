@@ -315,6 +315,36 @@ function calculateAllStats() {
     });
 }
 
+module.exports = {
+    register: register,
+    constructGameStats: constructGameStats,
+    recordGameData: recordGameData,
+    getPlayerRankings: getPlayerRankings,
+    setDebug: setDebug
+};
+
+function setDebug(debug) {
+    debugMode = debug;
+}
+
+function debug(message) {
+    if (debugMode) {
+        console.log(message);
+    }
+}
+
+function assign(source) {
+    //Object.assign would have been great here.
+    var destination = {};
+    for(var i in source) {
+        if(source.hasOwnProperty(i)) {
+            destination[i] = source[i];
+        }
+    }
+    return destination;
+}
+
+//Just for testing
 function createTestData() {
     var playerIds = [];
     ready.then(function () {
@@ -363,33 +393,4 @@ function name() {
 
 function randomInteger(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-module.exports = {
-    register: register,
-    constructGameStats: constructGameStats,
-    recordGameData: recordGameData,
-    getPlayerRankings: getPlayerRankings,
-    setDebug: setDebug
-};
-
-function setDebug(debug) {
-    debugMode = debug;
-}
-
-function debug(message) {
-    if (debugMode) {
-        console.log(message);
-    }
-}
-
-function assign(source) {
-    //Object.assign would have been great here.
-    var destination = {};
-    for(var i in source) {
-        if(source.hasOwnProperty(i)) {
-            destination[i] = source[i];
-        }
-    }
-    return destination;
 }
