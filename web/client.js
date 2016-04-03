@@ -595,3 +595,29 @@ $(window).on('keydown', function (event) {
         });
     }
 });
+
+ion.sound({
+    sounds: [
+        {
+            name: "metal_plate"
+        },
+        {
+            name: "button_tiny"
+        },
+        {
+            name: "pop_cork"
+        },
+        {
+            name: "glass"
+        },
+        {
+            name: "bell_ring"
+        },
+        {
+            name: "snap"
+        }
+    ],
+    volume: 0.5,
+    path: "lib/ion.sound-3.0.7/sounds/",
+    preload: true
+});
