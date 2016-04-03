@@ -24,7 +24,8 @@ vm = {
     needName: ko.observable(false),
     rankings: ko.observable({}),
     rankButtonText: ko.observable('Show my rankings'),
-    showingGlobalRank: ko.observable(true)
+    showingGlobalRank: ko.observable(true),
+    soundEnabled: ko.observable(JSON.parse(localStorageGet('soundEnabled') || false))
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -49,6 +50,12 @@ vm.playerName.subscribe(function (newName) {
 });
 vm.bannerVisible = ko.computed(function () {
     return !playing() && vm.bannerMessage();
+});
+vm.soundEnabled.subscribe(function (enabled) {
+    localStorageSet('soundEnabled', enabled);
+});
+vm.soundToggleText = ko.computed(function () {
+    return vm.soundEnabled() ? 'Disable sounds' : 'Enable sound';
 });
 
 if (window.location.href.indexOf('amazonaws') >= 0) {
@@ -111,13 +118,13 @@ socket.on('disconnect', function () {
 socket.on('state', function (data) {
     ko.mapping.fromJS(data, vm.state);
     if (weAreInState('start-of-turn')) {
-        ion.sound.play('snap');
+        playSound('snap');
     }
     if (weAreAlive()) {
         if (theyAreInState('action-response')
             || theyAreInState('final-action-response') && weCanBlock()
             || theyAreTargeted('block-response')) {
-            ion.sound.play('glass');
+            playSound('glass');
         }
     }
     vm.targetedAction('');
@@ -148,7 +155,7 @@ socket.on('chat', function (data) {
     } else {
         var player = vm.state.players()[data.from];
         from = player ? player.name() : 'Unknown';
-        ion.sound.play('water_droplet');
+        playSound('water_droplet');
     }
     var html = '<b>' + from + ':</b> ' + data.message + '<br/>';
     $('.chat').append(html);
@@ -606,6 +613,16 @@ $(window).on('keydown', function (event) {
         });
     }
 });
+
+function toggleSound() {
+    vm.soundEnabled(!vm.soundEnabled())
+}
+
+function playSound(sound) {
+    if (vm.soundEnabled()) {
+        ion.sound.play(sound);
+    }
+}
 
 ion.sound({
     sounds: [
