@@ -110,6 +110,9 @@ socket.on('disconnect', function () {
 });
 socket.on('state', function (data) {
     ko.mapping.fromJS(data, vm.state);
+    if (weAreInState('start-of-turn')) {
+        ion.sound.play('snap');
+    }
     vm.targetedAction('');
     vm.weAllowed(false);
     vm.chosenExchangeOptions({});
@@ -599,25 +602,25 @@ $(window).on('keydown', function (event) {
 ion.sound({
     sounds: [
         {
-            name: "metal_plate"
+            name: 'metal_plate'
         },
         {
-            name: "button_tiny"
+            name: 'button_tiny'
         },
         {
-            name: "pop_cork"
+            name: 'pop_cork'
         },
         {
-            name: "glass"
+            name: 'glass'
         },
         {
-            name: "bell_ring"
+            name: 'bell_ring'
         },
         {
-            name: "snap"
+            name: 'snap'
         }
     ],
     volume: 0.5,
-    path: "lib/ion.sound-3.0.7/sounds/",
+    path: 'lib/ion.sound-3.0.7/sounds/',
     preload: true
 });

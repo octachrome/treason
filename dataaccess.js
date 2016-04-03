@@ -105,7 +105,7 @@ var register = function (id, name) {
         }
         if (!name) {
             debug('Player given a dummy name');
-            name = "JohnDoe";
+            name = 'JohnDoe';
         }
 
         return treasonDb.get(id)
@@ -405,7 +405,7 @@ function createTestData() {
 
 function name() {
     var name = 'AI-';
-    var chars = "abcdefghijklmnopqrstuvwxyz";
+    var chars = 'abcdefghijklmnopqrstuvwxyz';
     for (var i = 0; i < 8; i++) {
         name += chars.charAt(randomInteger(0, chars.length - 1));
     }
