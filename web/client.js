@@ -148,6 +148,7 @@ socket.on('chat', function (data) {
     } else {
         var player = vm.state.players()[data.from];
         from = player ? player.name() : 'Unknown';
+        ion.sound.play('water_droplet');
     }
     var html = '<b>' + from + ':</b> ' + data.message + '<br/>';
     $('.chat').append(html);
@@ -625,6 +626,9 @@ ion.sound({
         },
         {
             name: 'snap'
+        },
+        {
+            name: 'water_droplet'
         }
     ],
     volume: 0.5,
