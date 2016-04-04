@@ -133,7 +133,7 @@ module.exports = function createGame(options) {
 
         var proxy = createGameProxy(playerIdx);
         if (isObserver) {
-            proxy.command = new function() {};
+            proxy.command = function () {};
         }
         proxies.push(proxy);
         return proxy;

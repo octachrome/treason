@@ -204,7 +204,7 @@ function create(form, event) {
     if (isInvalidPlayerName()) {
         return;
     }
-    _.debounce(new function() {
+    _.debounce(function () {
         socket.emit('create', {
             gameName: vm.playerName(),
             playerName: vm.playerName()
@@ -212,7 +212,7 @@ function create(form, event) {
     }, 500, true);
 }
 function showRankings(form, event) {
-    _.debounce(new function() {
+    _.debounce(function () {
         if (vm.showingGlobalRank()) {
             vm.showingGlobalRank(false);
             vm.rankButtonText('Show global rankings');
