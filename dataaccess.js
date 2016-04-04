@@ -183,12 +183,12 @@ var recordGameData = function (gameData) {
 var recordPlayerDisconnect = function (playerId) {
     return ready.then(function () {
         return treasonDb.get(playerId)
-            .then(function (result) {
-                if (result) {
+            .then(function (player) {
+                if (player) {
                     debug('Updating disconnects for player: ' + playerId);
                     return treasonDb.merge(playerId, {
-                        disconnects: 1 + (result.disconnects ? result.disconnects : 0)
-                    }).then(function (result) {
+                        disconnects: 1 + (player.disconnects || 0)
+                    }).then(function (player) {
                         debug('Updated disconnect count of player: ' + playerId);
                     }).catch(function (error) {
                         debug('Failed to update player.');
