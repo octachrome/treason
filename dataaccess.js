@@ -275,7 +275,7 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
 function calculateAllStats() {
     return ready.then(function () {
         debug('Calculating stats for every player');
-        stats = {};
+        var newStats = {};
         return Promise.all([
             treasonDb.view('games/by_winner', {reduce: true, group: true}),
             treasonDb.view('games/by_player', {reduce: true, group: true}),
@@ -283,7 +283,7 @@ function calculateAllStats() {
         ]).then(function (results) {
             var games = results[1];
             games.forEach(function (playerId, gameCount) {
-                stats[playerId] = {
+                newStats[playerId] = {
                     games: gameCount,
                     rank: 0,
                     playerName: '',
@@ -295,14 +295,14 @@ function calculateAllStats() {
 
             var wins = results[0];
             wins.forEach(function (playerId, winStats) {
-                stats[playerId].wins = winStats.wins;
-                stats[playerId].winsAI = winStats.winsAI;
-                stats[playerId].percent = Math.floor(100 * winStats.wins / stats[playerId].games);
+                newStats[playerId].wins = winStats.wins;
+                newStats[playerId].winsAI = winStats.winsAI;
+                newStats[playerId].percent = Math.floor(100 * winStats.wins / newStats[playerId].games);
             });
 
-            var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
-                var first = stats[id1];
-                var second = stats[id2];
+            var sortedPlayerIds = Object.keys(newStats).sort(function (id1, id2) {
+                var first = newStats[id1];
+                var second = newStats[id2];
                 var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
                 if (result == 0) {
                     result = second.wins - first.wins;
@@ -317,16 +317,17 @@ function calculateAllStats() {
 
             var rank = 1;
             for (var i = 0; i < sortedPlayerIds.length; i++) {
-                stats[sortedPlayerIds[i]].rank = rank++;
+                newStats[sortedPlayerIds[i]].rank = rank++;
             }
 
             var players = results[2];
             for (var j = 0; j < players.length; j++) {
                 var player = players[j];
-                if (stats[player.id]) {
-                    stats[player.id].playerName = player.value.name;
+                if (newStats[player.id]) {
+                    newStats[player.id].playerName = player.value.name;
                 }
             }
+            stats = newStats;
             debug('Finished calculating all stats')
         }).catch(function (error) {
             debug('Failed to calculate all stats');
