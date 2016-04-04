@@ -1,14 +1,16 @@
 Treason Coup
 ------------
 
-A clone of the card game Coup written in Node.js. For an explanation of how to play, see `web/rules.html`.
+A clone of the card game Coup written in Node.js. Play online at
+http://treason.thebrown.net.
 
-To run the server for a multiplayer game:
+To run the server locally:
 
     npm install
     node server.js [--debug]
 
-Then open `http://localhost:8080` in one or more browser windows.
+Then open `http://localhost:8080` in one or more browser windows. For an
+explanation of how to play, see `web/rules.html`.
 
 AI
 --
