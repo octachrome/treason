@@ -142,6 +142,16 @@ function createAiPlayer(game, options) {
 
     function respondToAction() {
         trackClaim(state.state.playerIdx, state.state.action);
+
+        if (state.state.action === 'steal' && aiPlayer.cash === 0) {
+            // If someone wants to steal nothing from us, go ahead.
+            debug('allowing');
+            command({
+                command: 'allow'
+            });
+            return;
+        }
+
         var blockingRole = getBlockingRole();
         if (blockingRole) {
             debug('blocking');
@@ -152,22 +162,25 @@ function createAiPlayer(game, options) {
             return;
         }
 
-        if (shouldChallenge()) {
-            debug('challenging');
-            command({
-                command: 'challenge'
-            });
-            return;
-        }
+        // Don't bluff in the final action response - it will just get challlenged.
+        if (state.state.name == stateNames.ACTION_RESPONSE) {
+            if (shouldChallenge()) {
+                debug('challenging');
+                command({
+                    command: 'challenge'
+                });
+                return;
+            }
 
-        blockingRole = getBluffedBlockingRole();
-        if (blockingRole) {
-            debug('blocking (bluff)');
-            command({
-                command: 'block',
-                blockingRole: blockingRole
-            });
-            return;
+            blockingRole = getBluffedBlockingRole();
+            if (blockingRole) {
+                debug('blocking (bluff)');
+                command({
+                    command: 'block',
+                    blockingRole: blockingRole
+                });
+                return;
+            }
         }
 
         debug('allowing');

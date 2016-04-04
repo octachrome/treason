@@ -24,7 +24,8 @@ vm = {
     needName: ko.observable(false),
     rankings: ko.observable({}),
     rankButtonText: ko.observable('Show my rankings'),
-    showingGlobalRank: ko.observable(true)
+    showingGlobalRank: ko.observable(true),
+    notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false))
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -49,6 +50,12 @@ vm.playerName.subscribe(function (newName) {
 });
 vm.bannerVisible = ko.computed(function () {
     return !playing() && vm.bannerMessage();
+});
+vm.notifsEnabled.subscribe(function (enabled) {
+    localStorageSet('notifsEnabled', enabled);
+});
+vm.notifToggleText = ko.computed(function () {
+    return vm.notifsEnabled() ? 'Disable notifications' : 'Enable notifications';
 });
 
 if (window.location.href.indexOf('amazonaws') >= 0) {
@@ -115,7 +122,7 @@ socket.on('state', function (data) {
     vm.chosenExchangeOptions({});
     $('.activity').scrollTop(0);
     $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
-    console.log(data);
+    notifyPlayerOfState();
 });
 socket.on('history', function (data) {
     var items;
@@ -138,6 +145,7 @@ socket.on('chat', function (data) {
     } else {
         var player = vm.state.players()[data.from];
         from = player ? player.name() : 'Unknown';
+        notifyPlayer(from + ' says: ' + data.message);
     }
     var html = '<b>' + from + ':</b> ' + data.message + '<br/>';
     $('.chat').append(html);
@@ -311,6 +319,10 @@ function weCanBlock() {
     if (!weAreAlive()) {
         return false;
     }
+    if (vm.state.state.playerIdx() === vm.state.playerIdx()) {
+        // Cannot block our own action.
+        return false;
+    }
     if (vm.state.state.name() != states.ACTION_RESPONSE && vm.state.state.name() != states.FINAL_ACTION_RESPONSE) {
         return false;
     }
@@ -341,9 +353,17 @@ function weCanChallenge() {
         return false;
     }
     if (vm.state.state.name() == states.ACTION_RESPONSE) {
+        if (vm.state.state.playerIdx() === vm.state.playerIdx()) {
+            // Cannot challenge our own action.
+            return false;
+        }
         // Only role-based actions can be challenged.
         return !!action.role;
     } else if (vm.state.state.name() == states.BLOCK_RESPONSE) {
+        if (vm.state.state.target() === vm.state.playerIdx()) {
+            // Cannot challenge our own block.
+            return false;
+        }
         return true;
     } else {
         return false;
@@ -565,6 +585,69 @@ function animateHistory(e) {
             .effect('highlight', {color: '#ddeeff'}, 1000);
     }
 }
+
+var windowVisible = true;
+$(window).on('focus', function () {
+    windowVisible = true;
+});
+$(window).on('blur', function () {
+    windowVisible = false;
+});
+function notifyPlayer(message) {
+    if (vm.notifsEnabled() && !windowVisible) {
+        // Only notify if the user is looking at a different window.
+        new Notification(message);
+    }
+}
+function notifyPlayerOfState() {
+    if (weAreInState(states.START_OF_TURN)) {
+        notifyPlayer('Your turn');
+    }
+    else if (weAreInState(states.EXCHANGE)) {
+        notifyPlayer('Choose the roles to keep');
+    }
+    else if (weCanBlock() || weCanChallenge()) {
+        notifyPlayer(stateMessage());
+    }
+    else if (weAreInState(states.EXCHANGE)) {
+        notifyPlayer('Choose the roles to keep');
+    }
+    else if (weMustReveal()) {
+        notifyPlayer('You must reveal an influence');
+    }
+    else if (weAreInState(states.GAME_WON)) {
+        notifyPlayer('You have won!');
+    }
+    else if (theyAreInState(states.GAME_WON)) {
+        notifyPlayer(currentPlayerName() + ' has won!');
+    }
+}
+function notifsSupported() {
+    return window.Notification;
+}
+function toggleNotifs() {
+    var enabled = vm.notifsEnabled();
+    if (!enabled) {
+        // Enabling...
+        Promise.resolve(Notification.permission).then(function (permission) {
+            if (permission !== 'granted') {
+                // Get permission to use notifications.
+                return Notification.requestPermission();
+            }
+            else {
+                return permission;
+            }
+        }).then(function (permission) {
+            if (permission === 'granted') {
+                vm.notifsEnabled(true);
+            }
+        });
+    }
+    else {
+        vm.notifsEnabled(false);
+    }
+}
+
 $(window).on('resize', function () {
     $('.activity').height($(window).height() - 40);
     $('.activity').scrollTop(0);

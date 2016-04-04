@@ -270,4 +270,40 @@ describe('AI', function () {
             });
         });
     });
+
+    describe('Given the AI has no cash and an ambassador', function () {
+        beforeEach(function () {
+            game._test_setInfluence(AI_IDX, 'ambassador');
+            game._test_setInfluence(OPPONENT_IDX, 'captain');
+            game._test_setCash(AI_IDX, 0);
+            game._test_setCash(OPPONENT_IDX, 0);
+
+            game._test_setTurnState({
+                name: stateNames.START_OF_TURN,
+                playerIdx: OPPONENT_IDX
+            });
+        });
+
+        describe('When the player steals from the AI', function () {
+            beforeEach(function () {
+                testPlayer.command({
+                    command: 'play-action',
+                    action: 'steal',
+                    target: AI_IDX
+                });
+
+                return testPlayer.getNextState().then(function (state) {
+                    expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
+                });
+            });
+
+            it('Then the AI should allow the steal (because no cash will be lost)', function () {
+                return testPlayer.getNextState().then(function (state) {
+                    expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                    expect(state.state.playerIdx).to.be(AI_IDX);
+                    expect(state.players[OPPONENT_IDX].cash).to.be(0);
+                });
+            });
+        });
+    });
 });
