@@ -194,7 +194,7 @@ function create(form, event) {
     if (isInvalidPlayerName()) {
         return;
     }
-    _.debounce(function () {
+    _.debounce(new function () {
         socket.emit('create', {
             gameName: vm.playerName(),
             playerName: vm.playerName()
