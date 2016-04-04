@@ -202,7 +202,8 @@ function create(form, event) {
     }, 500, true);
 }
 function showRankings(form, event) {
-    _.debounce(function () {
+    //Sometimes we need a little magic
+    _.debounce(new function () {
         if (vm.showingGlobalRank()) {
             vm.showingGlobalRank(false);
             vm.rankButtonText('Show global rankings');
