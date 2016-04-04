@@ -35,7 +35,7 @@
                 <p data-bind="text: version"></p>
                 <!-- ko if: !needName() -->
                 <form data-bind="submit: join">
-                    <p><input type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
+                    <p><input class="name-input" type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
                     <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join public game</button></p>
                 </form>
                 <p><button class="btn btn-default" data-bind="enable: playerName, click: create">Create private game</button></p>

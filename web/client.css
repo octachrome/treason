@@ -181,3 +181,6 @@ div.chat {
 .feedback {
     vertical-align: 5px;
 }
+.name-input {
+    width: 160px;
+}
