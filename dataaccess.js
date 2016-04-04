@@ -238,7 +238,7 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
                     }
                 }
 
-                var rankedPlayerStats = assign(stats[sortedPlayerId]);
+                var rankedPlayerStats = Object.assign(stats[sortedPlayerId]);
                 rankedPlayerStats.playerId = sortedPlayerId;
                 myRankings.push(rankedPlayerStats);
                 if (sortedPlayerId === playerId) {
@@ -251,7 +251,7 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
             debug('Getting global player rankings');
             for (var j = 0; j < playerRanksToReturn; j++) {
                 if (stats[sortedPlayerIds[j]]) {
-                    var rankedTopPlayerStats = assign(stats[sortedPlayerIds[j]]);
+                    var rankedTopPlayerStats = Object.assign(stats[sortedPlayerIds[j]]);
                     rankedTopPlayerStats.playerId = sortedPlayerIds[j];
                     playerStats.push(rankedTopPlayerStats);
                 } else {
@@ -353,17 +353,6 @@ function debug(message) {
     if (debugMode) {
         console.log(message);
     }
-}
-
-function assign(source) {
-    //Object.assign would have been great here.
-    var destination = {};
-    for(var i in source) {
-        if(source.hasOwnProperty(i)) {
-            destination[i] = source[i];
-        }
-    }
-    return destination;
 }
 
 //Just for testing
