@@ -372,7 +372,7 @@ function createTestData() {
     ready.then(function () {
         var registerPromises = [];
         for (var i = 0; i < 20; i++) {
-            registerPromises.push(register(i, name()));
+            registerPromises.push(register(i, randomName()));
         }
 
         Promise.all(registerPromises).then(function (result) {
@@ -404,7 +404,7 @@ function createTestData() {
 
 //createTestData();
 
-function name() {
+function randomName() {
     var name = 'AI-';
     var chars = "abcdefghijklmnopqrstuvwxyz";
     for (var i = 0; i < 8; i++) {
