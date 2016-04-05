@@ -45,11 +45,12 @@ function createAiPlayer(game, options) {
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
         onChatMessage: function() {},
-        ai: true
+        ai: true,
+        playerId: 'ai'
     };
 
     try {
-        var gameProxy = game.playerJoined(player);
+        var gameProxy = game.playerJoined(player, player.playerId);
     } catch(e) {
         handleError(e);
         return;

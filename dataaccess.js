@@ -24,7 +24,7 @@ var ready = treasonDb.exists().then(function (exists) {
         return treasonDb.save('_design/games', {
             by_winner: {
                 map: function (doc) {
-                    if (doc.type === 'game' && doc.playerRank && doc.playerRank[0]) {
+                    if (doc.type === 'game' && doc.playerRank && doc.playerRank[0] && doc.playerRank[0] !== 'ai') {
                         emit(doc.playerRank[0], doc.onlyHumans);
                     }
                 },
@@ -55,7 +55,7 @@ var ready = treasonDb.exists().then(function (exists) {
                 map: function (doc) {
                     if (doc.type === 'game' && doc.playerRank) {
                         doc.playerRank.forEach(function (player) {
-                            if (player) {
+                            if (player && player !== 'ai') {
                                 //Ignore AI players
                                 emit(player);
                             }
@@ -100,7 +100,7 @@ var register = function (id, name) {
     return ready.then(function() {
         debug('Player ' + name + ', trying to register with id ' + id);
 
-        if (!id) {
+        if (!id || id === 'ai') {
             id = -1;
         }
         if (!name) {
