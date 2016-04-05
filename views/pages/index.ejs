@@ -70,8 +70,6 @@
                                 <th>Rank</th>
                                 <th>Player</th>
                                 <th>Wins</th>
-                                <th>Wins (AI)</th>
-                                <th>Win %</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -79,9 +77,7 @@
                             <tr data-bind="css: $data.isPlayer ? 'success' : ''">
                                 <td data-bind="text: $data.rank"></td>
                                 <td data-bind="text: $data.playerName"></td>
-                                <td data-bind="text: $data.wins"></td>
-                                <td data-bind="text: $data.winsAI"></td>
-                                <td data-bind="text: $data.percent"></td>
+                                <td data-bind="text: $data.wins - $data.winsAI"></td>
                             </tr>
                         <!-- /ko -->
                         </tbody>
