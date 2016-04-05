@@ -117,7 +117,7 @@ module.exports = function createGame(options) {
             gameStats.players++;
         }
 
-        gameStats.onlyHumans = playerId && gameStats.onlyHumans;
+        gameStats.onlyHumans = playerId && playerId != 'ai' && gameStats.onlyHumans;
 
         var playerIdx = state.players.length;
         state.players.push(playerState);
