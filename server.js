@@ -195,7 +195,7 @@ fs.readFile(__dirname + '/adjectives.txt', function(err, data) {
 });
 
 function isInvalidPlayerName(playerName) {
-    return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/);
+    return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/ || !playerName.trim());
 }
 
 function randomGameName(playerName) {

@@ -190,33 +190,32 @@ function join(form, event, gameName) {
         gameName: gameName
     });
 }
-function create(form, event) {
+
+var create = _.debounce(function (form, event) {
     if (isInvalidPlayerName()) {
         return;
     }
-    _.debounce(new function () {
-        socket.emit('create', {
-            gameName: vm.playerName(),
-            playerName: vm.playerName()
-        });
-    }, 500, true);
-}
-function showRankings(form, event) {
-    //Sometimes we need a little magic
-    _.debounce(new function () {
-        if (vm.showingGlobalRank()) {
-            vm.showingGlobalRank(false);
-            vm.rankButtonText('Show global rankings');
-            socket.emit('showmyrank');
-        } else {
-            vm.showingGlobalRank(true);
-            vm.rankButtonText('Show my rankings');
-            socket.emit('showrankings');
-        }
-    }, 2000, true);
-}
+
+    socket.emit('create', {
+        gameName: vm.playerName(),
+        playerName: vm.playerName()
+    });
+}, 500, true);
+
+var showRankings = _.debounce(function (form, event) {
+    if (vm.showingGlobalRank()) {
+        vm.showingGlobalRank(false);
+        vm.rankButtonText('Show global rankings');
+        socket.emit('showmyrank');
+    } else {
+        vm.showingGlobalRank(true);
+        vm.rankButtonText('Show my rankings');
+        socket.emit('showrankings');
+    }
+}, 500, true);
+
 function isInvalidPlayerName() {
-    if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
+    if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/) || !vm.playerName().trim()) {
         alert('Enter a valid name');
         return true;
     }
