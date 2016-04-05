@@ -235,7 +235,7 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
                     }
                 }
 
-                var rankedPlayerStats = Object.assign(stats[sortedPlayerId]);
+                var rankedPlayerStats = Object.assign({}, stats[sortedPlayerId]);
                 rankedPlayerStats.playerId = sortedPlayerId;
                 myRankings.push(rankedPlayerStats);
                 if (sortedPlayerId === playerId) {
@@ -248,7 +248,7 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
             debug('Getting global player rankings');
             for (var j = 0; j < playerRanksToReturn; j++) {
                 if (stats[sortedPlayerIds[j]]) {
-                    var rankedTopPlayerStats = Object.assign(stats[sortedPlayerIds[j]]);
+                    var rankedTopPlayerStats = Object.assign({}, stats[sortedPlayerIds[j]]);
                     rankedTopPlayerStats.playerId = sortedPlayerIds[j];
                     playerStats.push(rankedTopPlayerStats);
                 } else {
