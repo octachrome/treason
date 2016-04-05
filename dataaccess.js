@@ -25,7 +25,7 @@ var ready = treasonDb.exists().then(function (exists) {
             by_winner: {
                 map: function (doc) {
                     if (doc.type === 'game' && doc.playerRank && doc.playerRank[0] && doc.playerRank[0] !== 'ai') {
-                        emit(doc.playerRank[0], doc.onlyHumans);
+                        emit(doc.playerRank[0], doc.humanPlayers);
                     }
                 },
                 reduce: function (keys, values, rereduce) {
@@ -44,7 +44,7 @@ var ready = treasonDb.exists().then(function (exists) {
 
                     stats.wins = values.length;
                     values.forEach(function(value) {
-                        if (!value) {
+                        if (value < 2) {
                             stats.winsAI++;
                         }
                     });
@@ -56,7 +56,6 @@ var ready = treasonDb.exists().then(function (exists) {
                     if (doc.type === 'game' && doc.playerRank) {
                         doc.playerRank.forEach(function (player) {
                             if (player && player !== 'ai') {
-                                //Ignore AI players
                                 emit(player);
                             }
                         });
