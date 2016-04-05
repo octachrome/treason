@@ -115,6 +115,9 @@ module.exports = function createGame(options) {
             playerState.influence = [];
         } else {
             gameStats.players++;
+            if (playerId && playerId != 'ai') {
+                gameStats.humanPlayers++;
+            }
         }
 
         gameStats.onlyHumans = playerId && playerId != 'ai' && gameStats.onlyHumans;
@@ -196,6 +199,7 @@ module.exports = function createGame(options) {
                         influence[j].revealed = true;
                     }
                 }
+                //If the player was eliminated already or an observer, we do not record a disconnect
                 if (player.playerId && player.influenceCount > 0) {
                     //Record the stats on the game
                     gameStats.playerDisconnect.unshift(player.playerId);

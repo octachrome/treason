@@ -150,11 +150,12 @@ var register = function (id, name) {
 /**
  * Captures statistics about each game.
  * PlayerRank is ordered by the first outgoing player being last in the array, with the winner first and no disconnects.
- * @type {{players: number, onlyHumans: boolean, playerRank: Array, bluffs: number, challenges: number, moves: number}}
+ * @type {{players: number, humanPlayers: number, onlyHumans: boolean, playerRank: Array, bluffs: number, challenges: number, moves: number}}
  */
 var constructGameStats = function() {
     return {
         players: 0,
+        humanPlayers: 0,
         onlyHumans: true,
         type: 'game',
         playerRank: [],
