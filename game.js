@@ -196,7 +196,7 @@ module.exports = function createGame(options) {
                         influence[j].revealed = true;
                     }
                 }
-                if (player.playerId) {
+                if (player.playerId && player.influenceCount > 0) {
                     //Record the stats on the game
                     gameStats.playerDisconnect.unshift(player.playerId);
                     //Record the stats individually, in case the game does not finish
