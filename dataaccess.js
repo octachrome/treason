@@ -11,16 +11,48 @@ var debugMode = false;
 var stats;
 var playerRanksToReturn = 10;
 
+//View recreation
+var gameVersionsDocumentId = 'game_versions';
+var updateViews = false;
+//NOTE: If you update any view, also increment this version
+var currentViewVersion = 1;
+
 var ready = treasonDb.exists().then(function (exists) {
     if (!exists) {
         return treasonDb.create();
     }
-}).then(function() {
-    debug('All databases initialised');
-}).then(function() {
+}).then(function () {
+    debug('All databases initialised. Checking if views should be recreated');
+    return treasonDb.get(gameVersionsDocumentId)
+        .then(function (result) {
+            if (result.currentViewVersion != currentViewVersion) {
+                updateViews = true;
+                return treasonDb.merge(gameVersionsDocumentId, {
+                    currentViewVersion: currentViewVersion
+                }).then(function (result) {
+                    debug('Updated current view version to ' + currentViewVersion);
+                }).catch(function (error) {
+                    debug('Failed to update current view version.');
+                    debug(error);
+                });
+            } else {
+                debug('View version is up to date, no action taken');
+            }
+        })
+        .catch(function () {
+            return treasonDb.save(gameVersionsDocumentId, {
+                currentViewVersion: currentViewVersion
+            }).then(function () {
+                debug('Current view version document not found in database, created it');
+            }).catch(function (error) {
+                debug('Failed to create initial current view version document');
+                debug(error);
+            });
+        });
+}).then(function () {
     debug('Initialising views');
-    if (debugMode) {
-        debug('Recreating views because of debug mode');
+    if (debugMode || updateViews) {
+        debug('Recreating views because ' + (updateViews ? 'view version was updated' : 'of debug mode'));
         return treasonDb.save('_design/games', {
             by_winner: {
                 map: function (doc) {
