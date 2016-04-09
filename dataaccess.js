@@ -125,6 +125,7 @@ var ready = treasonDb.exists().then(function (exists) {
 }).catch(function(error) {
     debug('Failed to initialise database(s)');
     debug(error);
+    process.exit(1);
 });
 
 calculateAllStats();
