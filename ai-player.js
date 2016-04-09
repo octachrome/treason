@@ -142,7 +142,6 @@ function createAiPlayer(game, options) {
 
     function respondToAction() {
         trackClaim(state.state.playerIdx, state.state.action);
-
         if (state.state.action === 'steal' && aiPlayer.cash === 0) {
             // If someone wants to steal nothing from us, go ahead.
             debug('allowing');
@@ -155,6 +154,7 @@ function createAiPlayer(game, options) {
         var blockingRole = getBlockingRole();
         if (blockingRole) {
             debug('blocking');
+            trackClaim(state.playerIdx, blockingRole);
             command({
                 command: 'block',
                 blockingRole: blockingRole
@@ -175,6 +175,7 @@ function createAiPlayer(game, options) {
             blockingRole = getBluffedBlockingRole();
             if (blockingRole) {
                 debug('blocking (bluff)');
+                trackClaim(state.playerIdx, blockingRole);
                 command({
                     command: 'block',
                     blockingRole: blockingRole
@@ -261,8 +262,8 @@ function createAiPlayer(game, options) {
     }
 
     function getBluffedBlockingRole() {
-        if (state.state.target != state.playerIdx) {
-            // Don't bluff unless we're being attacked
+        if (state.state.action != 'foreign-aid' && state.state.target != state.playerIdx) {
+            // Don't bluff unless this is an action we can block.
             return null;
         }
         var blockingRoles = actions[state.state.action].blockedBy || [];
@@ -270,27 +271,26 @@ function createAiPlayer(game, options) {
             // Cannot be blocked.
             return null;
         }
+        blockingRoles = shuffle(blockingRoles.slice());
+
         var choice = null;
         for (var i = 0; i < blockingRoles.length; i++) {
-            if (claims[state.playerIdx][blockingRoles[i]]) {
-                // We have claimed one of the blocking roles before - continue to claim the same role.
-                choice = i;
-                break;
+            if (shouldBluff(blockingRoles[i])) {
+                return blockingRoles[i];
             }
         }
-        if (choice == null) {
-            // Randomly choose.
-            choice = rand(blockingRoles.length);
-        }
-        var blockingRole = blockingRoles[choice];
+        // No bluffs are appropriate.
+        return null;
+    }
 
-        // For now we can only simulate against a single opponent.
-        if (isEndGame() && simulate(blockingRole) > 0) {
-            // If bluffing would win us the game, we will probably be challenged, so don't bluff.
-            return null;
-        } else {
-            return blockingRole;
+    function shuffle(array) {
+        var shuffled = [];
+        while (array.length) {
+            var i = Math.floor(Math.random() * array.length);
+            var e = array.splice(i, 1);
+            shuffled.push(e[0]);
         }
+        return shuffled;
     }
 
     function trackClaim(playerIdx, actionOrRole) {
@@ -351,22 +351,27 @@ function createAiPlayer(game, options) {
         }
     }
 
-    function shouldBluff(actionName) {
-        var action = actions[actionName];
-        if (calledBluffs.indexOf(action.role) >= 0) {
+    function shouldBluff(actionNameOrRole) {
+        var role;
+        if (actions[actionNameOrRole]) {
+            role = actions[actionNameOrRole].role;
+        } else {
+            role = actionNameOrRole;
+        }
+        if (calledBluffs.indexOf(role) >= 0) {
             // Don't bluff a role that we previously bluffed and got caught out on.
             return false;
         }
-        if (!bluffChoice && !claims[state.playerIdx][action.role]) {
+        if (!bluffChoice && !claims[state.playerIdx][role]) {
             // We shall not bluff (unless we already claimed this role earlier).
             return false;
         }
-        if (Object.keys(claims[state.playerIdx]).length > 2 && !claims[state.playerIdx][action.role]) {
+        if (Object.keys(claims[state.playerIdx]).length > 2 && !claims[state.playerIdx][role]) {
             // We have already bluffed a different role: don't bluff any more.
             return false;
         }
         // For now we can only simulate against a single opponent.
-        if (isEndGame() && simulate(action.role) > 0) {
+        if (isEndGame() && simulate(role) > 0) {
             // If bluffing would win us the game, we will probably be challenged, so don't bluff.
             return false;
         } else {

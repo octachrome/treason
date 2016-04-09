@@ -61,9 +61,9 @@ describe('AI', function () {
         });
     });
 
-    describe('Given an AI with a duke vs an opponent with a captain, and the endgame is a long way off', function () {
+    describe('Given an AI with a contessa vs an opponent with a captain, and the endgame is a long way off', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'duke', 'duke');
+            game._test_setInfluence(AI_IDX, 'contessa', 'contessa');
             game._test_setInfluence(OPPONENT_IDX, 'captain', 'captain');
             game._test_setCash(AI_IDX, 6);
             game._test_setCash(OPPONENT_IDX, 2);
@@ -91,6 +91,28 @@ describe('AI', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.BLOCK_RESPONSE);
                     expect(state.state.blockingRole).to.match(/captain|ambassador/);
+                    expect(state.state.playerIdx).to.be(OPPONENT_IDX);
+                });
+            });
+        });
+
+        // todo
+        describe('When the opponent attempts to draw foreign aid', function () {
+            beforeEach(function () {
+                testPlayer.command({
+                    command: 'play-action',
+                    action: 'foreign-aid'
+                });
+
+                return testPlayer.getNextState().then(function (state) {
+                    expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
+                });
+            });
+
+            it('Then the AI should bluff duke', function () {
+                return testPlayer.getNextState().then(function (state) {
+                    expect(state.state.name).to.be(stateNames.BLOCK_RESPONSE);
+                    expect(state.state.blockingRole).to.match(/duke/);
                     expect(state.state.playerIdx).to.be(OPPONENT_IDX);
                 });
             });
