@@ -11,21 +11,45 @@ var debugMode = false;
 var stats;
 var playerRanksToReturn = 10;
 
+//View recreation
+var gameVersionsDocumentId = 'game_versions';
+var updateViews = false;
+//NOTE: If you update any view, also increment this version
+var currentViewVersion = 1;
+
 var ready = treasonDb.exists().then(function (exists) {
     if (!exists) {
+        debug('Creating database');
         return treasonDb.create();
     }
-}).then(function() {
-    debug('All databases initialised');
-}).then(function() {
-    debug('Initialising views');
-    if (debugMode) {
-        debug('Recreating views because of debug mode');
+}).then(function () {
+    debug('Database is up. Checking if views should be recreated');
+    return treasonDb.get(gameVersionsDocumentId)
+        .then(function (result) {
+            if (result.currentViewVersion != currentViewVersion) {
+                updateViews = true;
+            } else {
+                debug('View version is up to date');
+            }
+        })
+        .catch(function () {
+            return treasonDb.save(gameVersionsDocumentId, {
+                currentViewVersion: currentViewVersion
+            }).then(function () {
+                debug('Current view version document not found in database, created it');
+            }).catch(function (error) {
+                debug('Failed to create initial current view version document');
+                debug(error);
+            });
+        });
+}).then(function () {
+    if (debugMode || updateViews) {
+        debug('Recreating views because ' + (updateViews ? 'view version was updated' : 'of debug mode'));
         return treasonDb.save('_design/games', {
             by_winner: {
                 map: function (doc) {
                     if (doc.type === 'game' && doc.playerRank && doc.playerRank[0] && doc.playerRank[0] !== 'ai') {
-                        emit(doc.playerRank[0], doc.onlyHumans);
+                        emit(doc.playerRank[0], doc.humanPlayers);
                     }
                 },
                 reduce: function (keys, values, rereduce) {
@@ -44,7 +68,7 @@ var ready = treasonDb.exists().then(function (exists) {
 
                     stats.wins = values.length;
                     values.forEach(function(value) {
-                        if (!value) {
+                        if (value < 2) {
                             stats.winsAI++;
                         }
                     });
@@ -54,10 +78,9 @@ var ready = treasonDb.exists().then(function (exists) {
             by_player: {
                 map: function (doc) {
                     if (doc.type === 'game' && doc.playerRank) {
-                        doc.playerRank.forEach(function (player) {
-                            if (player && player !== 'ai') {
-                                //Ignore AI players
-                                emit(player);
+                        doc.playerRank.forEach(function (playerId) {
+                            if (playerId && playerId !== 'ai') {
+                                emit(playerId);
                             }
                         });
                     }
@@ -74,27 +97,40 @@ var ready = treasonDb.exists().then(function (exists) {
             all_players: {
                 map: function (document) {
                     if (document.type === 'player') {
-                        emit(null, document);
-                    }
-                }
-            },
-            all_games: {
-                map: function (document) {
-                    if (document.type === 'game') {
-                        emit(null, document);
+                        emit(null, document.name);
                     }
                 }
             }
+        }).then(function() {
+            return treasonDb.merge(gameVersionsDocumentId, {
+                currentViewVersion: currentViewVersion
+            }).then(function () {
+                debug('Updated current view version to ' + currentViewVersion);
+            }).catch(function (error) {
+                debug('Failed to update current view version.');
+                debug(error);
+                throw error;
+            });
+        }).then(function() {
+            //Exercise a view. This will rebuild all the views and can take some time
+            debug('Initialising views');
+            var start = new Date().getTime();
+            return treasonDb.view('games/all_players').then(function() {
+                var end = new Date().getTime();
+                debug('Spent ' + (end - start) / 1000 + ' seconds initialising views');
+            });
         });
     }
 }).then(function() {
-    debug('Finished initialising views, databases ready');
+    debug('Finished initialising views');
+    return calculateAllStats();
+}).then(function() {
+    debug('Database is ready');
 }).catch(function(error) {
     debug('Failed to initialise database(s)');
     debug(error);
+    process.exit(1);
 });
-
-calculateAllStats();
 
 var register = function (id, name) {
     return ready.then(function() {
@@ -125,10 +161,10 @@ var register = function (id, name) {
             .then(function () {
                 debug('Existing player ' + name + ' logged in with id ' + id);
             })
-            .catch(function (error) {
+            .catch(function () {
                 //failed to find the player, recreate with new id
                 debug('Id ' + id + ' not recognised, recreating');
-                id = crypto.randomBytes(32).toString('hex');
+                id = crypto.randomBytes(16).toString('hex');
 
                 debug('Saving new id ' + id + ' for player ' + name);
                 return treasonDb.save(id, {
@@ -139,6 +175,13 @@ var register = function (id, name) {
                 }).catch(function (error) {
                     debug('Failed to save player');
                     debug(error);
+                    return treasonDb.get(id).then(function() {
+                        debug('Collision detected, retrying with new id');
+                        return register(null, name);
+                    }).catch(function(error) {
+                        debug(error);
+                        throw error;
+                    });
                 });
             })
             .then(function() {
@@ -150,29 +193,29 @@ var register = function (id, name) {
 /**
  * Captures statistics about each game.
  * PlayerRank is ordered by the first outgoing player being last in the array, with the winner first and no disconnects.
- * @type {{players: number, onlyHumans: boolean, playerRank: Array, bluffs: number, challenges: number, moves: number}}
+ * @type {{players: number, humanPlayers: number, onlyHumans: boolean, playerRank: Array, playerDisconnect: Array, gameStarted: number, gameFinished: number}}
  */
 var constructGameStats = function() {
     return {
         players: 0,
+        humanPlayers: 0,
         onlyHumans: true,
         type: 'game',
         playerRank: [],
         playerDisconnect: [],
         gameStarted: new Date().getTime(),
-        gameFinished: 0,
-        bluffs: 0,
-        challenges: 0,
-        moves: 0
+        gameFinished: 0
     };
 };
 
-var recordGameData = function (gameData) {
+var recordGameData = function (gameData, skipStatRecalculation) {
     return ready.then(function () {
         gameData.gameFinished = new Date().getTime();
         return treasonDb.save(gameData).then(function (result) {
-            debug('saved game data');
-            calculateAllStats();
+            debug('Saved game data for game: ' + result._id);
+            if (!skipStatRecalculation) {
+                calculateAllStats();
+            }
         }).catch(function (error) {
             debug('failed to save game data');
             debug(error);
@@ -205,8 +248,8 @@ var getAllPlayers = function () {
             var players = [];
             result.forEach(function (row) {
                 players.push({
-                    playerName: row.name,
-                    playerId: row._id
+                    playerName: row.value,
+                    playerId: row.id
                 })
             });
             return players;
@@ -238,7 +281,7 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
                     }
                 }
 
-                var rankedPlayerStats = Object.assign(stats[sortedPlayerId]);
+                var rankedPlayerStats = Object.assign({}, stats[sortedPlayerId]);
                 rankedPlayerStats.playerId = sortedPlayerId;
                 myRankings.push(rankedPlayerStats);
                 if (sortedPlayerId === playerId) {
@@ -251,7 +294,7 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
             debug('Getting global player rankings');
             for (var j = 0; j < playerRanksToReturn; j++) {
                 if (stats[sortedPlayerIds[j]]) {
-                    var rankedTopPlayerStats = Object.assign(stats[sortedPlayerIds[j]]);
+                    var rankedTopPlayerStats = Object.assign({}, stats[sortedPlayerIds[j]]);
                     rankedTopPlayerStats.playerId = sortedPlayerIds[j];
                     playerStats.push(rankedTopPlayerStats);
                 } else {
@@ -273,66 +316,66 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
 };
 
 function calculateAllStats() {
-    return ready.then(function () {
-        debug('Calculating stats for every player');
+    debug('Calculating stats for every player');
+
+    return Promise.all([
+        treasonDb.view('games/by_winner', {reduce: true, group: true}),
+        treasonDb.view('games/by_player', {reduce: true, group: true}),
+        treasonDb.view('games/all_players')
+    ]).then(function (results) {
         var newStats = {};
-        return Promise.all([
-            treasonDb.view('games/by_winner', {reduce: true, group: true}),
-            treasonDb.view('games/by_player', {reduce: true, group: true}),
-            treasonDb.view('games/all_players')
-        ]).then(function (results) {
-            var games = results[1];
-            games.forEach(function (playerId, gameCount) {
-                newStats[playerId] = {
-                    games: gameCount,
-                    rank: 0,
-                    playerName: '',
-                    wins: 0,
-                    winsAI: 0,
-                    percent: 0
-                };
-            });
 
-            var wins = results[0];
-            wins.forEach(function (playerId, winStats) {
-                newStats[playerId].wins = winStats.wins;
-                newStats[playerId].winsAI = winStats.winsAI;
-                newStats[playerId].percent = Math.floor(100 * winStats.wins / newStats[playerId].games);
-            });
-
-            var sortedPlayerIds = Object.keys(newStats).sort(function (id1, id2) {
-                var first = newStats[id1];
-                var second = newStats[id2];
-                var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
-                if (result == 0) {
-                    result = second.wins - first.wins;
-                    if (result == 0) {
-                        return second.percent - first.percent;
-                    }
-                    return result;
-                } else {
-                    return result;
-                }
-            });
-
-            var rank = 1;
-            for (var i = 0; i < sortedPlayerIds.length; i++) {
-                newStats[sortedPlayerIds[i]].rank = rank++;
-            }
-
-            var players = results[2];
-            for (var j = 0; j < players.length; j++) {
-                var player = players[j];
-                if (newStats[player.id]) {
-                    newStats[player.id].playerName = player.value.name;
-                }
-            }
-            stats = newStats;
-            debug('Finished calculating all stats')
-        }).catch(function (error) {
-            debug('Failed to calculate all stats');
-            debug(error);
+        var games = results[1];
+        games.forEach(function (playerId, gameCount) {
+            newStats[playerId] = {
+                games: gameCount,
+                rank: 0,
+                playerName: '',
+                wins: 0,
+                winsAI: 0,
+                percent: 0
+            };
         });
+
+        var wins = results[0];
+        wins.forEach(function (playerId, winStats) {
+            newStats[playerId].wins = winStats.wins;
+            newStats[playerId].winsAI = winStats.winsAI;
+            newStats[playerId].percent = Math.floor(100 * winStats.wins / newStats[playerId].games);
+        });
+
+        var sortedPlayerIds = Object.keys(newStats).sort(function (id1, id2) {
+            var first = newStats[id1];
+            var second = newStats[id2];
+            var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
+            if (result == 0) {
+                result = second.wins - first.wins;
+                if (result == 0) {
+                    return second.percent - first.percent;
+                }
+                return result;
+            } else {
+                return result;
+            }
+        });
+
+        var rank = 1;
+        for (var i = 0; i < sortedPlayerIds.length; i++) {
+            newStats[sortedPlayerIds[i]].rank = rank++;
+        }
+
+        var players = results[2];
+        for (var j = 0; j < players.length; j++) {
+            var player = players[j];
+            if (newStats[player.id]) {
+                newStats[player.id].playerName = player.value;
+            }
+        }
+        stats = newStats;
+        debug('Finished calculating all stats')
+    }).catch(function (error) {
+        debug('Failed to calculate all stats');
+        debug(error);
     });
 }
 
@@ -356,11 +399,11 @@ function debug(message) {
 }
 
 //Just for testing
-function createTestData() {
+function createTestData(players, games) {
     var playerIds = [];
     ready.then(function () {
         var registerPromises = [];
-        for (var i = 0; i < 20; i++) {
+        for (var i = 0; i < players; i++) {
             registerPromises.push(register(i, randomName()));
         }
 
@@ -369,8 +412,7 @@ function createTestData() {
                 playerIds.push(player);
             });
         }).then(function () {
-            var gamePromises = [];
-            for (var g = 0; g < 100; g++) {
+            for (var g = 0; g < games; g++) {
                 var playerRank = [];
                 for (var p = 0, len = 2 + randomInteger(0, 2); p < len; p++) {
                     playerRank.push(playerIds[randomInteger(0, playerIds.length - 1)]);
@@ -381,20 +423,20 @@ function createTestData() {
                 game.playerRank = playerRank;
                 game.players = playerRank.length;
                 game.onlyHumans = true;
+                game.humanPlayers = game.players;
 
-                gamePromises.push(recordGameData(game));
+                recordGameData(game, true);
             }
-            return Promise.all(gamePromises);
         });
     }).then(function () {
         debug('Finished creating test data');
     });
 }
 
-//createTestData();
+//createTestData(1000, 10000);
 
 function randomName() {
-    var name = 'AI-';
+    var name = 'P-';
     var chars = "abcdefghijklmnopqrstuvwxyz";
     for (var i = 0; i < 8; i++) {
         name += chars.charAt(randomInteger(0, chars.length - 1));

@@ -48,9 +48,6 @@
                     <input type="hidden" data-bind="value: gameUrl()" name="privateGameName"/>
                 </form>
                 <!-- /ko -->
-                <!-- ko if: !needName() -->
-                <p><button class="btn btn-default" data-bind="click: showRankings, text: rankButtonText"></button></p>
-                <!-- /ko -->
                 <p><a href="rules.html" target="blank">How to play</a></p>
                 <p><span data-bind="visible: activeUsers"><span data-bind="text: activeUsers"></span> players are online</span></p>
                 <p><a href="https://twitter.com/intent/tweet?screen_name=chrsbrn" class="twitter-mention-button" data-related="chrsbrn">Tweet to @chrsbrn</a>
@@ -70,8 +67,6 @@
                                 <th>Rank</th>
                                 <th>Player</th>
                                 <th>Wins</th>
-                                <th>Wins (AI)</th>
-                                <th>Win %</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -79,14 +74,15 @@
                             <tr data-bind="css: $data.isPlayer ? 'success' : ''">
                                 <td data-bind="text: $data.rank"></td>
                                 <td data-bind="text: $data.playerName"></td>
-                                <td data-bind="text: $data.wins"></td>
-                                <td data-bind="text: $data.winsAI"></td>
-                                <td data-bind="text: $data.percent"></td>
+                                <td data-bind="text: $data.wins - $data.winsAI"></td>
                             </tr>
                         <!-- /ko -->
                         </tbody>
                     </table>
                 </div>
+                <!-- ko if: !needName() -->
+                <p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>
+                <!-- /ko -->
             </div>
         </div>
     </div>
