@@ -19,16 +19,17 @@ var currentViewVersion = 1;
 
 var ready = treasonDb.exists().then(function (exists) {
     if (!exists) {
+        debug('Creating database');
         return treasonDb.create();
     }
 }).then(function () {
-    debug('All databases initialised. Checking if views should be recreated');
+    debug('Database is up. Checking if views should be recreated');
     return treasonDb.get(gameVersionsDocumentId)
         .then(function (result) {
             if (result.currentViewVersion != currentViewVersion) {
                 updateViews = true;
             } else {
-                debug('View version is up to date, no action taken');
+                debug('View version is up to date');
             }
         })
         .catch(function () {
@@ -42,7 +43,6 @@ var ready = treasonDb.exists().then(function (exists) {
             });
         });
 }).then(function () {
-    debug('Initialising views');
     if (debugMode || updateViews) {
         debug('Recreating views because ' + (updateViews ? 'view version was updated' : 'of debug mode'));
         return treasonDb.save('_design/games', {
@@ -120,22 +120,24 @@ var ready = treasonDb.exists().then(function (exists) {
             });
         }).then(function() {
             //Exercise a view. This will rebuild all the views and can take some time
+            debug('Initialising views');
             var start = new Date().getTime();
             return treasonDb.view('games/all_players').then(function() {
                 var end = new Date().getTime();
-                debug('Spent ' + (end - start) / 1000 + ' seconds initialising views.');
+                debug('Spent ' + (end - start) / 1000 + ' seconds initialising views');
             });
         });
     }
 }).then(function() {
-    debug('Finished initialising views, databases ready');
+    debug('Finished initialising views');
+    return calculateAllStats();
+}).then(function() {
+    debug('Database is ready');
 }).catch(function(error) {
     debug('Failed to initialise database(s)');
     debug(error);
     process.exit(1);
 });
-
-calculateAllStats();
 
 var register = function (id, name) {
     return ready.then(function() {
@@ -312,66 +314,66 @@ var getPlayerRankings = function (playerId, showPersonalRank) {
 };
 
 function calculateAllStats() {
-    return ready.then(function () {
-        debug('Calculating stats for every player');
+    debug('Calculating stats for every player');
+
+    return Promise.all([
+        treasonDb.view('games/by_winner', {reduce: true, group: true}),
+        treasonDb.view('games/by_player', {reduce: true, group: true}),
+        treasonDb.view('games/all_players')
+    ]).then(function (results) {
         var newStats = {};
-        return Promise.all([
-            treasonDb.view('games/by_winner', {reduce: true, group: true}),
-            treasonDb.view('games/by_player', {reduce: true, group: true}),
-            treasonDb.view('games/all_players')
-        ]).then(function (results) {
-            var games = results[1];
-            games.forEach(function (playerId, gameCount) {
-                newStats[playerId] = {
-                    games: gameCount,
-                    rank: 0,
-                    playerName: '',
-                    wins: 0,
-                    winsAI: 0,
-                    percent: 0
-                };
-            });
 
-            var wins = results[0];
-            wins.forEach(function (playerId, winStats) {
-                newStats[playerId].wins = winStats.wins;
-                newStats[playerId].winsAI = winStats.winsAI;
-                newStats[playerId].percent = Math.floor(100 * winStats.wins / newStats[playerId].games);
-            });
-
-            var sortedPlayerIds = Object.keys(newStats).sort(function (id1, id2) {
-                var first = newStats[id1];
-                var second = newStats[id2];
-                var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
-                if (result == 0) {
-                    result = second.wins - first.wins;
-                    if (result == 0) {
-                        return second.percent - first.percent;
-                    }
-                    return result;
-                } else {
-                    return result;
-                }
-            });
-
-            var rank = 1;
-            for (var i = 0; i < sortedPlayerIds.length; i++) {
-                newStats[sortedPlayerIds[i]].rank = rank++;
-            }
-
-            var players = results[2];
-            for (var j = 0; j < players.length; j++) {
-                var player = players[j];
-                if (newStats[player.id]) {
-                    newStats[player.id].playerName = player.value.name;
-                }
-            }
-            stats = newStats;
-            debug('Finished calculating all stats')
-        }).catch(function (error) {
-            debug('Failed to calculate all stats');
-            debug(error);
+        var games = results[1];
+        games.forEach(function (playerId, gameCount) {
+            newStats[playerId] = {
+                games: gameCount,
+                rank: 0,
+                playerName: '',
+                wins: 0,
+                winsAI: 0,
+                percent: 0
+            };
         });
+
+        var wins = results[0];
+        wins.forEach(function (playerId, winStats) {
+            newStats[playerId].wins = winStats.wins;
+            newStats[playerId].winsAI = winStats.winsAI;
+            newStats[playerId].percent = Math.floor(100 * winStats.wins / newStats[playerId].games);
+        });
+
+        var sortedPlayerIds = Object.keys(newStats).sort(function (id1, id2) {
+            var first = newStats[id1];
+            var second = newStats[id2];
+            var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
+            if (result == 0) {
+                result = second.wins - first.wins;
+                if (result == 0) {
+                    return second.percent - first.percent;
+                }
+                return result;
+            } else {
+                return result;
+            }
+        });
+
+        var rank = 1;
+        for (var i = 0; i < sortedPlayerIds.length; i++) {
+            newStats[sortedPlayerIds[i]].rank = rank++;
+        }
+
+        var players = results[2];
+        for (var j = 0; j < players.length; j++) {
+            var player = players[j];
+            if (newStats[player.id]) {
+                newStats[player.id].playerName = player.value.name;
+            }
+        }
+        stats = newStats;
+        debug('Finished calculating all stats')
+    }).catch(function (error) {
+        debug('Failed to calculate all stats');
+        debug(error);
     });
 }
 
