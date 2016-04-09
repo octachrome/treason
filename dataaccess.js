@@ -118,6 +118,13 @@ var ready = treasonDb.exists().then(function (exists) {
                 debug(error);
                 throw error;
             });
+        }).then(function() {
+            //Exercise a view. This will rebuild all the views and can take some time
+            var start = new Date().getTime();
+            return treasonDb.view('games/all_players').then(function() {
+                var end = new Date().getTime();
+                debug('Spent ' + (end - start) / 1000 + ' seconds initialising views.');
+            });
         });
     }
 }).then(function() {
