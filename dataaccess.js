@@ -208,12 +208,14 @@ var constructGameStats = function() {
     };
 };
 
-var recordGameData = function (gameData) {
+var recordGameData = function (gameData, skipStatRecalculation) {
     return ready.then(function () {
         gameData.gameFinished = new Date().getTime();
         return treasonDb.save(gameData).then(function (result) {
-            debug('saved game data');
-            calculateAllStats();
+            debug('Saved game data for game: ' + result._id);
+            if (!skipStatRecalculation) {
+                calculateAllStats();
+            }
         }).catch(function (error) {
             debug('failed to save game data');
             debug(error);
@@ -397,11 +399,11 @@ function debug(message) {
 }
 
 //Just for testing
-function createTestData() {
+function createTestData(players, games) {
     var playerIds = [];
     ready.then(function () {
         var registerPromises = [];
-        for (var i = 0; i < 20; i++) {
+        for (var i = 0; i < players; i++) {
             registerPromises.push(register(i, randomName()));
         }
 
@@ -410,8 +412,7 @@ function createTestData() {
                 playerIds.push(player);
             });
         }).then(function () {
-            var gamePromises = [];
-            for (var g = 0; g < 100; g++) {
+            for (var g = 0; g < games; g++) {
                 var playerRank = [];
                 for (var p = 0, len = 2 + randomInteger(0, 2); p < len; p++) {
                     playerRank.push(playerIds[randomInteger(0, playerIds.length - 1)]);
@@ -423,19 +424,18 @@ function createTestData() {
                 game.players = playerRank.length;
                 game.onlyHumans = true;
 
-                gamePromises.push(recordGameData(game));
+                recordGameData(game, true);
             }
-            return Promise.all(gamePromises);
         });
     }).then(function () {
         debug('Finished creating test data');
     });
 }
 
-//createTestData();
+//createTestData(100, 1000);
 
 function randomName() {
-    var name = 'AI-';
+    var name = 'P-';
     var chars = "abcdefghijklmnopqrstuvwxyz";
     for (var i = 0; i < 8; i++) {
         name += chars.charAt(randomInteger(0, chars.length - 1));
