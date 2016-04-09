@@ -12,6 +12,7 @@
  */
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
+    playerId: ko.observable(localStorageGet('playerId') || ''),
     activeUsers: ko.observable(),
     bannerMessage: ko.observable(''),
     targetedAction: ko.observable(''),
@@ -21,6 +22,9 @@ vm = {
     history: ko.observableArray(),
     gameUrl: ko.observable(''),
     needName: ko.observable(false),
+    rankings: ko.observable({}),
+    rankButtonText: ko.observable('Show my rankings'),
+    showingGlobalRank: ko.observable(true),
     notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false))
 };
 vm.state = ko.mapping.fromJS({
@@ -89,8 +93,16 @@ ko.bindingHandlers.tooltip = {
     }
 };
 var socket = io();
-socket.on('hello', function (data) {
-    vm.activeUsers(data.activeUsers);
+socket.on('connect', function() {
+    socket.on('handshake', function(data) {
+        vm.activeUsers(data.activeUsers);
+        vm.playerId(data.playerId);
+        localStorageSet('playerId', data.playerId);
+    });
+    socket.emit('registerplayer', {
+        playerName: vm.playerName(),
+        playerId: vm.playerId()
+    });
 });
 socket.on('gameinprogress', function(data) {
     vm.bannerMessage('The game: "' + data.gameName + '" is currently in progress.');
@@ -151,6 +163,9 @@ socket.on('error', function (data) {
 socket.on('game-error', function (data) {
     console.error(data);
 });
+socket.on('rankings', function (data) {
+    vm.rankings(data);
+});
 
 function playAgain() {
     // If we were playing a private game, rejoin the same one. Otherwise, join a new public game.
@@ -175,19 +190,32 @@ function join(form, event, gameName) {
         gameName: gameName
     });
 }
-function create(form, event) {
+
+var create = _.debounce(function (form, event) {
     if (isInvalidPlayerName()) {
         return;
     }
-    _.debounce(new function() {
-        socket.emit('create', {
-            gameName: vm.playerName(),
-            playerName: vm.playerName()
-        });
-    }, 500, true);
-}
+
+    socket.emit('create', {
+        gameName: vm.playerName(),
+        playerName: vm.playerName()
+    });
+}, 500, true);
+
+var showRankings = _.debounce(function (form, event) {
+    if (vm.showingGlobalRank()) {
+        vm.showingGlobalRank(false);
+        vm.rankButtonText('Show global rankings');
+        socket.emit('showmyrank');
+    } else {
+        vm.showingGlobalRank(true);
+        vm.rankButtonText('Show my rankings');
+        socket.emit('showrankings');
+    }
+}, 500, true);
+
 function isInvalidPlayerName() {
-    if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/)) {
+    if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/) || !vm.playerName().trim()) {
         alert('Enter a valid name');
         return true;
     }

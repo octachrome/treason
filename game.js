@@ -15,6 +15,7 @@ var fs = require('fs');
 var rand = require('random-seed')();
 var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared');
+var dataAccess = require('./dataaccess');
 var actions = shared.actions;
 var stateNames = shared.states;
 
@@ -55,6 +56,10 @@ module.exports = function createGame(options) {
         }
     };
 
+    dataAccess.setDebug(options.debug);
+
+    var gameStats = dataAccess.constructGameStats();
+
     var players = [];
     var allows = [];
     var proxies = [];
@@ -71,7 +76,7 @@ module.exports = function createGame(options) {
     game._test_setDeck = _test_setDeck;
     game._test_resetAllows = resetAllows;
 
-    function playerJoined(player) {
+    function playerJoined(player, playerId) {
         var isObserver = false;
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
             isObserver = true;
@@ -100,14 +105,19 @@ module.exports = function createGame(options) {
                     revealed: false
                 }
             ],
-            isObserver: isObserver
+            isObserver: isObserver,
+            playerId: playerId
         };
 
         if (isObserver) {
             playerState.cash = 0;
             playerState.influenceCount = 0;
             playerState.influence = [];
+        } else {
+            gameStats.players++;
         }
+
+        gameStats.onlyHumans = playerId && gameStats.onlyHumans;
 
         var playerIdx = state.players.length;
         state.players.push(playerState);
@@ -123,7 +133,7 @@ module.exports = function createGame(options) {
 
         var proxy = createGameProxy(playerIdx);
         if (isObserver) {
-            proxy.command = new function() {};
+            proxy.command = function () {};
         }
         proxies.push(proxy);
         return proxy;
@@ -153,7 +163,7 @@ module.exports = function createGame(options) {
         };
         proxy.getGameName = function () {
             return state.gameName;
-        }
+        };
         return proxy;
     }
 
@@ -186,6 +196,15 @@ module.exports = function createGame(options) {
                         influence[j].revealed = true;
                     }
                 }
+                if (player.playerId) {
+                    //Record the stats on the game
+                    gameStats.playerDisconnect.unshift(player.playerId);
+                    //Record the stats individually, in case the game does not finish
+                    //Should not be recorded if the player is the last human player
+                    if (!onlyAiLeft()) {
+                        dataAccess.recordPlayerDisconnect(player.playerId);
+                    }
+                }
                 player.influenceCount = 0;
                 var end = checkForGameEnd();
                 if (!end) {
@@ -204,17 +223,19 @@ module.exports = function createGame(options) {
         for (var k = 0; k < historySuffix.length; k++) {
             contHistory('player-left', historySuffix[k]);
         }
-        checkOnlyAiLeft();
+        if (onlyAiLeft()) {
+            destroyGame();
+        }
         emitState();
     }
 
-    function checkOnlyAiLeft() {
+    function onlyAiLeft() {
         for (var i = 0; i < players.length; i++) {
             if (players[i] && !players[i].ai) {
-                return;
+                return false;
             }
         }
-        destroyGame();
+        return true;
     }
 
     function destroyGame() {
@@ -225,6 +246,7 @@ module.exports = function createGame(options) {
     }
 
     function afterPlayerDeath(playerIdx) {
+        gameStats.playerRank.unshift(state.players[playerIdx].playerId);
         addHistory('player-died', '{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
@@ -246,6 +268,9 @@ module.exports = function createGame(options) {
                 name: stateNames.GAME_WON,
                 playerIdx: winnerIdx
             });
+            var playerId = state.players[winnerIdx].playerId;
+            gameStats.playerRank.unshift(playerId);
+            dataAccess.recordGameData(gameStats);
             game.emit('end');
             return true;
         } else {

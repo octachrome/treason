@@ -23,7 +23,7 @@ function createNetPlayer(game, socket, playerName) {
     };
 
     try {
-        var gameProxy = game.playerJoined(player);
+        var gameProxy = game.playerJoined(player, socket.playerId);
     } catch(e) {
         handleError(e);
         return;

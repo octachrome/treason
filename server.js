@@ -14,6 +14,7 @@
 
 var fs = require('fs');
 var rand = require('random-seed')();
+var dataAccess = require('./dataaccess');
 
 var argv = require('optimist')
     .usage('$0 [--debug] [--port <port>] [--log <logfile>]')
@@ -44,6 +45,7 @@ app.get('/', function (req, res) {
 });
 
 var server = app.listen(argv.port);
+dataAccess.setDebug(argv.debug);
 
 var io = require('socket.io')(server);
 var createGame = require('./game');
@@ -51,7 +53,6 @@ var createNetPlayer = require('./net-player');
 
 var publicGames = [];
 var privateGames = {};
-var pending = [];
 var sockets = {};
 var TIMEOUT = 30 * 60 * 1000;
 
@@ -66,8 +67,25 @@ io.on('connection', function (socket) {
             activeUsers++;
         }
     }
-    socket.emit('hello', {
-        activeUsers: activeUsers
+
+    //Emit the global rankings upon connect
+    dataAccess.getPlayerRankings().then(function (result) {
+        socket.emit('rankings', result);
+    });
+
+    socket.on('registerplayer', function (data) {
+        dataAccess.register(data.playerId, data.playerName).then(function (playerId) {
+            socket.emit('handshake', {
+                activeUsers: activeUsers,
+                playerId: playerId
+            });
+            socket.playerId = playerId;
+
+            //Now that we know who you are, we can highlight you in the rankings
+            dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
+                socket.emit('rankings', result);
+            });
+        });
     });
 
     socket.on('join', function (data) {
@@ -148,11 +166,23 @@ io.on('connection', function (socket) {
         });
     });
 
+    socket.on('showrankings', function () {
+        dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
+            socket.emit('rankings', result);
+        });
+    });
+
+    socket.on('showmyrank', function () {
+        dataAccess.getPlayerRankings(socket.playerId, true).then(function (result) {
+            socket.emit('rankings', result);
+        });
+    });
+
     socket.on('disconnect', function () {
         delete sockets[socket.id];
         socket.removeAllListeners();
         socket = null;
-    })
+    });
 });
 
 var adjectives;
@@ -165,7 +195,7 @@ fs.readFile(__dirname + '/adjectives.txt', function(err, data) {
 });
 
 function isInvalidPlayerName(playerName) {
-    return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/);
+    return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/ || !playerName.trim());
 }
 
 function randomGameName(playerName) {
