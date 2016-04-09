@@ -97,14 +97,7 @@ var ready = treasonDb.exists().then(function (exists) {
             all_players: {
                 map: function (document) {
                     if (document.type === 'player') {
-                        emit(null, document);
-                    }
-                }
-            },
-            all_games: {
-                map: function (document) {
-                    if (document.type === 'game') {
-                        emit(null, document);
+                        emit(null, document.name);
                     }
                 }
             }
@@ -168,7 +161,7 @@ var register = function (id, name) {
             .then(function () {
                 debug('Existing player ' + name + ' logged in with id ' + id);
             })
-            .catch(function (error) {
+            .catch(function () {
                 //failed to find the player, recreate with new id
                 debug('Id ' + id + ' not recognised, recreating');
                 id = crypto.randomBytes(32).toString('hex');
@@ -248,8 +241,8 @@ var getAllPlayers = function () {
             var players = [];
             result.forEach(function (row) {
                 players.push({
-                    playerName: row.name,
-                    playerId: row._id
+                    playerName: row.value,
+                    playerId: row.id
                 })
             });
             return players;
@@ -368,7 +361,7 @@ function calculateAllStats() {
         for (var j = 0; j < players.length; j++) {
             var player = players[j];
             if (newStats[player.id]) {
-                newStats[player.id].playerName = player.value.name;
+                newStats[player.id].playerName = player.value;
             }
         }
         stats = newStats;
@@ -432,7 +425,7 @@ function createTestData(players, games) {
     });
 }
 
-//createTestData(100, 1000);
+//createTestData(1000, 10000);
 
 function randomName() {
     var name = 'P-';
