@@ -177,7 +177,7 @@ var register = function (id, name) {
                     debug(error);
                     return treasonDb.get(id).then(function() {
                         debug('Collision detected, retrying with new id');
-                        return register(crypto.randomBytes(16).toString('hex'), name);
+                        return register(null, name);
                     }).catch(function(error) {
                         debug(error);
                         throw error;
