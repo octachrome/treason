@@ -78,9 +78,9 @@ var ready = treasonDb.exists().then(function (exists) {
             by_player: {
                 map: function (doc) {
                     if (doc.type === 'game' && doc.playerRank) {
-                        doc.playerRank.forEach(function (player) {
-                            if (player && player !== 'ai') {
-                                emit(player);
+                        doc.playerRank.forEach(function (playerId) {
+                            if (playerId && playerId !== 'ai') {
+                                emit(playerId);
                             }
                         });
                     }
@@ -164,7 +164,7 @@ var register = function (id, name) {
             .catch(function () {
                 //failed to find the player, recreate with new id
                 debug('Id ' + id + ' not recognised, recreating');
-                id = crypto.randomBytes(32).toString('hex');
+                id = crypto.randomBytes(16).toString('hex');
 
                 debug('Saving new id ' + id + ' for player ' + name);
                 return treasonDb.save(id, {
@@ -175,6 +175,13 @@ var register = function (id, name) {
                 }).catch(function (error) {
                     debug('Failed to save player');
                     debug(error);
+                    return treasonDb.get(id).then(function() {
+                        debug('Collision detected, retrying with new id');
+                        return register(crypto.randomBytes(16).toString('hex'), name);
+                    }).catch(function(error) {
+                        debug(error);
+                        throw error;
+                    });
                 });
             })
             .then(function() {
