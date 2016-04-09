@@ -416,6 +416,7 @@ function createTestData(players, games) {
                 game.playerRank = playerRank;
                 game.players = playerRank.length;
                 game.onlyHumans = true;
+                game.humanPlayers = game.players;
 
                 recordGameData(game, true);
             }
