@@ -27,14 +27,6 @@ var ready = treasonDb.exists().then(function (exists) {
         .then(function (result) {
             if (result.currentViewVersion != currentViewVersion) {
                 updateViews = true;
-                return treasonDb.merge(gameVersionsDocumentId, {
-                    currentViewVersion: currentViewVersion
-                }).then(function (result) {
-                    debug('Updated current view version to ' + currentViewVersion);
-                }).catch(function (error) {
-                    debug('Failed to update current view version.');
-                    debug(error);
-                });
             } else {
                 debug('View version is up to date, no action taken');
             }
@@ -116,6 +108,16 @@ var ready = treasonDb.exists().then(function (exists) {
                     }
                 }
             }
+        }).then(function() {
+            return treasonDb.merge(gameVersionsDocumentId, {
+                currentViewVersion: currentViewVersion
+            }).then(function () {
+                debug('Updated current view version to ' + currentViewVersion);
+            }).catch(function (error) {
+                debug('Failed to update current view version.');
+                debug(error);
+                throw error;
+            });
         });
     }
 }).then(function() {
