@@ -48,9 +48,6 @@
                     <input type="hidden" data-bind="value: gameUrl()" name="privateGameName"/>
                 </form>
                 <!-- /ko -->
-                <!-- ko if: !needName() -->
-                <p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>
-                <!-- /ko -->
                 <p><a href="rules.html" target="blank">How to play</a></p>
                 <p><span data-bind="visible: activeUsers"><span data-bind="text: activeUsers"></span> players are online</span></p>
                 <p><a href="https://twitter.com/intent/tweet?screen_name=chrsbrn" class="twitter-mention-button" data-related="chrsbrn">Tweet to @chrsbrn</a>
@@ -83,6 +80,9 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- ko if: !needName() -->
+                <p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>
+                <!-- /ko -->
             </div>
         </div>
     </div>
