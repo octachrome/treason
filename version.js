@@ -1,7 +1,6 @@
 'use strict';
 
 var exec = require('child_process').exec;
-var Promise = require('es6-promise').Promise;
 
 var versionPromise = null;
 

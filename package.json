@@ -11,7 +11,6 @@
   "dependencies": {
     "deepcopy": "^0.5.0",
     "ejs": "^2.3.3",
-    "es6-promise": "^2.1.1",
     "express": "^4.12.3",
     "extend": "^2.0.1",
     "optimist": "^0.6.1",
