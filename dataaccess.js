@@ -37,6 +37,7 @@ var ready = treasonDb.exists().then(function (exists) {
                 currentViewVersion: currentViewVersion
             }).then(function () {
                 debug('Current view version document not found in database, created it');
+                updateViews = true;
             }).catch(function (error) {
                 debug('Failed to create initial current view version document');
                 debug(error);
