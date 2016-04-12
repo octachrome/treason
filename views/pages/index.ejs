@@ -27,6 +27,77 @@
 <body>
     <div class="banner" data-bind="visible: bannerVisible, html: bannerMessage"></div>
     <div class="container" data-bind="visible: !playing()">
+
+        <div class="modal fade" id="newGameModal" tabindex="-1" role="dialog" aria-labelledby="newGameLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="newGameModalTitle">Welcome to Coup</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>What would you like to do?</p>
+                        <p><button class="btn btn-default" data-bind="enable: playerName, click: join" data-dismiss="modal">Join public game</button></p>
+                        <p><button class="btn btn-default" data-bind="enable: playerName, click: create" data-dismiss="modal">Create private game</button></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="joinGameModal" tabindex="-1" role="dialog" aria-labelledby="joinGameLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="joinGameModalTitle">Game #101</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>Game is currently waiting for players.</p>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th>Human</th>
+                                    <th>Rank</th>
+                                    <th>Disconnects</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td>Steve</td>
+                                    <td>yes</td>
+                                    <td>113</td>
+                                    <td>0</td>
+                                </tr>
+                                <tr>
+                                    <td>Dave</td>
+                                    <td>yes</td>
+                                    <td>256</td>
+                                    <td>2</td>
+                                </tr>
+                                <tr>
+                                    <td>Brutus</td>
+                                    <td>no</td>
+                                    <td>n/a</td>
+                                    <td>n/a</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <p><button class="btn btn-default btn-block" data-bind="enable: playerName, click: join" data-dismiss="modal">Join game</button></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row"><br/></div>
         <div class="row">
             <!-- Welcome screen -->
@@ -36,9 +107,8 @@
                 <!-- ko if: !needName() -->
                 <form data-bind="submit: join">
                     <p><input class="name-input" type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
-                    <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join public game</button></p>
                 </form>
-                <p><button class="btn btn-default" data-bind="enable: playerName, click: create">Create private game</button></p>
+                <p><button class="btn btn-default" data-toggle="modal" data-target="#newGameModal">Play Coup</button></p>
                 <!-- /ko -->
                 <!-- ko if: needName() -->
                 <p>Please enter a name to be able to join <span data-bind="text: gameUrl()"></span></p>
@@ -50,6 +120,36 @@
                 <!-- /ko -->
                 <p><a href="rules.html" target="blank">How to play</a></p>
                 <p><span data-bind="visible: activeUsers"><span data-bind="text: activeUsers"></span> players are online</span></p>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-condensed ">
+                        <thead>
+                        <tr>
+                            <th>Game</th>
+                            <th>Status</th>
+                            <th>Public</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr data-toggle="modal" data-target="#joinGameModal">
+                            <td>#101</td>
+                            <td>3 waiting</td>
+                            <td>yes</td>
+                        </tr>
+                        <tr>
+                            <td>#102</td>
+                            <td>1 waiting</td>
+                            <td>yes</td>
+                        </tr>
+                        <tr>
+                            <td>#102</td>
+                            <td>5 playing</td>
+                            <td>no</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <p><a href="https://twitter.com/intent/tweet?screen_name=chrsbrn" class="twitter-mention-button" data-related="chrsbrn">Tweet to @chrsbrn</a>
 <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
 <span class="feedback">to send feedback</span><p>
@@ -83,6 +183,46 @@
                 <!-- ko if: !needName() -->
                 <p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>
                 <!-- /ko -->
+            </div>
+        </div>
+
+        <div class="row">
+
+        </div>
+
+        <div class="row-fluid well">
+            <div class="col-xs-10">
+                <div class="global-chat">
+                    <p>[22:40] Dave: let's play. Anyone up for a game?</p>
+                    <p>[22:42] Steve: I'm up for one or two</p>
+                    <p>[22:45] Dave: I've created game #101, join that one</p>
+                </div>
+            </div>
+            <div class="col-xs-2">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Players Online</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>Dave</td>
+                        </tr>
+                        <tr>
+                            <td>Steve</td>
+                        </tr>
+                        <tr>
+                            <td>Willard</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="">
+                <input id="lobbyChat" type="text" class="form-control" placeholder="Global chat message">
             </div>
         </div>
     </div>

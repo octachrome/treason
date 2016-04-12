@@ -72,6 +72,12 @@ div.chat {
     margin-bottom: 10px;
     word-wrap: break-word;
 }
+div.global-chat {
+    height: 300px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+}
 .label-revealed {
     background-color: #aaa;
 }
