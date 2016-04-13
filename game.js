@@ -335,7 +335,7 @@ module.exports = function createGame(options) {
 
                 if (!player.isObserver) {
                     for (var j = 0; j < 2; j++) {
-                        state.players[i].influence[j].role = deck.pop();
+                        player.influence[j].role = deck.pop();
                     }
 
                     gameStats.players++;
