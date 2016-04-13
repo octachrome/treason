@@ -194,13 +194,12 @@ var register = function (id, name) {
 /**
  * Captures statistics about each game.
  * PlayerRank is ordered by the first outgoing player being last in the array, with the winner first and no disconnects.
- * @type {{players: number, humanPlayers: number, onlyHumans: boolean, playerRank: Array, playerDisconnect: Array, gameStarted: number, gameFinished: number}}
+ * @type {{players: number, humanPlayers: number, playerRank: Array, playerDisconnect: Array, gameStarted: number, gameFinished: number}}
  */
 var constructGameStats = function() {
     return {
         players: 0,
         humanPlayers: 0,
-        onlyHumans: true,
         type: 'game',
         playerRank: [],
         playerDisconnect: [],
@@ -423,7 +422,6 @@ function createTestData(players, games) {
 
                 game.playerRank = playerRank;
                 game.players = playerRank.length;
-                game.onlyHumans = true;
                 game.humanPlayers = game.players;
 
                 recordGameData(game, true);
