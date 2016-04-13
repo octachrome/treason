@@ -1,7 +1,7 @@
 License
 =======
 
-All original work is copyright Chris Brown and Jackie Niebling, 2015.
+All original work is copyright Christopher Brown and Jackie Niebling, 2015-2016.
 Licensed under Creative Commons Attribution-NonCommercial, http://creativecommons.org/licenses/by-nc/4.0
 
 Icons
@@ -12,7 +12,7 @@ cycle.svg, hand.svg, pistol-gun.svg, plain-dagger.svg, snatch.svg, swap-bag.svg,
 
 thumbs-up.svg, thumbs-down.svg: http://www.clipartbest.com; Free without explicit license.
 
-coins.svg, coin.svg, gavel.svg: Copyright Chris Brown, 2015; https://creativecommons.org/licenses/by/4.0
+coins.svg, coin.svg, gavel.svg: Copyright Christopher Brown, 2015; https://creativecommons.org/licenses/by/4.0
 
 Icon fonts generated with https://icomoon.io.
 

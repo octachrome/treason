@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Christopher Brown
+ * Copyright 2015-2016 Christopher Brown and Jackie Niebling.
  *
  * This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
  *
@@ -11,6 +11,7 @@
  *     USA
  */
 'use strict';
+
 var fs = require('fs');
 var rand = require('random-seed')();
 var createAiPlayer = require('./ai-player');
