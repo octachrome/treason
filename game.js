@@ -113,14 +113,7 @@ module.exports = function createGame(options) {
             playerState.cash = 0;
             playerState.influenceCount = 0;
             playerState.influence = [];
-        } else {
-            gameStats.players++;
-            if (playerId && playerId != 'ai') {
-                gameStats.humanPlayers++;
-            }
         }
-
-        gameStats.onlyHumans = playerId && playerId != 'ai' && gameStats.onlyHumans;
 
         var playerIdx = state.players.length;
         state.players.push(playerState);
@@ -337,11 +330,21 @@ module.exports = function createGame(options) {
             throw new GameException('Incorrect state');
         }
         if (state.numPlayers >= MIN_PLAYERS) {
-            for (var j = 0; j < state.players[0].influence.length; j++) {
-                for (var i = 0; i < state.numPlayers; i++) {
-                    state.players[i].influence[j].role = deck.pop();
+            for (var i = 0; i < state.numPlayers; i++) {
+                var player = state.players[i];
+
+                if (!player.isObserver) {
+                    for (var j = 0; j < 2; j++) {
+                        state.players[i].influence[j].role = deck.pop();
+                    }
+
+                    gameStats.players++;
+                    if (player.playerId && playerId !== 'ai') {
+                        gameStats.humanPlayers++;
+                    }
                 }
             }
+
             var firstPlayer = Math.floor(Math.random() * state.numPlayers);
             setState({
                 name: stateNames.START_OF_TURN,
