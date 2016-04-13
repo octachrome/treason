@@ -339,7 +339,7 @@ module.exports = function createGame(options) {
                     }
 
                     gameStats.players++;
-                    if (player.playerId && playerId !== 'ai') {
+                    if (player.playerId && player.playerId !== 'ai') {
                         gameStats.humanPlayers++;
                     }
                 }
