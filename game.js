@@ -592,6 +592,11 @@ module.exports = function createGame(options) {
             if (state.state.playerIdx != playerIdx) {
                 throw new GameException('Not your turn');
             }
+            addHistoryAsync(
+                state.state.target,
+                format('{%d} saw your %s', playerIdx, state.state.confession),
+                'interrogate',
+                state.state.continuation);
             if (command.forceExchange) {
                 var target = state.players[state.state.target];
                 var idx = indexOfInfluence(target, state.state.confession);
@@ -599,11 +604,6 @@ module.exports = function createGame(options) {
                     throw new GameException('Target does not have the confessed role');
                 }
                 target.influence[idx].role = swapRole(state.state.confession);
-                addHistoryAsync(
-                    state.state.target,
-                    format('{%d} saw your %s', playerIdx, state.state.confession),
-                    'interrogate',
-                    state.state.continuation);
                 addHistoryEx('interrogate', state.state.continuation, '{%d} forced {%d} to exchange roles', playerIdx, state.state.target);
             }
             else {
