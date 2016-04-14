@@ -289,6 +289,8 @@ function createAiPlayer(game, options) {
         var choice = null;
         for (var i = 0; i < blockingRoles.length; i++) {
             if (shouldBluff(blockingRoles[i])) {
+                // Now that we've bluffed, recalculate whether or not to bluff next time.
+                bluffChoice = rand.random() < options.chanceToBluff;
                 return blockingRoles[i];
             }
         }
