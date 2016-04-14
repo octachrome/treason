@@ -599,6 +599,11 @@ module.exports = function createGame(options) {
                     throw new GameException('Target does not have the confessed role');
                 }
                 target.influence[idx].role = swapRole(state.state.confession);
+                addHistoryAsync(
+                    state.state.target,
+                    format('{%d} saw your %s', playerIdx, state.state.confession),
+                    'interrogate',
+                    state.state.continuation);
                 addHistoryEx('interrogate', state.state.continuation, '{%d} forced {%d} to exchange roles', playerIdx, state.state.target);
             }
             else {
