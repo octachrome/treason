@@ -115,6 +115,9 @@ div.chat {
 .label-ambassador, .btn-ambassador, .btn-ambassador:focus {
     background-color: hsl(80, 60%, 45%);
 }
+.label-inquisitor, .btn-inquisitor, .btn-inquisitor:focus {
+    background-color: hsl(80, 60%, 45%);
+}
 .label-captain, .btn-captain, .btn-captain:focus {
     background-color: hsl(195, 60%, 50%);
 }
@@ -122,15 +125,15 @@ div.chat {
     background-color: white;
     color: #333;
 }
-.btn-duke, .btn-assassin, .btn-contessa, .btn-ambassador, .btn-captain {
+.btn-duke, .btn-assassin, .btn-contessa, .btn-ambassador, .btn-inquisitor, .btn-captain {
     color: white;
     opacity: 0.8;
 }
-.btn-duke:hover, .btn-assassin:hover, .btn-contessa:hover, .btn-ambassador:hover, .btn-captain:hover {
+.btn-duke:hover, .btn-assassin:hover, .btn-contessa:hover, .btn-ambassador:hover, .btn-inquisitor:hover, .btn-captain:hover {
     opacity: 1.0;
     color: white;
 }
-.btn-duke:focus, .btn-assassin:focus, .btn-contessa:focus, .btn-ambassador:focus, .btn-captain:focus {
+.btn-duke:focus, .btn-assassin:focus, .btn-contessa:focus, .btn-ambassador:focus, .btn-inquisitor:focus, .btn-captain:focus {
     color: white;
 }
 .hist-steal {
