@@ -18,23 +18,23 @@
         'tax': {
             cost: 0,
             gain: 3,
-            role: 'duke'
+            roles: 'duke'
         },
         'assassinate': {
             cost: 3,
-            role: 'assassin',
+            roles: 'assassin',
             targeted: true,
             blockedBy: ['contessa']
         },
         'steal': {
             cost: 0,
-            role: 'captain',
+            roles: 'captain',
             targeted: true,
-            blockedBy: ['captain', 'ambassador']
+            blockedBy: ['captain', 'ambassador', 'inquisitor']
         },
         'exchange': {
             cost: 0,
-            role: 'ambassador'
+            roles: ['ambassador', 'inquisitor']
         }
     };
 

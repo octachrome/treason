@@ -347,7 +347,7 @@ function blockingRoles() {
     if (!action) {
         return [];
     }
-    return action.blockedBy || [];
+    return _.intersection(action.blockedBy || [], vm.state.roles());
 }
 function weCanChallenge() {
     var action = actions[vm.state.state.action()];
@@ -360,7 +360,7 @@ function weCanChallenge() {
             return false;
         }
         // Only role-based actions can be challenged.
-        return !!action.role;
+        return !!action.roles;
     } else if (vm.state.state.name() == states.BLOCK_RESPONSE) {
         if (vm.state.state.target() === vm.state.playerIdx()) {
             // Cannot challenge our own block.
@@ -509,8 +509,8 @@ function roleDescription(role) {
 }
 function buttonActionClass(actionName) {
     var action = actions[actionName];
-    if (action && action.role) {
-        return 'btn-' + action.role;
+    if (action && action.roles) {
+        return 'btn-' + getGameRole(action.roles);
     }
     for (var property in actions) {
         if (actions.hasOwnProperty(property) && actions[property].blockedBy) {
@@ -542,6 +542,11 @@ function actionNames() {
         'foreign-aid',
         'coup'
     ];
+}
+function getGameRole(roles) {
+    var gameRoles = vm.state && vm.state.roles && vm.state.roles() || [];
+    return _.intersection(gameRoles, _.flatten([roles]))[0];
+
 }
 function showCheatSheet() {
     vm.sidebar('cheat');

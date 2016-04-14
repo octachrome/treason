@@ -14,6 +14,7 @@
 
 var fs = require('fs');
 var randomGen = require('random-seed');
+var lodash = require('lodash');
 var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared');
 var dataAccess = require('./dataaccess');
@@ -364,6 +365,10 @@ module.exports = function createGame(options) {
         }
     }
 
+    function getGameRole(roles) {
+        return lodash.intersection(state.roles, lodash.flatten([roles]))[0];
+    }
+
     function command(playerIdx, command) {
         debug('command from player: ' + playerIdx);
         debug(command);
@@ -395,8 +400,8 @@ module.exports = function createGame(options) {
             if (action == null) {
                 throw new GameException('Unknown action');
             }
-            if (action.role && state.roles.indexOf(action.role) === -1) {
-                throw new GameException('This game does not include role ' + action.role);
+            if (action.roles && !getGameRole(action.roles)) {
+                throw new GameException('Action not allowed in this game');
             }
             if (player.cash >= 10 && command.action != 'coup') {
                 throw new GameException('You must coup with >= 10 cash');
@@ -416,7 +421,7 @@ module.exports = function createGame(options) {
                 }
             }
             player.cash -= action.cost;
-            if (action.role == null && action.blockedBy == null) {
+            if (action.roles == null && action.blockedBy == null) {
                 if (playAction(playerIdx, command, false)) {
                     nextTurn();
                 }
@@ -453,10 +458,10 @@ module.exports = function createGame(options) {
                 if (!action) {
                     throw new GameException('Unknown action');
                 }
-                if (!action.role) {
+                if (!action.roles) {
                     throw new GameException('Action cannot be challenged');
                 }
-                challenge(playerIdx, state.state.playerIdx, action.role);
+                challenge(playerIdx, state.state.playerIdx, getGameRole(action.roles));
 
             } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 if (playerIdx == state.state.target) {
@@ -518,6 +523,9 @@ module.exports = function createGame(options) {
             }
             if (!command.blockingRole) {
                 throw new GameException('No blocking role specified');
+            }
+            if (state.roles.indexOf(command.blockingRole) < 0) {
+                throw new GameException('Role not valid in this game');
             }
             if (action.blockedBy.indexOf(command.blockingRole) < 0) {
                 throw new GameException('Action cannot be blocked by that role');
