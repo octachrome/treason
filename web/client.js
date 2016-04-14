@@ -521,7 +521,7 @@ function roleDescription(role) {
 function buttonActionClass(actionName) {
     var action = actions[actionName];
     if (action && action.roles) {
-        return 'btn-' + getGameRole(action.roles);
+        return 'btn-' + actionName;
     }
     for (var property in actions) {
         if (actions.hasOwnProperty(property) && actions[property].blockedBy) {
