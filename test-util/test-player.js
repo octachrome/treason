@@ -30,6 +30,18 @@ function TestPlayers(game, opts) {
         return Promise.all(promises);
     }
 
+    this.startGame = function (gameType) {
+        testPlayers[0].command({
+            command: 'start',
+            gameType: gameType
+        });
+        var promises = [];
+        for (var i = 0; i < testPlayers.length; i++) {
+            promises.push(testPlayers[i].getNextState(stateNames.START_OF_TURN));
+        }
+        return Promise.all(promises);
+    }
+
     this.createTestPlayer = function (playerName) {
         var player = {
             name: playerName || ('player' + testPlayers.length),

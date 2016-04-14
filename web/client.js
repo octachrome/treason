@@ -225,8 +225,10 @@ function isInvalidPlayerName() {
     }
     return false;
 }
-function start() {
-    command('start');
+function start(gameType) {
+    command('start', {
+        gameType: gameType
+    });
 }
 function addAi() {
     command('add-ai');

@@ -13,7 +13,7 @@
 'use strict';
 
 var fs = require('fs');
-var rand = require('random-seed')();
+var randomGen = require('random-seed');
 var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared');
 var dataAccess = require('./dataaccess');
@@ -27,19 +27,11 @@ var escape = require('validator').escape;
 var EventEmitter = require('events').EventEmitter;
 
 var nextGameId = 1;
-var nextPlayerId = 1;
 
 var MIN_PLAYERS = 2;
 var MAX_PLAYERS = 6;
 
-var epithets;
-
-fs.readFile(__dirname + '/epithets.txt', function(err, data) {
-    if (err) {
-        throw err;
-    }
-    epithets = data.toString().split(/\r?\n/);
-});
+var epithets = fs.readFileSync(__dirname + '/epithets.txt', 'utf8').split(/\r?\n/);
 
 module.exports = function createGame(options) {
     options = options || {};
@@ -52,10 +44,13 @@ module.exports = function createGame(options) {
         numPlayers: 0,
         gameName: options.gameName,
         created: options.created,
+        roles: [],
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
         }
     };
+
+    var rand = randomGen.create(options.randomSeed);
 
     dataAccess.setDebug(options.debug);
 
@@ -65,8 +60,8 @@ module.exports = function createGame(options) {
     var allows = [];
     var proxies = [];
 
-    var deck = buildDeck();
-    var _test_ignoreShuffle = false;
+    var deck;
+    var _test_fixedDeck = false;
 
     var game = new EventEmitter();
     game.canJoin = canJoin;
@@ -326,11 +321,20 @@ module.exports = function createGame(options) {
         return masked;
     }
 
-    function start() {
+    function start(gameType) {
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
             throw new GameException('Incorrect state');
         }
         if (state.numPlayers >= MIN_PLAYERS) {
+            state.roles = ['duke', 'captain', 'assassin', 'contessa'];
+            if (gameType === 'inquisitors') {
+                state.roles.push('inquisitor');
+            }
+            else {
+                state.roles.push('ambassador');
+            }
+            deck = buildDeck();
+
             for (var i = 0; i < state.numPlayers; i++) {
                 var player = state.players[i];
 
@@ -346,7 +350,13 @@ module.exports = function createGame(options) {
                 }
             }
 
-            var firstPlayer = Math.floor(Math.random() * state.numPlayers);
+            var firstPlayer;
+            if (typeof options.firstPlayer === 'number') {
+                firstPlayer = options.firstPlayer;
+            }
+            else {
+                firstPlayer = rand(state.numPlayers);
+            }
             setState({
                 name: stateNames.START_OF_TURN,
                 playerIdx: firstPlayer
@@ -366,7 +376,7 @@ module.exports = function createGame(options) {
             throw new GameException('Stale state (' + command.stateId + '!=' + state.stateId + ')');
         }
         if (command.command == 'start') {
-            start();
+            start(command.gameType);
 
         } else if (command.command == 'add-ai') {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
@@ -384,6 +394,9 @@ module.exports = function createGame(options) {
             action = actions[command.action];
             if (action == null) {
                 throw new GameException('Unknown action');
+            }
+            if (action.role && state.roles.indexOf(action.role) === -1) {
+                throw new GameException('This game does not include role ' + action.role);
             }
             if (player.cash >= 10 && command.action != 'coup') {
                 throw new GameException('You must coup with >= 10 cash');
@@ -903,34 +916,22 @@ module.exports = function createGame(options) {
     }
 
     function shuffle(array) {
-        if (_test_ignoreShuffle) {
+        if (_test_fixedDeck) {
             return array;
         }
         var shuffled = [];
         while (array.length) {
-            var i = Math.floor(Math.random() * array.length);
+            var i = rand(array.length);
             var e = array.splice(i, 1);
             shuffled.push(e[0]);
         }
         return shuffled;
     }
 
-    function buildDeck() {
-        var roles = {};
-        for (var actionName in actions) {
-            var action = actions[actionName];
-            if (action.role) {
-                roles[action.role] = true;
-            }
-            if (action.blockedBy) {
-                for (var i = 0; i < action.blockedBy.length; i++) {
-                    roles[action.blockedBy[i]] = true;
-                }
-            }
-        }
+    function buildDeck(gameType) {
         var deck = [];
         for (var i = 0; i < 3; i++) {
-            deck = deck.concat(Object.keys(roles));
+            deck = deck.concat(state.roles);
         }
         return shuffle(deck);
     }
@@ -1018,7 +1019,7 @@ module.exports = function createGame(options) {
 
     function _test_setDeck(d) {
         deck = d;
-        _test_ignoreShuffle = true;
+        _test_fixedDeck = true;
     }
 
     return game;

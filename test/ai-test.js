@@ -15,15 +15,20 @@ describe('AI', function () {
     var testPlayer;
 
     beforeEach(function () {
-        game = createGame();
+        game = createGame({
+            randomSeed: 1,
+            firstPlayer: OPPONENT_IDX
+        });
         aiPlayer = createAiPlayer(game, {
             searchHorizon: 7,
             chanceToBluff: 1,
-            randomSeed: 1 // Make AI decisions predictably random.
+            randomSeed: 2 // Make AI decisions predictably random.
         });
         var testPlayers = new TestPlayers(game);
         testPlayer = testPlayers.createTestPlayer();
-        return testPlayers.waitForNewPlayers(testPlayer);
+        return testPlayers.waitForNewPlayers(testPlayer).then(function () {
+            return testPlayers.startGame();
+        });
     });
 
     describe('Given an AI with a duke vs an opponent with a captain', function () {

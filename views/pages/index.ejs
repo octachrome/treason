@@ -128,7 +128,8 @@
                         <p>Waiting for players</p>
                         <p>
                             <button class="btn btn-default" data-bind="event: {vclick: addAi}">Add AI</button>
-                            <button class="btn btn-default" data-bind="event: {vclick: start}, visible: state.numPlayers() >= 2">Start</button>
+                            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'normal')}, visible: state.numPlayers() >= 2">Start normal game</button>
+                            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'inquisitors')}, visible: state.numPlayers() >= 2">Start inquisitor game</button>
                         </p>
                     </div>
                     <div data-bind="visible: weAreInState('start-of-turn')">

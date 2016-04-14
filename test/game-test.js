@@ -37,7 +37,9 @@ describe('Game', function () {
     describe('Reveals', function () {
         beforeEach(function () {
             player2 = testPlayers.createTestPlayer(game);
-            return testPlayers.waitForNewPlayers(player2);
+            return testPlayers.waitForNewPlayers(player2).then(function () {
+                return testPlayers.startGame();
+            });
         });
 
         describe('Given a player is revealing an influence due to a failed ambassador challenge', function () {

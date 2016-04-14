@@ -31,14 +31,7 @@ var actionsToRoles = {
 // https://www.randomlists.com/random-first-names
 // http://listofrandomnames.com/
 // http://random-name-generator.info/
-var aiPlayerNames;
-
-fs.readFile(__dirname + '/names.txt', function(err, data) {
-    if (err) {
-        throw err;
-    }
-    aiPlayerNames = data.toString().split(/\r?\n/);
-});
+var aiPlayerNames = fs.readFileSync(__dirname + '/names.txt', 'utf8').split(/\r?\n/);
 
 function createAiPlayer(game, options) {
     options = extend({
