@@ -314,9 +314,10 @@ module.exports = function createGame(options) {
                 }
             }
         }
-        // If a player is exchanging, show the drawn cards to that player alone.
+        // If a player is exchanging or interrogating, show the roles to that player alone.
         if (state.state.playerIdx != playerIdx) {
             masked.state.exchangeOptions = [];
+            masked.state.confession = null;
         }
         masked.playerIdx = playerIdx;
         return masked;
@@ -433,6 +434,8 @@ module.exports = function createGame(options) {
                     message = format('{%d} attempted to assassinate {%d}', playerIdx, command.target);
                 } else if (command.action == 'exchange') {
                     message = format('{%d} attempted to exchange', playerIdx);
+                } else if (command.action == 'interrogate') {
+                    message = format('{%d} attempted to interrogate {%d}', playerIdx, command.target);
                 } else {
                     message = format('{%d} attempted to draw %s', playerIdx, command.action);
                 }
@@ -580,6 +583,27 @@ module.exports = function createGame(options) {
             // Return the other roles to the deck.
             deck = shuffle(deck.concat(unchosen));
             addHistoryEx('exchange', state.state.continuation, '{%d} exchanged roles', playerIdx);
+            nextTurn();
+
+        } else if (command.command == 'interrogate') {
+            if (state.state.name != stateNames.INTERROGATE) {
+                throw new GameException('Incorrect state');
+            }
+            if (state.state.playerIdx != playerIdx) {
+                throw new GameException('Not your turn');
+            }
+            if (command.forceExchange) {
+                var target = state.players[state.state.target];
+                var idx = indexOfInfluence(target, state.state.confession);
+                if (idx == null) {
+                    throw new GameException('Target does not have the confessed role');
+                }
+                target.influence[idx].role = swapRole(state.state.confession);
+                addHistoryEx('interrogate', state.state.continuation, '{%d} forced {%d} to exchange roles', playerIdx, state.state.target);
+            }
+            else {
+                addHistoryEx('interrogate', state.state.continuation, '{%d} allowed {%d} to keep the same roles', playerIdx, state.state.target);
+            }
             nextTurn();
 
         } else {
@@ -870,6 +894,20 @@ module.exports = function createGame(options) {
                 action: actionState.action,
                 exchangeOptions: exchangeOptions,
                 // After exchanging, need to know whether to create a new history item or continue existing one
+                continuation: cont
+            });
+            return false; // Not yet end of turn
+        } else if (actionState.action == 'interrogate') {
+            target = state.players[actionState.target];
+            var influence = getInfluence(target);
+            var confession = influence[rand(influence.length)];
+            setState({
+                name: stateNames.INTERROGATE,
+                playerIdx: state.state.playerIdx,
+                action: actionState.action,
+                target: state.state.target,
+                confession: confession,
+                // After interrogating, need to know whether to create a new history item or continue existing one
                 continuation: cont
             });
             return false; // Not yet end of turn

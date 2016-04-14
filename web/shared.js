@@ -35,6 +35,11 @@
         'exchange': {
             cost: 0,
             roles: ['ambassador', 'inquisitor']
+        },
+        'interrogate': {
+            cost: 0,
+            roles: 'inquisitor',
+            targeted: true
         }
     };
 
@@ -46,6 +51,7 @@
         BLOCK_RESPONSE: 'block-response',
         REVEAL_INFLUENCE: 'reveal-influence',
         EXCHANGE: 'exchange',
+        INTERROGATE: 'interrogate',
         GAME_WON: 'game-won'
     };
 

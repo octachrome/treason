@@ -30,6 +30,9 @@ i.steal:before {
 i.exchange:before {
     content: "\e600";
 }
+i.interrogate:before {
+    content: "\e600";
+}
 i.income:before {
     content: "\e606";
 }
@@ -146,6 +149,9 @@ div.chat {
     border-left: 5px solid hsl(0, 0%, 20%);
 }
 .hist-exchange {
+    border-left: 5px solid hsl(80, 60%, 45%);
+}
+.hist-interrogate {
     border-left: 5px solid hsl(80, 60%, 45%);
 }
 .current-player {

@@ -34,6 +34,7 @@ vm.state = ko.mapping.fromJS({
     playerIdx: null,
     numPlayers: null,
     gameName: null,
+    roles: [],
     state: {
         name: null,
         playerIdx: null,
@@ -42,7 +43,8 @@ vm.state = ko.mapping.fromJS({
         target: null,
         message: null,
         exchangeOptions: null,
-        playerToReveal: null
+        playerToReveal: null,
+        confession: null
     }
 });
 vm.playerName.subscribe(function (newName) {
@@ -272,6 +274,10 @@ function toRevealPlayerName() {
     }
     return '';
 }
+function actionPresentInGame(actionName) {
+    var action = actions[actionName];
+    return !action.roles || getGameRole(action.roles);
+}
 function canPlayAction(actionName) {
     var action = actions[actionName];
     var player = ourPlayer();
@@ -460,6 +466,11 @@ function exchange() {
         });
     }
 }
+function interrogate(forceExchange) {
+    command('interrogate', {
+        forceExchange: forceExchange
+    });
+}
 function formatMessage(message) {
     for (var i = 0; i < vm.state.players().length; i++) {
         var playerName;
@@ -537,6 +548,7 @@ function actionNames() {
         'tax',
         'steal',
         'assassinate',
+        'interrogate',
         'exchange',
         'income',
         'foreign-aid',
