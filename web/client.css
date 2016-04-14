@@ -31,7 +31,7 @@ i.exchange:before {
     content: "\e600";
 }
 i.interrogate:before {
-    content: "\e600";
+    content: "\e900";
 }
 i.income:before {
     content: "\e606";
