@@ -17,10 +17,13 @@ var rand = require('random-seed')();
 var dataAccess = require('./dataaccess');
 
 var argv = require('optimist')
-    .usage('$0 [--debug] [--port <port>] [--log <logfile>]')
+    .usage('$0 [--debug] [--port <port>] [--log <logfile>] [--db <database>]')
     .default('port', 8080)
     .default('log', 'treason.log')
+    .default('db', 'treason_db')
     .argv;
+
+dataAccess.init(argv.db);
 
 var winston = require('winston');
 winston.add(winston.transports.File, {
