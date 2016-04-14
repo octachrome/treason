@@ -13,7 +13,9 @@ describe('Game', function () {
     var player2;
 
     beforeEach(function () {
-        game = createGame();
+        game = createGame({
+            firstPlayer: 0
+        });
         testPlayers = new TestPlayers(game);
         player0 = testPlayers.createTestPlayer();
         player1 = testPlayers.createTestPlayer();
@@ -37,7 +39,9 @@ describe('Game', function () {
     describe('Reveals', function () {
         beforeEach(function () {
             player2 = testPlayers.createTestPlayer(game);
-            return testPlayers.waitForNewPlayers(player2);
+            return testPlayers.waitForNewPlayers(player2).then(function () {
+                return testPlayers.startGame();
+            });
         });
 
         describe('Given a player is revealing an influence due to a failed ambassador challenge', function () {
@@ -437,6 +441,74 @@ describe('Game', function () {
                     return player0.getNextState().then(function (state) {
                         expect(state.state.name).to.be(stateNames.START_OF_TURN);
                         expect(state.state.playerIdx).to.be(2);
+                    });
+                });
+            });
+        });
+    });
+
+    describe('Exchanging', function () {
+        describe('Given a game with ambassadors', function () {
+            beforeEach(function () {
+                return testPlayers.startGame();
+            });
+
+            describe('When player0 tries to exchange', function () {
+                beforeEach(function () {
+                    player0.command({
+                        command: 'play-action',
+                        action: 'exchange'
+                    });
+
+                    return testPlayers.consumeState(stateNames.ACTION_RESPONSE);
+                });
+
+                describe('When player1 allows', function () {
+                    beforeEach(function () {
+                        player1.command({
+                            command: 'allow',
+                            action: 'exchange'
+                        });
+                    });
+
+                    it('Then player0 should choose from four roles', function () {
+                        return player0.getNextState().then(function (state) {
+                            expect(state.state.name).to.be(stateNames.EXCHANGE);
+                            expect(state.state.exchangeOptions.length).to.be(4);
+                        });
+                    });
+                });
+            });
+        });
+
+        describe('Given a game with inquisitors', function () {
+            beforeEach(function () {
+                return testPlayers.startGame('inquisitors');
+            });
+
+            describe('When player0 tries to exchange', function () {
+                beforeEach(function () {
+                    player0.command({
+                        command: 'play-action',
+                        action: 'exchange'
+                    });
+
+                    return testPlayers.consumeState(stateNames.ACTION_RESPONSE);
+                });
+
+                describe('When player1 allows', function () {
+                    beforeEach(function () {
+                        player1.command({
+                            command: 'allow',
+                            action: 'exchange'
+                        });
+                    });
+
+                    it('Then player0 should choose from three roles', function () {
+                        return player0.getNextState().then(function (state) {
+                            expect(state.state.name).to.be(stateNames.EXCHANGE);
+                            expect(state.state.exchangeOptions.length).to.be(3);
+                        });
                     });
                 });
             });

@@ -188,14 +188,7 @@ io.on('connection', function (socket) {
     });
 });
 
-var adjectives;
-
-fs.readFile(__dirname + '/adjectives.txt', function(err, data) {
-    if (err) {
-        throw err;
-    }
-    adjectives = data.toString().split(/\r?\n/);
-});
+var adjectives = fs.readFileSync(__dirname + '/adjectives.txt', 'utf8').split(/\r?\n/);
 
 function isInvalidPlayerName(playerName) {
     return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/ || !playerName.trim());

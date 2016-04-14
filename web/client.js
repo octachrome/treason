@@ -34,6 +34,7 @@ vm.state = ko.mapping.fromJS({
     playerIdx: null,
     numPlayers: null,
     gameName: null,
+    roles: [],
     state: {
         name: null,
         playerIdx: null,
@@ -42,7 +43,8 @@ vm.state = ko.mapping.fromJS({
         target: null,
         message: null,
         exchangeOptions: null,
-        playerToReveal: null
+        playerToReveal: null,
+        confession: null
     }
 });
 vm.playerName.subscribe(function (newName) {
@@ -225,8 +227,10 @@ function isInvalidPlayerName() {
     }
     return false;
 }
-function start() {
-    command('start');
+function start(gameType) {
+    command('start', {
+        gameType: gameType
+    });
 }
 function addAi() {
     command('add-ai');
@@ -269,6 +273,10 @@ function toRevealPlayerName() {
         }
     }
     return '';
+}
+function actionPresentInGame(actionName) {
+    var action = actions[actionName];
+    return !action.roles || getGameRole(action.roles);
 }
 function canPlayAction(actionName) {
     var action = actions[actionName];
@@ -345,7 +353,7 @@ function blockingRoles() {
     if (!action) {
         return [];
     }
-    return action.blockedBy || [];
+    return _.intersection(action.blockedBy || [], vm.state.roles());
 }
 function weCanChallenge() {
     var action = actions[vm.state.state.action()];
@@ -358,7 +366,7 @@ function weCanChallenge() {
             return false;
         }
         // Only role-based actions can be challenged.
-        return !!action.role;
+        return !!action.roles;
     } else if (vm.state.state.name() == states.BLOCK_RESPONSE) {
         if (vm.state.state.target() === vm.state.playerIdx()) {
             // Cannot challenge our own block.
@@ -458,6 +466,11 @@ function exchange() {
         });
     }
 }
+function interrogate(forceExchange) {
+    command('interrogate', {
+        forceExchange: forceExchange
+    });
+}
 function formatMessage(message) {
     for (var i = 0; i < vm.state.players().length; i++) {
         var playerName;
@@ -507,8 +520,8 @@ function roleDescription(role) {
 }
 function buttonActionClass(actionName) {
     var action = actions[actionName];
-    if (action && action.role) {
-        return 'btn-' + action.role;
+    if (action && action.roles) {
+        return 'btn-' + actionName;
     }
     for (var property in actions) {
         if (actions.hasOwnProperty(property) && actions[property].blockedBy) {
@@ -535,11 +548,17 @@ function actionNames() {
         'tax',
         'steal',
         'assassinate',
+        'interrogate',
         'exchange',
         'income',
         'foreign-aid',
         'coup'
     ];
+}
+function getGameRole(roles) {
+    var gameRoles = vm.state && vm.state.roles && vm.state.roles() || [];
+    return _.intersection(gameRoles, _.flatten([roles]))[0];
+
 }
 function showCheatSheet() {
     vm.sidebar('cheat');

@@ -15,6 +15,7 @@
 var extend = require('extend');
 var randomGen = require('random-seed');
 var fs = require('fs');
+var lodash = require('lodash');
 
 var shared = require('./web/shared');
 var stateNames = shared.states;
@@ -31,14 +32,7 @@ var actionsToRoles = {
 // https://www.randomlists.com/random-first-names
 // http://listofrandomnames.com/
 // http://random-name-generator.info/
-var aiPlayerNames;
-
-fs.readFile(__dirname + '/names.txt', function(err, data) {
-    if (err) {
-        throw err;
-    }
-    aiPlayerNames = data.toString().split(/\r?\n/);
-});
+var aiPlayerNames = fs.readFileSync(__dirname + '/names.txt', 'utf8').split(/\r?\n/);
 
 function createAiPlayer(game, options) {
     options = extend({
@@ -280,6 +274,7 @@ function createAiPlayer(game, options) {
             return null;
         }
         var blockingRoles = actions[state.state.action].blockedBy || [];
+        blockingRoles = lodash.intersection(state.roles, blockingRoles);
         if (blockingRoles.length == 0) {
             // Cannot be blocked.
             return null;
