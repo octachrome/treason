@@ -859,7 +859,11 @@ module.exports = function createGame(options) {
                 target.cash = 0;
             }
         } else if (actionState.action == 'exchange') {
-            var exchangeOptions = [deck.pop(), deck.pop()].concat(getInfluence(player));
+            var exchangeOptions = [deck.pop()].concat(getInfluence(player));
+            if (state.roles.indexOf('ambassador') !== -1) {
+                // Ambassadors draw two cards; inquisitors draw one.
+                exchangeOptions.unshift(deck.pop());
+            }
             setState({
                 name: stateNames.EXCHANGE,
                 playerIdx: state.state.playerIdx,

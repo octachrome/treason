@@ -15,6 +15,7 @@
 var extend = require('extend');
 var randomGen = require('random-seed');
 var fs = require('fs');
+var lodash = require('lodash');
 
 var shared = require('./web/shared');
 var stateNames = shared.states;
@@ -273,6 +274,7 @@ function createAiPlayer(game, options) {
             return null;
         }
         var blockingRoles = actions[state.state.action].blockedBy || [];
+        blockingRoles = lodash.intersection(state.roles, blockingRoles);
         if (blockingRoles.length == 0) {
             // Cannot be blocked.
             return null;

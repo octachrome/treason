@@ -35,11 +35,7 @@ function TestPlayers(game, opts) {
             command: 'start',
             gameType: gameType
         });
-        var promises = [];
-        for (var i = 0; i < testPlayers.length; i++) {
-            promises.push(testPlayers[i].getNextState(stateNames.START_OF_TURN));
-        }
-        return Promise.all(promises);
+        return this.consumeState(stateNames.START_OF_TURN);
     }
 
     this.createTestPlayer = function (playerName) {
