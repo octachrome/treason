@@ -18,7 +18,9 @@ describe('Challenges', function () {
         player0 = testPlayers.createTestPlayer();
         player1 = testPlayers.createTestPlayer();
         player2 = testPlayers.createTestPlayer();
-        return testPlayers.waitForNewPlayers(player0, player1, player1);
+        return testPlayers.waitForNewPlayers(player0, player1, player1).then(function () {
+            return testPlayers.startGame();
+        });
     });
 
     describe('Given player0 assassinates player1 with a real assassin', function () {

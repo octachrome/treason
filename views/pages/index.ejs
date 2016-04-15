@@ -268,18 +268,20 @@
                         <p>Waiting for players</p>
                         <p>
                             <button class="btn btn-default" data-bind="event: {vclick: addAi}">Add AI</button>
-                            <button class="btn btn-default" data-bind="event: {vclick: start}, visible: state.numPlayers() >= 2">Start</button>
+                            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'normal')}, visible: state.numPlayers() >= 2">Start normal game</button>
+                            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'inquisitors')}, visible: state.numPlayers() >= 2">Start inquisitor game</button>
                         </p>
                     </div>
                     <div data-bind="visible: weAreInState('start-of-turn')">
                         <!-- ko if: !targetedAction() -->
                             Your turn:<br/>
                             <!-- ko foreach: actionNames() -->
-                                <button class="btn btn-action" data-bind="enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)">
-                                    <i data-bind="css: $data"></i>
-                                    <span data-bind="text: $data"></span>
-                                </button>
-                                <!-- ko if: $data == 'exchange' --><br/><!-- /ko -->
+                                <!-- ko if: actionPresentInGame($data) -->
+                                    <button class="btn btn-action" data-bind="enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)">
+                                        <i data-bind="css: $data"></i>
+                                        <span data-bind="text: $data"></span>
+                                    </button>
+                                <!-- /ko -->
                             <!-- /ko -->
                         <!-- /ko -->
                         <!-- ko if: targetedAction -->
@@ -311,6 +313,19 @@
                             <i class="exchange"></i>
                             <span>Exchange</span>
                         </button>
+                    </div>
+                    <div data-bind="visible: theyAreInState('interrogate')">
+                        <i class="interrogate"></i>
+                        Waiting for <span data-bind="text: currentPlayerName()"></span> to interrogate <span data-bind="text: targetPlayerName()"></span>
+                    </div>
+                    <div data-bind="visible: weAreInState('interrogate')">
+                        <i class="interrogate"></i>
+                        <span data-bind="text: targetPlayerName()"></span> has a
+                        <span class="label" data-bind="text: state.state.confession(), css: labelClass(state.state.confession())"></span><br/>
+
+                        Force <span data-bind="text: targetPlayerName()"></span> to exchange it for another role?<br/>
+                        <button class="btn btn-default" data-bind="event: {vclick: interrogate.bind(null, true)}">Yes</button>
+                        <button class="btn btn-default" data-bind="event: {vclick: interrogate.bind(null, false)}">No</button>
                     </div>
                     <div data-bind="visible: weAreInState('action-response')">
                         <i data-bind="css: state.state.action"></i>

@@ -1,32 +1,32 @@
+/*
+ * Copyright 2015-2016 Christopher Brown and Jackie Niebling.
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
+ *
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to:
+ *     Creative Commons
+ *     PO Box 1866
+ *     Mountain View
+ *     CA 94042
+ *     USA
+ */
 'use strict';
 
 var extend = require('extend');
 var randomGen = require('random-seed');
 var fs = require('fs');
+var lodash = require('lodash');
 
 var shared = require('./web/shared');
 var stateNames = shared.states;
 var actions = shared.actions;
 
-var rankedRoles = ['duke', 'assassin', 'captain', 'contessa', 'ambassador'];
-var actionsToRoles = {
-    'tax': 'duke',
-    'assassinate': 'assassin',
-    'steal': 'captain',
-    'exchange': 'ambassador'
-};
+var rankedRoles = ['duke', 'assassin', 'captain', 'inquisitor', 'contessa', 'ambassador'];
 
 // https://www.randomlists.com/random-first-names
 // http://listofrandomnames.com/
 // http://random-name-generator.info/
-var aiPlayerNames;
-
-fs.readFile(__dirname + '/names.txt', function(err, data) {
-    if (err) {
-        throw err;
-    }
-    aiPlayerNames = data.toString().split(/\r?\n/);
-});
+var aiPlayerNames = fs.readFileSync(__dirname + '/names.txt', 'utf8').split(/\r?\n/);
 
 function createAiPlayer(game, options) {
     options = extend({
@@ -87,7 +87,7 @@ function createAiPlayer(game, options) {
 
         if (state.state.name == stateNames.ACTION_RESPONSE) {
             lastRoleClaim = {
-                role: actionsToRoles[state.state.action],
+                role: getRoleForAction(state.state.action),
                 playerIdx: state.state.playerIdx
             };
         } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
@@ -113,6 +113,17 @@ function createAiPlayer(game, options) {
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();
         }
+    }
+
+    function getRoleForAction(actionName) {
+        var action = actions[actionName];
+        if (!action) {
+            return null;
+        }
+        if (!action.roles) {
+            return null;
+        }
+        return lodash.intersection(state.roles, lodash.flatten([action.roles]))[0];
     }
 
     function onHistoryEvent(message) {
@@ -268,6 +279,7 @@ function createAiPlayer(game, options) {
             return null;
         }
         var blockingRoles = actions[state.state.action].blockedBy || [];
+        blockingRoles = lodash.intersection(state.roles, blockingRoles);
         if (blockingRoles.length == 0) {
             // Cannot be blocked.
             return null;
@@ -277,6 +289,8 @@ function createAiPlayer(game, options) {
         var choice = null;
         for (var i = 0; i < blockingRoles.length; i++) {
             if (shouldBluff(blockingRoles[i])) {
+                // Now that we've bluffed, recalculate whether or not to bluff next time.
+                bluffChoice = rand.random() < options.chanceToBluff;
                 return blockingRoles[i];
             }
         }
@@ -295,10 +309,10 @@ function createAiPlayer(game, options) {
     }
 
     function trackClaim(playerIdx, actionOrRole) {
-        if (actionOrRole == 'foreign-aid' || actionOrRole == 'income') {
+        if (actions[actionOrRole] && !actions[actionOrRole].roles) {
             return;
         }
-        var role = actionsToRoles[actionOrRole] || actionOrRole;
+        var role = getRoleForAction(actionOrRole) || actionOrRole;
         claims[playerIdx][role] = true;
         debug('player ' + playerIdx + ' claimed ' + role);
     }
@@ -430,7 +444,7 @@ function createAiPlayer(game, options) {
                 calledBluffs.push(state.state.blockingRole);
             } else if (state.state.playerIdx == state.playerIdx && state.state.action) {
                 // We bluffed an action.
-                calledBluffs.push(actionsToRoles[state.state.action]);
+                calledBluffs.push(getRoleForAction(state.state.action));
             }
         }
     }
@@ -461,14 +475,18 @@ function createAiPlayer(game, options) {
 
     function assassinTarget() {
         return playersByStrength().filter(function (idx) {
-            return !claims[idx]['contessa'];
+            return !canBlock(idx, 'assassinate');
         })[0];
     }
 
     function captainTarget() {
         return playersByStrength().filter(function (idx) {
-            return !claims[idx]['ambassador'] && !claims[idx]['captain'];
+            return !canBlock(idx, 'steal');
         })[0];
+    }
+
+    function canBlock(playerIdx, actionName) {
+        return lodash.intersection(actions[actionName].blockedBy, getClaimedRoles(playerIdx)).length > 0;
     }
 
     function strongestPlayer() {
@@ -548,9 +566,11 @@ function createAiPlayer(game, options) {
         debug('their cash: ' + cash[0]);
         debug('our cash: ' + cash[1]);
         var i, turn, other;
+        function otherCanBlock(actionName) {
+            return lodash.intersection(roles[other], actions[actionName].blockedBy).length > 0;
+        }
         function canSteal() {
-            return roles[turn].indexOf('captain') >= 0 && roles[other].indexOf('captain') < 0 &&
-                roles[other].indexOf('ambassador') < 0;
+            return roles[turn].indexOf('captain') >= 0 && !otherCanBlock('steal');
         }
         function steal() {
             debug(turn ? 'we steal' : 'they steal');
@@ -563,7 +583,7 @@ function createAiPlayer(game, options) {
             }
         }
         function canAssassinate() {
-            return roles[turn].indexOf('assassin') >= 0 && roles[other].indexOf('contessa') < 0;
+            return roles[turn].indexOf('assassin') >= 0 && !otherCanBlock('assassinate');
         }
         function assassinate() {
             debug(turn ? 'we assassinate' : 'they assassinate');

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Christopher Brown
+ * Copyright 2015-2016 Christopher Brown and Jackie Niebling.
  *
  * This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
  *
@@ -17,10 +17,13 @@ var rand = require('random-seed')();
 var dataAccess = require('./dataaccess');
 
 var argv = require('optimist')
-    .usage('$0 [--debug] [--port <port>] [--log <logfile>]')
+    .usage('$0 [--debug] [--port <port>] [--log <logfile>] [--db <database>]')
     .default('port', 8080)
     .default('log', 'treason.log')
+    .default('db', 'treason_db')
     .argv;
+
+dataAccess.init(argv.db);
 
 var winston = require('winston');
 winston.add(winston.transports.File, {
@@ -185,14 +188,7 @@ io.on('connection', function (socket) {
     });
 });
 
-var adjectives;
-
-fs.readFile(__dirname + '/adjectives.txt', function(err, data) {
-    if (err) {
-        throw err;
-    }
-    adjectives = data.toString().split(/\r?\n/);
-});
+var adjectives = fs.readFileSync(__dirname + '/adjectives.txt', 'utf8').split(/\r?\n/);
 
 function isInvalidPlayerName(playerName) {
     return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/ || !playerName.trim());

@@ -2,3 +2,5 @@
 sudo setcap cap_net_bind_service=+ep /usr/bin/nodejs
 # Open port 80 in the firewall (also needs to be opened in the AWS security group)
 sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+# Also open port 5900 in the firewall for Nginx proxying CouchDB
+sudo iptables -A INPUT -p tcp --dport 5900 -j ACCEPT

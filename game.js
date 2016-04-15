@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Christopher Brown
+ * Copyright 2015-2016 Christopher Brown and Jackie Niebling.
  *
  * This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
  *
@@ -11,8 +11,10 @@
  *     USA
  */
 'use strict';
+
 var fs = require('fs');
-var rand = require('random-seed')();
+var randomGen = require('random-seed');
+var lodash = require('lodash');
 var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared');
 var dataAccess = require('./dataaccess');
@@ -26,19 +28,11 @@ var escape = require('validator').escape;
 var EventEmitter = require('events').EventEmitter;
 
 var nextGameId = 1;
-var nextPlayerId = 1;
 
 var MIN_PLAYERS = 2;
 var MAX_PLAYERS = 6;
 
-var epithets;
-
-fs.readFile(__dirname + '/epithets.txt', function(err, data) {
-    if (err) {
-        throw err;
-    }
-    epithets = data.toString().split(/\r?\n/);
-});
+var epithets = fs.readFileSync(__dirname + '/epithets.txt', 'utf8').split(/\r?\n/);
 
 module.exports = function createGame(options) {
     options = options || {};
@@ -51,10 +45,13 @@ module.exports = function createGame(options) {
         numPlayers: 0,
         gameName: options.gameName,
         created: options.created,
+        roles: [],
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
         }
     };
+
+    var rand = randomGen.create(options.randomSeed);
 
     dataAccess.setDebug(options.debug);
 
@@ -64,8 +61,8 @@ module.exports = function createGame(options) {
     var allows = [];
     var proxies = [];
 
-    var deck = buildDeck();
-    var _test_ignoreShuffle = false;
+    var deck;
+    var _test_fixedDeck = false;
 
     var game = new EventEmitter();
     game.canJoin = canJoin;
@@ -113,14 +110,7 @@ module.exports = function createGame(options) {
             playerState.cash = 0;
             playerState.influenceCount = 0;
             playerState.influence = [];
-        } else {
-            gameStats.players++;
-            if (playerId && playerId != 'ai') {
-                gameStats.humanPlayers++;
-            }
         }
-
-        gameStats.onlyHumans = playerId && playerId != 'ai' && gameStats.onlyHumans;
 
         var playerIdx = state.players.length;
         state.players.push(playerState);
@@ -324,30 +314,60 @@ module.exports = function createGame(options) {
                 }
             }
         }
-        // If a player is exchanging, show the drawn cards to that player alone.
+        // If a player is exchanging or interrogating, show the roles to that player alone.
         if (state.state.playerIdx != playerIdx) {
             masked.state.exchangeOptions = [];
+            masked.state.confession = null;
         }
         masked.playerIdx = playerIdx;
         return masked;
     }
 
-    function start() {
+    function start(gameType) {
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
             throw new GameException('Incorrect state');
         }
         if (state.numPlayers >= MIN_PLAYERS) {
-            for (var j = 0; j < state.players[0].influence.length; j++) {
-                for (var i = 0; i < state.numPlayers; i++) {
-                    state.players[i].influence[j].role = deck.pop();
+            state.roles = ['duke', 'captain', 'assassin', 'contessa'];
+            if (gameType === 'inquisitors') {
+                state.roles.push('inquisitor');
+            }
+            else {
+                state.roles.push('ambassador');
+            }
+            deck = buildDeck();
+
+            for (var i = 0; i < state.numPlayers; i++) {
+                var player = state.players[i];
+
+                if (!player.isObserver) {
+                    for (var j = 0; j < 2; j++) {
+                        player.influence[j].role = deck.pop();
+                    }
+
+                    gameStats.players++;
+                    if (player.playerId && player.playerId !== 'ai') {
+                        gameStats.humanPlayers++;
+                    }
                 }
             }
-            var firstPlayer = Math.floor(Math.random() * state.numPlayers);
+
+            var firstPlayer;
+            if (typeof options.firstPlayer === 'number') {
+                firstPlayer = options.firstPlayer;
+            }
+            else {
+                firstPlayer = rand(state.numPlayers);
+            }
             setState({
                 name: stateNames.START_OF_TURN,
                 playerIdx: firstPlayer
             });
         }
+    }
+
+    function getGameRole(roles) {
+        return lodash.intersection(state.roles, lodash.flatten([roles]))[0];
     }
 
     function command(playerIdx, command) {
@@ -362,7 +382,7 @@ module.exports = function createGame(options) {
             throw new GameException('Stale state (' + command.stateId + '!=' + state.stateId + ')');
         }
         if (command.command == 'start') {
-            start();
+            start(command.gameType);
 
         } else if (command.command == 'add-ai') {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
@@ -380,6 +400,9 @@ module.exports = function createGame(options) {
             action = actions[command.action];
             if (action == null) {
                 throw new GameException('Unknown action');
+            }
+            if (action.roles && !getGameRole(action.roles)) {
+                throw new GameException('Action not allowed in this game');
             }
             if (player.cash >= 10 && command.action != 'coup') {
                 throw new GameException('You must coup with >= 10 cash');
@@ -399,7 +422,7 @@ module.exports = function createGame(options) {
                 }
             }
             player.cash -= action.cost;
-            if (action.role == null && action.blockedBy == null) {
+            if (action.roles == null && action.blockedBy == null) {
                 if (playAction(playerIdx, command, false)) {
                     nextTurn();
                 }
@@ -411,6 +434,8 @@ module.exports = function createGame(options) {
                     message = format('{%d} attempted to assassinate {%d}', playerIdx, command.target);
                 } else if (command.action == 'exchange') {
                     message = format('{%d} attempted to exchange', playerIdx);
+                } else if (command.action == 'interrogate') {
+                    message = format('{%d} attempted to interrogate {%d}', playerIdx, command.target);
                 } else {
                     message = format('{%d} attempted to draw %s', playerIdx, command.action);
                 }
@@ -436,10 +461,10 @@ module.exports = function createGame(options) {
                 if (!action) {
                     throw new GameException('Unknown action');
                 }
-                if (!action.role) {
+                if (!action.roles) {
                     throw new GameException('Action cannot be challenged');
                 }
-                challenge(playerIdx, state.state.playerIdx, action.role);
+                challenge(playerIdx, state.state.playerIdx, getGameRole(action.roles));
 
             } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 if (playerIdx == state.state.target) {
@@ -502,6 +527,9 @@ module.exports = function createGame(options) {
             if (!command.blockingRole) {
                 throw new GameException('No blocking role specified');
             }
+            if (state.roles.indexOf(command.blockingRole) < 0) {
+                throw new GameException('Role not valid in this game');
+            }
             if (action.blockedBy.indexOf(command.blockingRole) < 0) {
                 throw new GameException('Action cannot be blocked by that role');
             }
@@ -555,6 +583,32 @@ module.exports = function createGame(options) {
             // Return the other roles to the deck.
             deck = shuffle(deck.concat(unchosen));
             addHistoryEx('exchange', state.state.continuation, '{%d} exchanged roles', playerIdx);
+            nextTurn();
+
+        } else if (command.command == 'interrogate') {
+            if (state.state.name != stateNames.INTERROGATE) {
+                throw new GameException('Incorrect state');
+            }
+            if (state.state.playerIdx != playerIdx) {
+                throw new GameException('Not your turn');
+            }
+            addHistoryAsync(
+                state.state.target,
+                format('{%d} saw your %s', playerIdx, state.state.confession),
+                'interrogate',
+                state.state.continuation);
+            if (command.forceExchange) {
+                var target = state.players[state.state.target];
+                var idx = indexOfInfluence(target, state.state.confession);
+                if (idx == null) {
+                    throw new GameException('Target does not have the confessed role');
+                }
+                target.influence[idx].role = swapRole(state.state.confession);
+                addHistoryEx('interrogate', state.state.continuation, '{%d} forced {%d} to exchange roles', playerIdx, state.state.target);
+            }
+            else {
+                addHistoryEx('interrogate', state.state.continuation, '{%d} allowed {%d} to keep the same roles', playerIdx, state.state.target);
+            }
             nextTurn();
 
         } else {
@@ -834,13 +888,31 @@ module.exports = function createGame(options) {
                 target.cash = 0;
             }
         } else if (actionState.action == 'exchange') {
-            var exchangeOptions = [deck.pop(), deck.pop()].concat(getInfluence(player));
+            var exchangeOptions = [deck.pop()].concat(getInfluence(player));
+            if (state.roles.indexOf('ambassador') !== -1) {
+                // Ambassadors draw two cards; inquisitors draw one.
+                exchangeOptions.unshift(deck.pop());
+            }
             setState({
                 name: stateNames.EXCHANGE,
                 playerIdx: state.state.playerIdx,
                 action: actionState.action,
                 exchangeOptions: exchangeOptions,
                 // After exchanging, need to know whether to create a new history item or continue existing one
+                continuation: cont
+            });
+            return false; // Not yet end of turn
+        } else if (actionState.action == 'interrogate') {
+            target = state.players[actionState.target];
+            var influence = getInfluence(target);
+            var confession = influence[rand(influence.length)];
+            setState({
+                name: stateNames.INTERROGATE,
+                playerIdx: state.state.playerIdx,
+                action: actionState.action,
+                target: state.state.target,
+                confession: confession,
+                // After interrogating, need to know whether to create a new history item or continue existing one
                 continuation: cont
             });
             return false; // Not yet end of turn
@@ -899,34 +971,22 @@ module.exports = function createGame(options) {
     }
 
     function shuffle(array) {
-        if (_test_ignoreShuffle) {
+        if (_test_fixedDeck) {
             return array;
         }
         var shuffled = [];
         while (array.length) {
-            var i = Math.floor(Math.random() * array.length);
+            var i = rand(array.length);
             var e = array.splice(i, 1);
             shuffled.push(e[0]);
         }
         return shuffled;
     }
 
-    function buildDeck() {
-        var roles = {};
-        for (var actionName in actions) {
-            var action = actions[actionName];
-            if (action.role) {
-                roles[action.role] = true;
-            }
-            if (action.blockedBy) {
-                for (var i = 0; i < action.blockedBy.length; i++) {
-                    roles[action.blockedBy[i]] = true;
-                }
-            }
-        }
+    function buildDeck(gameType) {
         var deck = [];
         for (var i = 0; i < 3; i++) {
-            deck = deck.concat(Object.keys(roles));
+            deck = deck.concat(state.roles);
         }
         return shuffle(deck);
     }
@@ -1014,7 +1074,7 @@ module.exports = function createGame(options) {
 
     function _test_setDeck(d) {
         deck = d;
-        _test_ignoreShuffle = true;
+        _test_fixedDeck = true;
     }
 
     return game;

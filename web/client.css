@@ -30,6 +30,9 @@ i.steal:before {
 i.exchange:before {
     content: "\e600";
 }
+i.interrogate:before {
+    content: "\e900";
+}
 i.income:before {
     content: "\e606";
 }
@@ -109,34 +112,37 @@ div.global-chat {
 .btn-action:disabled:hover {
     color: #888;
 }
-.label-duke, .btn-duke, .btn-duke:focus {
+.label-duke, .btn-duke, .btn-duke:focus, .btn-tax, .btn-tax:focus {
     background-color: hsl(280, 60%, 50%);
 }
-.label-assassin, .btn-assassin, .btn-assassin:focus {
+.label-assassin, .btn-assassin, .btn-assassin:focus, .btn-assassinate, .btn-assassinate:focus {
     background-color: hsl(0, 0%, 20%);
 }
 .label-contessa, .btn-contessa, .btn-contessa:focus {
     background-color: hsl(359, 60%, 50%);
 }
-.label-ambassador, .btn-ambassador, .btn-ambassador:focus {
+.label-ambassador, .btn-ambassador, .btn-ambassador:focus, .btn-exchange, .btn-exchange:focus {
     background-color: hsl(80, 60%, 45%);
 }
-.label-captain, .btn-captain, .btn-captain:focus {
+.label-inquisitor, .btn-inquisitor, .btn-inquisitor:focus, .btn-interrogate, .btn-interrogate:focus {
+    background-color: hsl(55, 60%, 45%);
+}
+.label-captain, .btn-captain, .btn-captain:focus, .btn-steal, .btn-steal:focus {
     background-color: hsl(195, 60%, 50%);
 }
 .btn-default, .btn-default:focus {
     background-color: white;
     color: #333;
 }
-.btn-duke, .btn-assassin, .btn-contessa, .btn-ambassador, .btn-captain {
+.btn-duke, .btn-tax, .btn-assassin, .btn-assassinate, .btn-contessa, .btn-ambassador, .btn-exchange, .btn-inquisitor, .btn-interrogate, .btn-captain, .btn-steal {
     color: white;
     opacity: 0.8;
 }
-.btn-duke:hover, .btn-assassin:hover, .btn-contessa:hover, .btn-ambassador:hover, .btn-captain:hover {
+.btn-duke:hover, .btn-tax:hover, .btn-assassin:hover, .btn-assassinate:hover, .btn-contessa:hover, .btn-ambassador:hover, .btn-exchange:hover, .btn-inquisitor:hover, .btn-interrogate:hover, .btn-captain:hover, .btn-steal:hover {
     opacity: 1.0;
     color: white;
 }
-.btn-duke:focus, .btn-assassin:focus, .btn-contessa:focus, .btn-ambassador:focus, .btn-captain:focus {
+.btn-duke:focus, .btn-tax:focus, .btn-assassin:focus, .btn-assassinate:focus, .btn-contessa:focus, .btn-ambassador:focus, .btn-exchange:focus, .btn-inquisitor:focus, .btn-interrogate:focus, .btn-captain:focus, .btn-steal:focus {
     color: white;
 }
 .hist-steal {
@@ -150,6 +156,9 @@ div.global-chat {
 }
 .hist-exchange {
     border-left: 5px solid hsl(80, 60%, 45%);
+}
+.hist-interrogate {
+    border-left: 5px solid hsl(55, 60%, 45%);
 }
 .current-player {
     border-left: 5px solid black;
