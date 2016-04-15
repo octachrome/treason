@@ -510,6 +510,9 @@ function roleDescription(role) {
     if (role === 'ambassador') {
         return 'Draw two from the deck and optionally exchange your influences';
     }
+    if (role === 'inquisitor') {
+        return 'Draw one from the deck OR look at one opponent\'s role and optionally swap it';
+    }
     if (role === 'assassin') {
         return 'Pay $3 to reveal another player\'s influence; blocked by contessa';
     }

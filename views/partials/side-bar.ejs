@@ -24,19 +24,12 @@
     <li class="list-group-item">
         <a href="javascript: null" data-bind="event: {vclick: showCheatSheet}, visible: sidebar() != 'cheat'">Cheat sheet</a>
         <div data-bind="visible: sidebar() == 'cheat'">
-            <!-- ko if: getGameRole('ambassador') -->
-                <p><span class="label label-ambassador">ambassador</span> Draw two from the deck and optionally exchange your infuences</p>
+            <!-- ko foreach: state.roles -->
+                <p><span class="label" data-bind="text: $data, css: labelClass($data)"></span> <span data-bind="text: roleDescription($data)"></span></p>
             <!-- /ko -->
-            <!-- ko if: getGameRole('inquisitor') -->
-                <p><span class="label label-inquisitor">inquisitor</span> Draw one from the deck OR look at one opponent's role and optionally swap it</p>
+            <!-- ko if: state.roles().length === 0 -->
+            <p>Not available until the game starts</p>
             <!-- /ko -->
-            <p><span class="label label-assassin">assassin</span> Pay $3 to reveal another player's influence; blocked by contessa</p>
-            <p><span class="label label-captain">captain</span> Steal $2 from another player; blocked by captain and ambassador</p>
-            <p><span class="label label-contessa">contessa</span> Block assassination</p>
-            <p><span class="label label-duke">duke</span> Tax +$3; block foreign aid</p>
-            <p>Income +$1</p>
-            <p>Foreign aid +$2; blocked by duke</p>
-            <p>Coup to reveal another player's influence for $7</p>
         </div>
     </li>
 </ul>
