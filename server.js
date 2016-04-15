@@ -107,12 +107,6 @@ io.on('connection', function (socket) {
         if (!game) {
             game = createPrivateGame(gameName);
         }
-        if (!game.canJoin()) {
-            socket.emit('gameinprogress', {
-                gameName: gameName
-            });
-            return;
-        }
         createNetPlayer(game, socket, playerName);
     }
 

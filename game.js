@@ -74,19 +74,7 @@ module.exports = function createGame(options) {
     game._test_resetAllows = resetAllows;
 
     function playerJoined(player) {
-        var isObserver = false;
-        if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
-            isObserver = true;
-            if (!state.gameName) {
-                throw new GameException('Cannot join game ' + gameId + ': it has started');
-            }
-        }
-        if (state.players.length >= MAX_PLAYERS) {
-            isObserver = true;
-            if (!state.gameName) {
-                throw new GameException('Cannot join game ' + gameId + ': it is full');
-            }
-        }
+        var isObserver = !canJoin();
 
         var playerState = {
             name: playerName(player.name),
@@ -1044,8 +1032,10 @@ module.exports = function createGame(options) {
         }, 0);
     }
 
+    // Returns whether another person can join as an actual player.
+    // If it returns false, you can still join as an observer.
     function canJoin() {
-        return state.state.name == stateNames.WAITING_FOR_PLAYERS;
+        return state.state.name == stateNames.WAITING_FOR_PLAYERS && state.players.length < MAX_PLAYERS;
     }
 
     function sendChatMessage(playerIdx, message) {

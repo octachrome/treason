@@ -106,11 +106,6 @@ socket.on('connect', function() {
         playerId: vm.playerId()
     });
 });
-socket.on('gameinprogress', function(data) {
-    vm.bannerMessage('The game: "' + data.gameName + '" is currently in progress.');
-    vm.state.state.name(null);
-    vm.needName(false);
-});
 socket.on('disconnect', function () {
     vm.bannerMessage('Disconnected');
     $('#privateGameCreatedModal').modal('hide');//close the modal in case it was open when we disconnected
