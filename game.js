@@ -242,6 +242,9 @@ module.exports = function createGame(options) {
         debug('destroying game');
         players = [];
         proxies = [];
+        setState({
+            name: 'destroyed'
+        })
         game.emit('end');
     }
 
@@ -1042,7 +1045,7 @@ module.exports = function createGame(options) {
     }
 
     function canJoin() {
-        return state.state.name == stateNames.WAITING_FOR_PLAYERS || state.gameName;
+        return state.state.name == stateNames.WAITING_FOR_PLAYERS;
     }
 
     function sendChatMessage(playerIdx, message) {
