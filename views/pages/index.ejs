@@ -37,8 +37,7 @@
                     </div>
                     <div class="modal-body">
                         <p>What would you like to do?</p>
-                        <p><button class="btn btn-default" data-bind="enable: playerName, click: join" data-dismiss="modal">Join public game</button></p>
-                        <p><button class="btn btn-default" data-bind="enable: playerName, click: create" data-dismiss="modal">Create private game</button></p>
+                        <p><button class="btn btn-default" data-bind="enable: playerName, click: create" data-dismiss="modal">Create game</button></p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -99,57 +98,27 @@
         </div>
 
         <div class="row"><br/></div>
+        <!-- ko if: !loggedIn() -->
         <div class="row">
             <!-- Welcome screen -->
             <div class="col-sm-4">
                 <h3>Treason Coup</h3>
                 <p data-bind="text: version"></p>
                 <!-- ko if: !needName() -->
-                <form data-bind="submit: join">
+                <form data-bind="submit: enter">
                     <p><input class="name-input" type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
+                    <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Enter the arena</button></p>
                 </form>
-                <p><button class="btn btn-default" data-toggle="modal" data-target="#newGameModal">Play Coup</button></p>
                 <!-- /ko -->
                 <!-- ko if: needName() -->
                 <p>Please enter a name to be able to join <span data-bind="text: gameUrl()"></span></p>
                 <form data-bind="submit: join">
-                    <p><input type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
-                    <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join private game</button></p>
+                    <p><input class="name-input" type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
+                    <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join game</button></p>
                     <input type="hidden" data-bind="value: gameUrl()" name="privateGameName"/>
                 </form>
                 <!-- /ko -->
                 <p><a href="rules.html" target="blank">How to play</a></p>
-                <p><span data-bind="visible: activeUsers"><span data-bind="text: activeUsers"></span> players are online</span></p>
-
-                <div class="table-responsive">
-                    <table class="table table-hover table-condensed ">
-                        <thead>
-                        <tr>
-                            <th>Game</th>
-                            <th>Status</th>
-                            <th>Public</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr data-toggle="modal" data-target="#joinGameModal">
-                            <td>#101</td>
-                            <td>3 waiting</td>
-                            <td>yes</td>
-                        </tr>
-                        <tr>
-                            <td>#102</td>
-                            <td>1 waiting</td>
-                            <td>yes</td>
-                        </tr>
-                        <tr>
-                            <td>#102</td>
-                            <td>5 playing</td>
-                            <td>no</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-
                 <p><a href="https://twitter.com/intent/tweet?screen_name=chrsbrn" class="twitter-mention-button" data-related="chrsbrn">Tweet to @chrsbrn</a>
 <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
 <span class="feedback">to send feedback</span><p>
@@ -181,15 +150,67 @@
                     </table>
                 </div>
                 <!-- ko if: !needName() -->
-                <p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>
+                <!--<p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>-->
                 <!-- /ko -->
             </div>
         </div>
-
+        <!-- /ko -->
+        <!-- ko if: loggedIn() -->
         <div class="row">
+            <div class="col-sm-6">
+                <h3>Treason Coup</h3>
+                <p data-bind="text: version"></p>
 
+                <div class="well">
+                    <button class="btn btn-default" data-bind="click: join" data-dismiss="modal">Quick Play</button>
+                    <button class="btn btn-default" data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create Game</button>
+                    <button class="btn btn-default" data-bind="click: create" data-dismiss="modal">Create Private Game</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>Game</th>
+                            <th>Status</th>
+                            <th>Type</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr data-toggle="modal" data-target="#joinGameModal">
+                            <td><a href="#101" data-dismiss="modal">#101</a></td>
+                            <td>waiting 2/6</td>
+                            <td>inq+</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <h4><span data-bind="text: showingGlobalRank() ? 'Global ' : 'Personal '"></span>Rankings</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Wins</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- ko foreach: rankings() -->
+                        <tr data-bind="css: $data.isPlayer ? 'success' : ''">
+                            <td data-bind="text: $data.rank"></td>
+                            <td data-bind="text: $data.playerName"></td>
+                            <td data-bind="text: $data.wins - $data.winsAI"></td>
+                        </tr>
+                        <!-- /ko -->
+                        </tbody>
+                    </table>
+                </div>
+                <p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>
+            </div>
         </div>
-
         <div class="row-fluid well">
             <div class="col-xs-10">
                 <div class="global-chat">
@@ -225,6 +246,7 @@
                 <input id="lobbyChat" type="text" class="form-control" placeholder="Global chat message">
             </div>
         </div>
+        <!-- /ko -->
     </div>
 
     <div class="container" style="display: none" data-bind="visible: playing()">

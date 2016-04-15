@@ -25,7 +25,8 @@ vm = {
     rankings: ko.observable({}),
     rankButtonText: ko.observable('Show my rankings'),
     showingGlobalRank: ko.observable(true),
-    notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false))
+    notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false)),
+    loggedIn: ko.observable(false)
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -97,13 +98,11 @@ ko.bindingHandlers.tooltip = {
 var socket = io();
 socket.on('connect', function() {
     socket.on('handshake', function(data) {
+        //send all lobby data here
         vm.activeUsers(data.activeUsers);
         vm.playerId(data.playerId);
         localStorageSet('playerId', data.playerId);
-    });
-    socket.emit('registerplayer', {
-        playerName: vm.playerName(),
-        playerId: vm.playerId()
+        vm.loggedIn(true);
     });
 });
 socket.on('gameinprogress', function(data) {
@@ -116,6 +115,7 @@ socket.on('disconnect', function () {
     $('#privateGameCreatedModal').modal('hide');//close the modal in case it was open when we disconnected
     vm.state.state.name(null); // Opens the welcome screen.
     vm.needName(false);
+    vm.loggedIn(false);
 });
 socket.on('state', function (data) {
     ko.mapping.fromJS(data, vm.state);
@@ -190,6 +190,13 @@ function join(form, event, gameName) {
     socket.emit('join', {
         playerName: vm.playerName(),
         gameName: gameName
+    });
+}
+
+function enter(form, event) {
+    socket.emit('registerplayer', {
+        playerName: vm.playerName(),
+        playerId: vm.playerId()
     });
 }
 
