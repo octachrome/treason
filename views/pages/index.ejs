@@ -289,7 +289,9 @@
                     <div data-bind="visible: state.state.name() == 'waiting-for-players'">
                         <p>Waiting for players</p>
                         <p>
-                            <button class="btn btn-default" data-bind="event: {vclick: addAi}">Add AI</button>
+                            <button class="btn btn-default" data-bind="enable: canAddAi(), event: {vclick: addAi}">Add AI</button>
+                            <button class="btn btn-default" data-bind="enable: canRemoveAi(), event: {vclick: removeAi}">Remove AI</button>
+                            <br/>
                             <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'normal')}, visible: state.numPlayers() >= 2">Start normal game</button>
                             <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'inquisitors')}, visible: state.numPlayers() >= 2">Start inquisitor game</button>
                         </p>

@@ -105,11 +105,6 @@ socket.on('connect', function() {
         vm.loggedIn(true);
     });
 });
-socket.on('gameinprogress', function(data) {
-    vm.bannerMessage('The game: "' + data.gameName + '" is currently in progress.');
-    vm.state.state.name(null);
-    vm.needName(false);
-});
 socket.on('disconnect', function () {
     vm.bannerMessage('Disconnected');
     $('#privateGameCreatedModal').modal('hide');//close the modal in case it was open when we disconnected
@@ -239,8 +234,19 @@ function start(gameType) {
         gameType: gameType
     });
 }
+function canAddAi() {
+    return vm.state.players().length < 6;
+}
 function addAi() {
     command('add-ai');
+}
+function canRemoveAi() {
+    return vm.state.players().some(function (player) {
+        return player.ai();
+    });
+}
+function removeAi() {
+    command('remove-ai');
 }
 function weAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() == vm.state.playerIdx();
@@ -510,6 +516,9 @@ function labelClass(role, revealed) {
 function roleDescription(role) {
     if (role === 'ambassador') {
         return 'Draw two from the deck and optionally exchange your influences';
+    }
+    if (role === 'inquisitor') {
+        return 'Draw one from the deck OR look at one opponent\'s role and optionally swap it';
     }
     if (role === 'assassin') {
         return 'Pay $3 to reveal another player\'s influence; blocked by contessa';
