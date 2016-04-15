@@ -123,16 +123,21 @@ socket.on('state', function (data) {
 });
 socket.on('history', function (data) {
     var items;
-    if (data.continuation && vm.history().length) {
-        // Collect related history items together.
-        items = vm.history()[0];
-    } else {
+    // Collect related history items together (but don't bother searching too far back).
+    for (var i = 0; i < 10 && i < vm.history().length; i++) {
+        if (vm.history()[i]()[0].histGroup == data.histGroup) {
+            items = vm.history()[i];
+            break;
+        }
+    }
+    if (!items) {
         items = ko.observableArray();
         vm.history.unshift(items);
     }
     items.push({
         icon: data.type,
-        message: formatMessage(data.message)
+        message: formatMessage(data.message),
+        histGroup: data.histGroup
     });
 });
 socket.on('chat', function (data) {

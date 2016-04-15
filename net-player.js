@@ -39,11 +39,11 @@ function createNetPlayer(game, socket, playerName) {
         });
     }
 
-    function onHistoryEvent(message, type, continuation) {
+    function onHistoryEvent(message, type, histGroup) {
         socket.emit('history', {
             message: message,
             type: type,
-            continuation: continuation
+            histGroup: histGroup
         });
     }
 
