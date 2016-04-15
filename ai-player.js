@@ -50,7 +50,7 @@ function createAiPlayer(game, options) {
     };
 
     try {
-        var gameProxy = game.playerJoined(player, player.playerId);
+        var gameProxy = game.playerJoined(player);
     } catch(e) {
         handleError(e);
         return;

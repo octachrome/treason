@@ -73,7 +73,7 @@ module.exports = function createGame(options) {
     game._test_setDeck = _test_setDeck;
     game._test_resetAllows = resetAllows;
 
-    function playerJoined(player, playerId) {
+    function playerJoined(player) {
         var isObserver = false;
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
             isObserver = true;
@@ -103,7 +103,7 @@ module.exports = function createGame(options) {
                 }
             ],
             isObserver: isObserver,
-            playerId: playerId
+            ai: !!player.ai
         };
 
         if (isObserver) {
@@ -116,10 +116,6 @@ module.exports = function createGame(options) {
         state.players.push(playerState);
         players.push(player);
         state.numPlayers++;
-
-        if (state.numPlayers === MAX_PLAYERS) {
-            start();
-        }
 
         addHistory('player-joined', playerState.name + ' joined the game' +(isObserver ? ' as an observer': ''));
         emitState();
@@ -168,6 +164,7 @@ module.exports = function createGame(options) {
         if (!player) {
             throw new GameException('Unknown player disconnected');
         }
+        var playerId = players[playerIdx].playerId;
         var historySuffix = [];
         if (state.state.name == stateNames.WAITING_FOR_PLAYERS || player.isObserver) {
             state.players.splice(playerIdx, 1);
@@ -190,13 +187,13 @@ module.exports = function createGame(options) {
                     }
                 }
                 //If the player was eliminated already or an observer, we do not record a disconnect
-                if (player.playerId && player.influenceCount > 0) {
+                if (playerId && player.influenceCount > 0) {
                     //Record the stats on the game
-                    gameStats.playerDisconnect.unshift(player.playerId);
+                    gameStats.playerDisconnect.unshift(playerId);
                     //Record the stats individually, in case the game does not finish
                     //Should not be recorded if the player is the last human player
                     if (!onlyAiLeft()) {
-                        dataAccess.recordPlayerDisconnect(player.playerId);
+                        dataAccess.recordPlayerDisconnect(playerId);
                     }
                 }
                 player.influenceCount = 0;
@@ -223,6 +220,15 @@ module.exports = function createGame(options) {
         emitState();
     }
 
+    function removeAiPlayer() {
+        for (var i = players.length - 1; i > 0; i--) {
+            if (players[i] && players[i].ai) {
+                playerLeft(i);
+                return;
+            }
+        }
+    }
+
     function onlyAiLeft() {
         for (var i = 0; i < players.length; i++) {
             if (players[i] && !players[i].ai) {
@@ -240,7 +246,7 @@ module.exports = function createGame(options) {
     }
 
     function afterPlayerDeath(playerIdx) {
-        gameStats.playerRank.unshift(state.players[playerIdx].playerId);
+        gameStats.playerRank.unshift(players[playerIdx].playerId);
         addHistory('player-died', '{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
@@ -262,7 +268,7 @@ module.exports = function createGame(options) {
                 name: stateNames.GAME_WON,
                 playerIdx: winnerIdx
             });
-            var playerId = state.players[winnerIdx].playerId;
+            var playerId = players[winnerIdx].playerId;
             gameStats.playerRank.unshift(playerId);
             dataAccess.recordGameData(gameStats);
             game.emit('end');
@@ -347,7 +353,7 @@ module.exports = function createGame(options) {
                     }
 
                     gameStats.players++;
-                    if (player.playerId && player.playerId !== 'ai') {
+                    if (!player.ai) {
                         gameStats.humanPlayers++;
                     }
                 }
@@ -390,6 +396,12 @@ module.exports = function createGame(options) {
                 throw new GameException('Incorrect state');
             }
             createAiPlayer(game, options);
+
+        } else if (command.command == 'remove-ai') {
+            if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
+                throw new GameException('Incorrect state');
+            }
+            removeAiPlayer();
 
         } else if (command.command == 'play-action') {
             if (state.state.name != stateNames.START_OF_TURN) {

@@ -232,8 +232,19 @@ function start(gameType) {
         gameType: gameType
     });
 }
+function canAddAi() {
+    return vm.state.players().length < 6;
+}
 function addAi() {
     command('add-ai');
+}
+function canRemoveAi() {
+    return vm.state.players().some(function (player) {
+        return player.ai();
+    });
+}
+function removeAi() {
+    command('remove-ai');
 }
 function weAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() == vm.state.playerIdx();

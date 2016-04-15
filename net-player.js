@@ -12,18 +12,17 @@
  */
 'use strict';
 
-var playerId = 1;
-
 function createNetPlayer(game, socket, playerName) {
     var player = {
-        name: playerName || ('Player ' + playerId++),
+        name: playerName || 'Anonymous',
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
-        onChatMessage: onChatMessage
+        onChatMessage: onChatMessage,
+        playerId: socket.playerId
     };
 
     try {
-        var gameProxy = game.playerJoined(player, socket.playerId);
+        var gameProxy = game.playerJoined(player);
     } catch(e) {
         handleError(e);
         return;
