@@ -328,8 +328,9 @@ module.exports = function createGame(options) {
             throw new GameException('Incorrect state');
         }
         if (state.numPlayers >= MIN_PLAYERS) {
+            gameStats.gameType = gameType || 'original';
             state.roles = ['duke', 'captain', 'assassin', 'contessa'];
-            if (gameType === 'inquisitors') {
+            if (gameStats.gameType === 'inquisitors') {
                 state.roles.push('inquisitor');
             }
             else {
@@ -983,7 +984,7 @@ module.exports = function createGame(options) {
         return shuffled;
     }
 
-    function buildDeck(gameType) {
+    function buildDeck() {
         var deck = [];
         for (var i = 0; i < 3; i++) {
             deck = deck.concat(state.roles);
