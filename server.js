@@ -136,7 +136,7 @@ io.on('connection', function (socket) {
         for (var gameName in games) {
             if (games.hasOwnProperty(gameName)) {
                 game = games[gameName];
-                if (game && game.canJoin()) {
+                if (game && game.canJoin() && !game.password()) {
                     createNetPlayer(game, socket, playerName);
                     break;
                 }
@@ -254,7 +254,8 @@ function filterGames() {
                 gamesList.push({
                     gameName: gameName,
                     status: game.currentState(),
-                    type: game.gameType()
+                    type: game.gameType(),
+                    passwordRequired: game.password() ? 'yes' : 'no'
                 });
             }
         }
