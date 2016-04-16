@@ -119,14 +119,14 @@ io.on('connection', function (socket) {
     function joinGame(gameName, playerName, password) {
         var game = games[gameName];
 
-        if (game && game.canJoin()) {
+        if (game) {
             if (game.password() === password) {
                 createNetPlayer(game, socket, playerName);
             } else {
                 socket.emit('gamerequirespassword', 'Failed to join game, incorrect password');
             }
         } else {
-            socket.emit('gamejoinfailure', 'Failed to join game, game not found');
+            socket.emit('error', 'Failed to join game, game not found');
         }
     }
 
@@ -250,7 +250,7 @@ function filterGames() {
     for (var gameName in games) {
         if (games.hasOwnProperty(gameName)) {
             var game = games[gameName];
-            if (game && game.canJoin()) {
+            if (game) {
                 gamesList.push({
                     gameName: gameName,
                     status: game.currentState(),
