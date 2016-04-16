@@ -144,8 +144,7 @@ io.on('connection', function (socket) {
         }
 
         if (!game) {
-            //todo create the game and join it
-            socket.emit('gamejoinfailure', 'Failed to find a game to quick join')
+            createNewGame(socket);
         }
     }
 
@@ -153,31 +152,7 @@ io.on('connection', function (socket) {
         if (isInvalidPlayerName(data.playerName)) {
             return;
         }
-
-        var gameName = '#' + gameId++;
-        var password = data.password || '';
-
-        var game = createGame({
-            debug: argv.debug,
-            logger: winston,
-            moveDelay: 1000,
-            gameName: gameName,
-            created: new Date(),
-            password: password
-        });
-
-        games[gameName] = game;
-
-        game.once('end', function () {
-            delete games[gameName];
-        });
-
-        socket.emit('created', {
-            gameName: gameName,
-            password: password
-        });
-
-        broadcastGames(socket);
+        createNewGame(socket, data.password);
     });
 
     socket.on('showrankings', function () {
@@ -199,6 +174,32 @@ io.on('connection', function (socket) {
         socket = null;
     });
 });
+
+function createNewGame(socket, password) {
+    var gameName = '#' + gameId++;
+
+    var game = createGame({
+        debug: argv.debug,
+        logger: winston,
+        moveDelay: 1000,
+        gameName: gameName,
+        created: new Date(),
+        password: password || ''
+    });
+
+    games[gameName] = game;
+
+    game.once('end', function () {
+        delete games[gameName];
+    });
+
+    socket.emit('created', {
+        gameName: gameName,
+        password: password
+    });
+
+    broadcastGames(socket);
+}
 
 function isInvalidPlayerName(playerName) {
     return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/ || !playerName.trim());
