@@ -182,6 +182,10 @@ socket.on('game-error', function (data) {
 socket.on('rankings', function (data) {
     vm.rankings(data);
 });
+socket.on('gamenotfound', function (data) {
+    alert(data);
+    location = location.href.split('#')[0];
+});
 
 function playAgain() {
     // If we were playing a private game, rejoin the same one. Otherwise, join a new public game.

@@ -126,7 +126,7 @@ io.on('connection', function (socket) {
                 socket.emit('gamerequirespassword', 'Failed to join game, incorrect password');
             }
         } else {
-            socket.emit('error', 'Failed to join game, game not found');
+            socket.emit('gamenotfound', 'Failed to join game, game not found');
         }
     }
 
