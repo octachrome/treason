@@ -12,8 +12,6 @@
  */
 'use strict';
 
-var fs = require('fs');
-var rand = require('random-seed')();
 var dataAccess = require('./dataaccess');
 
 var argv = require('optimist')
@@ -54,8 +52,9 @@ var io = require('socket.io')(server);
 var createGame = require('./game');
 var createNetPlayer = require('./net-player');
 
-var publicGames = [];
-var privateGames = {};
+var gameId = 1;
+var games = [];
+var players = {};
 var sockets = {};
 var TIMEOUT = 30 * 60 * 1000;
 
@@ -80,9 +79,15 @@ io.on('connection', function (socket) {
         dataAccess.register(data.playerId, data.playerName).then(function (playerId) {
             socket.emit('handshake', {
                 activeUsers: activeUsers,
-                playerId: playerId
+                playerId: playerId,
+                games: filterGames()
             });
+
             socket.playerId = playerId;
+
+            players[playerId] = {
+                playerName: data.playerName
+            };
 
             //Now that we know who you are, we can highlight you in the rankings
             dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
@@ -94,72 +99,69 @@ io.on('connection', function (socket) {
     socket.on('join', function (data) {
         var playerName = data.playerName;
         var gameName = data.gameName;
+        var password = data.gamePassword;
 
         if (isInvalidPlayerName(playerName)) {
             return;
         }
+
         if (gameName) {
-            joinPrivateGame(playerName, gameName);
+            joinGame(gameName, playerName, password);
         } else {
-            joinOrCreatePublicGame(playerName);
+            quickJoin(playerName);
         }
     });
 
-    function joinPrivateGame(playerName, gameName) {
-        var game = privateGames[gameName];
-        if (!game) {
-            game = createPrivateGame(gameName);
+    function joinGame(gameName, playerName, password) {
+        var game = games[gameName];
+
+        if (game.password === password) {
+            createNetPlayer(game, socket, playerName);
+        } else {
+            socket.emit('gamejoinfailure', 'Failed to join game, incorrect password');
         }
-        createNetPlayer(game, socket, playerName);
     }
 
-    function joinOrCreatePublicGame(playerName) {
-        var game = null;
-        while (!game) {
-            if (publicGames.length) {
-                game = publicGames.pop();
-                if (!game.canJoin()) {
-                    game = null;
+    function quickJoin(playerName) {
+        //discover a game to join
+        var game;
+        for (var gameName in games) {
+            if (games.hasOwnProperty(gameName)) {
+                game = games[gameName];
+                if (game && game.canJoin()) {
+                    createNetPlayer(game, socket, playerName);
+                    break;
                 }
-            } else {
-                game = createGame({
-                    debug: argv.debug,
-                    logger: winston,
-                    moveDelay: 3000, // For AI players
-                    moveDelaySpread: 700
-                });
             }
         }
-        createNetPlayer(game, socket, playerName);
-        if (game.canJoin()) {
-            // The game is not yet full; still open for more players.
-            publicGames.push(game);
+
+        if (!game) {
+            //todo create the game and join it
+            socket.emit('gamejoinfailure', 'Failed to find a game to quick join')
         }
     }
 
-    function createPrivateGame(gameName) {
+    socket.on('create', function(data) {
+        if (isInvalidPlayerName(data.playerName)) {
+            return;
+        }
+
         var game = createGame({
             debug: argv.debug,
             logger: winston,
             moveDelay: 1000,
-            gameName: gameName,
+            gameName: gameId++,
             created: new Date()
         });
-        privateGames[gameName] = game;
-        game.once('end', function () {
-            delete privateGames[gameName];
-        });
-        return game;
-    }
 
-    socket.on('create', function(data) {
-        var gameName = randomGameName(data.gameName);
-        if (isInvalidPlayerName(data.playerName)) {
-            return;
-        }
-        var game = createPrivateGame(gameName);
+        games[game.gameName] = game;
+
+        game.once('end', function () {
+            delete games[game.gameName];
+        });
+
         socket.emit('created', {
-            gameName: gameName
+            gameName: game.gameName
         });
     });
 
@@ -182,23 +184,10 @@ io.on('connection', function (socket) {
     });
 });
 
-var adjectives = fs.readFileSync(__dirname + '/adjectives.txt', 'utf8').split(/\r?\n/);
-
 function isInvalidPlayerName(playerName) {
     return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/ || !playerName.trim());
 }
 
-function randomGameName(playerName) {
-    var i = 1;
-    while (true) {
-        var adjective = adjectives[rand(adjectives.length)];
-        var gameName =  playerName + "'s " + adjective + " game";
-        if (i > 100) {
-            gameName += " (" + i + ")";
-        }
-        if (!privateGames[gameName]) {
-            return gameName;
-        }
-        i++;
-    }
+function filterGames() {
+    return games;
 }

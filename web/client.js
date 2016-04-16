@@ -97,6 +97,12 @@ ko.bindingHandlers.tooltip = {
 };
 var socket = io();
 socket.on('connect', function() {
+    if (vm.playerName() && vm.playerId()) {
+        socket.emit('registerplayer', {
+            playerName: vm.playerName(),
+            playerId: vm.playerId()
+        });
+    }
     socket.on('handshake', function(data) {
         //send all lobby data here
         vm.activeUsers(data.activeUsers);
