@@ -508,16 +508,16 @@ function labelClass(role, revealed) {
 }
 function roleDescription(role) {
     if (role === 'ambassador') {
-        return 'Draw two from the deck and optionally exchange your influences';
+        return 'Draw two from the deck and exchange your influences';
     }
     if (role === 'inquisitor') {
-        return 'Draw one from the deck OR look at one opponent\'s role and optionally swap it';
+        return 'Draw one from the deck and exchange OR look at one opponent\'s role and optionally force an exchange';
     }
     if (role === 'assassin') {
         return 'Pay $3 to reveal another player\'s influence; blocked by contessa';
     }
     if (role === 'captain') {
-        return 'Steal $2 from another player; blocked by captain and ambassador';
+        return 'Steal $2 from another player; blocked by captain and ' + getGameRole(['ambassador', 'inquisitor']);
     }
     if (role === 'contessa') {
         return 'Block assassination';
