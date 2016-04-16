@@ -74,7 +74,7 @@
                             <tr data-bind="css: $data.isPlayer ? 'success' : ''">
                                 <td data-bind="text: $data.rank"></td>
                                 <td data-bind="text: $data.playerName"></td>
-                                <td data-bind="text: $data.wins - $data.winsAI"></td>
+                                <td data-bind="text: ($data.wins - $data.winsAI) + ' / ' + $data.games"></td>
                             </tr>
                         <!-- /ko -->
                         </tbody>
