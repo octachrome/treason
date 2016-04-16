@@ -53,7 +53,7 @@ var createGame = require('./game');
 var createNetPlayer = require('./net-player');
 
 var gameId = 1;
-var games = [];
+var games = {};
 var players = {};
 var sockets = {};
 var TIMEOUT = 30 * 60 * 1000;
@@ -99,7 +99,7 @@ io.on('connection', function (socket) {
     socket.on('join', function (data) {
         var playerName = data.playerName;
         var gameName = data.gameName;
-        var password = data.gamePassword;
+        var password = data.password;
 
         if (isInvalidPlayerName(playerName)) {
             return;
@@ -115,7 +115,7 @@ io.on('connection', function (socket) {
     function joinGame(gameName, playerName, password) {
         var game = games[gameName];
 
-        if (game.password === password) {
+        if (game && game.password() === password && game.canJoin()) {
             createNetPlayer(game, socket, playerName);
         } else {
             socket.emit('gamejoinfailure', 'Failed to join game, incorrect password');
@@ -146,22 +146,37 @@ io.on('connection', function (socket) {
             return;
         }
 
+        var gameName = '#' + gameId++;
+        var password = data.password || '';
+
         var game = createGame({
             debug: argv.debug,
             logger: winston,
             moveDelay: 1000,
-            gameName: gameId++,
-            created: new Date()
+            gameName: gameName,
+            created: new Date(),
+            password: password
         });
 
-        games[game.gameName] = game;
+        games[gameName] = game;
 
         game.once('end', function () {
-            delete games[game.gameName];
+            delete games[gameName];
         });
 
         socket.emit('created', {
-            gameName: game.gameName
+            gameName: gameName,
+            password: password
+        });
+
+        var gamesList = filterGames();
+
+        socket.emit('updategames', {
+            games: gamesList
+        });
+
+        socket.broadcast.emit('updategames', {
+            games: gamesList
         });
     });
 
@@ -189,5 +204,20 @@ function isInvalidPlayerName(playerName) {
 }
 
 function filterGames() {
-    return games;
+    var gamesList = [];
+
+    for (var gameName in games) {
+        if (games.hasOwnProperty(gameName)) {
+            var game = games[gameName];
+            if (game && game.canJoin()) {
+                gamesList.push({
+                    gameName: gameName,
+                    status: game.currentState(),
+                    type: game.gameType()
+                });
+            }
+        }
+    }
+
+    return gamesList;
 }

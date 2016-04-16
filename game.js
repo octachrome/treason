@@ -48,7 +48,8 @@ module.exports = function createGame(options) {
         roles: [],
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
-        }
+        },
+        password: options.password
     };
 
     var rand = randomGen.create(options.randomSeed);
@@ -66,6 +67,9 @@ module.exports = function createGame(options) {
 
     var game = new EventEmitter();
     game.canJoin = canJoin;
+    game.password = password;
+    game.currentState = currentState;
+    game.gameType = gameType;
     game.playerJoined = playerJoined;
     game._test_setTurnState = _test_setTurnState;
     game._test_setInfluence = _test_setInfluence;
@@ -1036,6 +1040,18 @@ module.exports = function createGame(options) {
     // If it returns false, you can still join as an observer.
     function canJoin() {
         return state.state.name == stateNames.WAITING_FOR_PLAYERS && state.players.length < MAX_PLAYERS;
+    }
+
+    function password() {
+        return state.password;
+    }
+
+    function currentState() {
+        return state.state.name;
+    }
+
+    function gameType() {
+        return gameStats.gameType;
     }
 
     function sendChatMessage(playerIdx, message) {

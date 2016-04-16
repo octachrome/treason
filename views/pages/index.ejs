@@ -170,18 +170,20 @@
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
-                        <tr>
-                            <th>Game</th>
-                            <th>Status</th>
-                            <th>Type</th>
-                        </tr>
+                            <tr>
+                                <th>Game</th>
+                                <th>Status</th>
+                                <th>Type</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        <tr data-toggle="modal" data-target="#joinGameModal">
-                            <td><a href="#101" data-dismiss="modal">#101</a></td>
-                            <td>waiting 2/6</td>
-                            <td>inq+</td>
-                        </tr>
+                            <!-- ko foreach: games() -->
+                            <tr data-toggle="modal" data-target="#joinGameModal">
+                                <td><a href="#101" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a></td>
+                                <td data-bind="text: $data.status"></td>
+                                <td data-bind="text: $data.type"></td>
+                            </tr>
+                            <!-- /ko -->
                         </tbody>
                     </table>
                 </div>

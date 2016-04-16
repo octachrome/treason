@@ -26,7 +26,8 @@ vm = {
     rankButtonText: ko.observable('Show my rankings'),
     showingGlobalRank: ko.observable(true),
     notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false)),
-    loggedIn: ko.observable(false)
+    loggedIn: ko.observable(false),
+    games: ko.observableArray([])
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -111,12 +112,16 @@ socket.on('connect', function() {
         vm.loggedIn(true);
     });
 });
+socket.on('updategames', function(data) {
+    vm.games(data.games);
+});
 socket.on('disconnect', function () {
     vm.bannerMessage('Disconnected');
     $('#privateGameCreatedModal').modal('hide');//close the modal in case it was open when we disconnected
     vm.state.state.name(null); // Opens the welcome screen.
     vm.needName(false);
     vm.loggedIn(false);
+    location = location.href.split('#')[0]
 });
 socket.on('state', function (data) {
     ko.mapping.fromJS(data, vm.state);
@@ -155,10 +160,16 @@ socket.on('chat', function (data) {
     $('.chat').scrollTop(10000);
 });
 socket.on('created', function(data) {
-    socket.emit('disconnect');
-    location.hash = data.gameName;
-    //if you created a private game, we show you the welcome modal
-    $('#privateGameCreatedModal').modal({})
+    //todo only disconnect them from their current game
+    //socket.emit('disconnect');
+    if (data.gameName) {
+        location.hash = data.gameName;
+
+        if (data.password) {
+            //if you created a private game, we show you the welcome modal
+            $('#privateGameCreatedModal').modal({})
+        }
+    }
 });
 socket.on('error', function (data) {
     alert(data);
@@ -190,7 +201,8 @@ function join(form, event, gameName) {
     $('.chat').html('');
     socket.emit('join', {
         playerName: vm.playerName(),
-        gameName: gameName
+        gameName: gameName,
+        password: ''
     });
 }
 
