@@ -27,7 +27,9 @@ vm = {
     showingGlobalRank: ko.observable(true),
     notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false)),
     loggedIn: ko.observable(false),
-    games: ko.observableArray([])
+    games: ko.observableArray([]),
+    players: ko.observableArray([]),
+    password: ko.observable('')
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -68,7 +70,7 @@ if (window.location.href.indexOf('amazonaws') >= 0) {
 
 $(window).on('hashchange load', function() {
     if (location.hash) {
-        vm.gameUrl(decodeURIComponent(location.hash.substring(1)));
+        vm.gameUrl(location.hash);
         if (vm.playerName()) {
             join(null, null, vm.gameUrl());
         } else {
@@ -105,15 +107,21 @@ socket.on('connect', function() {
         });
     }
     socket.on('handshake', function(data) {
-        //send all lobby data here
         vm.activeUsers(data.activeUsers);
         vm.playerId(data.playerId);
         localStorageSet('playerId', data.playerId);
         vm.loggedIn(true);
     });
+    socket.on('updategames', function(data) {
+        vm.games(data.games);
+    });
+    socket.on('updateplayers', function(data) {
+        vm.players(data.players);
+    });
 });
-socket.on('updategames', function(data) {
-    vm.games(data.games);
+
+socket.on('gamerequirespassword', function() {
+    $('#passwordRequiredModal').modal('show');
 });
 socket.on('disconnect', function () {
     vm.bannerMessage('Disconnected');
@@ -160,8 +168,6 @@ socket.on('chat', function (data) {
     $('.chat').scrollTop(10000);
 });
 socket.on('created', function(data) {
-    //todo only disconnect them from their current game
-    //socket.emit('disconnect');
     if (data.gameName) {
         location.hash = data.gameName;
 
@@ -202,7 +208,7 @@ function join(form, event, gameName) {
     socket.emit('join', {
         playerName: vm.playerName(),
         gameName: gameName,
-        password: ''
+        password: vm.password()
     });
 }
 
@@ -220,7 +226,8 @@ var create = _.debounce(function (form, event) {
 
     socket.emit('create', {
         gameName: vm.playerName(),
-        playerName: vm.playerName()
+        playerName: vm.playerName(),
+        password: vm.password()
     });
 }, 500, true);
 

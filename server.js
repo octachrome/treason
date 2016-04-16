@@ -65,6 +65,7 @@ io.on('connection', function (socket) {
     for (var id in sockets) {
         if (timestamp - sockets[id] > TIMEOUT) {
             delete sockets[id];
+            delete players[id];
         } else {
             activeUsers++;
         }
@@ -88,6 +89,8 @@ io.on('connection', function (socket) {
             players[playerId] = {
                 playerName: data.playerName
             };
+
+            broadcastPlayers(socket);
 
             //Now that we know who you are, we can highlight you in the rankings
             dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
@@ -115,10 +118,14 @@ io.on('connection', function (socket) {
     function joinGame(gameName, playerName, password) {
         var game = games[gameName];
 
-        if (game && game.password() === password && game.canJoin()) {
-            createNetPlayer(game, socket, playerName);
+        if (game && game.canJoin()) {
+            if (game.password() === password) {
+                createNetPlayer(game, socket, playerName);
+            } else {
+                socket.emit('gamerequirespassword', 'Failed to join game, incorrect password');
+            }
         } else {
-            socket.emit('gamejoinfailure', 'Failed to join game, incorrect password');
+            socket.emit('gamejoinfailure', 'Failed to join game, game not found');
         }
     }
 
@@ -169,15 +176,7 @@ io.on('connection', function (socket) {
             password: password
         });
 
-        var gamesList = filterGames();
-
-        socket.emit('updategames', {
-            games: gamesList
-        });
-
-        socket.broadcast.emit('updategames', {
-            games: gamesList
-        });
+        broadcastGames(socket);
     });
 
     socket.on('showrankings', function () {
@@ -194,6 +193,7 @@ io.on('connection', function (socket) {
 
     socket.on('disconnect', function () {
         delete sockets[socket.id];
+        delete players[socket.id];
         socket.removeAllListeners();
         socket = null;
     });
@@ -201,6 +201,45 @@ io.on('connection', function (socket) {
 
 function isInvalidPlayerName(playerName) {
     return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/ || !playerName.trim());
+}
+
+function broadcastGames(socket) {
+    var gamesList = filterGames();
+
+    socket.emit('updategames', {
+        games: gamesList
+    });
+
+    socket.broadcast.emit('updategames', {
+        games: gamesList
+    });
+}
+
+function broadcastPlayers(socket) {
+    var playerList = filterPlayers();
+
+    socket.emit('updateplayers', {
+        players: playerList
+    });
+
+    socket.broadcast.emit('updateplayers', {
+        players: playerList
+    });
+}
+
+function filterPlayers() {
+    var playerList = [];
+
+    for (var playerId in players) {
+        if (players.hasOwnProperty(playerId)) {
+            var player = players[playerId];
+            playerList.push({
+                playerName: player.playerName
+            });
+        }
+    }
+
+    return playerList;
 }
 
 function filterGames() {

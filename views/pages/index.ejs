@@ -33,11 +33,32 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="newGameModalTitle">Welcome to Coup</h4>
+                        <h4 class="modal-title" id="newGameModalTitle">Create New Game</h4>
                     </div>
                     <div class="modal-body">
-                        <p>What would you like to do?</p>
-                        <p><button class="btn btn-default" data-bind="enable: playerName, click: create" data-dismiss="modal">Create game</button></p>
+                        <p><input type="text" placeholder="No password" data-bind="textInput: password"/></p>
+                        <p><button class="btn btn-default" data-bind="click: create" data-dismiss="modal">Create game</button></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="passwordRequiredModal" tabindex="-1" role="dialog" aria-labelledby="passwordRequiredLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="passwordRequiredTitle">Create New Game</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form data-bind="submit: join">
+                            <p><input type="text" placeholder="Type password here" data-bind="textInput: password"/></p>
+                            <p><button class="btn btn-default" type="submit" data-bind="enable: password">Join game</button></p>
+                            <input type="hidden" data-bind="value: gameUrl()" name="privateGameName"/>
+                        </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -58,32 +79,20 @@
                         <div class="table-responsive">
                             <table class="table">
                                 <thead>
-                                <tr>
-                                    <th>Player</th>
-                                    <th>Human</th>
-                                    <th>Rank</th>
-                                    <th>Disconnects</th>
-                                </tr>
+                                    <tr>
+                                        <th>Player</th>
+                                        <!--<th>Human</th>-->
+                                        <!--<th>Rank</th>-->
+                                        <!--<th>Disconnects</th>-->
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                <tr>
-                                    <td>Steve</td>
-                                    <td>yes</td>
-                                    <td>113</td>
-                                    <td>0</td>
-                                </tr>
-                                <tr>
-                                    <td>Dave</td>
-                                    <td>yes</td>
-                                    <td>256</td>
-                                    <td>2</td>
-                                </tr>
-                                <tr>
-                                    <td>Brutus</td>
-                                    <td>no</td>
-                                    <td>n/a</td>
-                                    <td>n/a</td>
-                                </tr>
+                                    <tr>
+                                        <td>Steve</td>
+                                        <!--<td>yes</td>
+                                        <td>113</td>
+                                        <td>0</td>-->
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -164,7 +173,6 @@
                 <div class="well">
                     <button class="btn btn-default" data-bind="click: join" data-dismiss="modal">Quick Play</button>
                     <button class="btn btn-default" data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create Game</button>
-                    <button class="btn btn-default" data-bind="click: create" data-dismiss="modal">Create Private Game</button>
                 </div>
 
                 <div class="table-responsive">
@@ -179,7 +187,7 @@
                         <tbody>
                             <!-- ko foreach: games() -->
                             <tr data-toggle="modal" data-target="#joinGameModal">
-                                <td><a href="#101" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a></td>
+                                <td><a href="" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a></td>
                                 <td data-bind="text: $data.status"></td>
                                 <td data-bind="text: $data.type"></td>
                             </tr>
@@ -225,20 +233,16 @@
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
-                        <tr>
-                            <th>Players Online</th>
-                        </tr>
+                            <tr>
+                                <th>Players Online: <span data-bind="text: activeUsers"></span></th>
+                            </tr>
                         </thead>
                         <tbody>
-                        <tr>
-                            <td>Dave</td>
-                        </tr>
-                        <tr>
-                            <td>Steve</td>
-                        </tr>
-                        <tr>
-                            <td>Willard</td>
-                        </tr>
+                            <!-- ko foreach: players() -->
+                            <tr>
+                                <td data-bind="text: $data.playerName"></td>
+                            </tr>
+                            <!-- /ko -->
                         </tbody>
                     </table>
                 </div>
