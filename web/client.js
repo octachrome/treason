@@ -22,7 +22,7 @@ vm = {
     history: ko.observableArray(),
     gameUrl: ko.observable(''),
     needName: ko.observable(false),
-    rankings: ko.observable({}),
+    rankings: ko.observableArray(),
     rankButtonText: ko.observable('Show my rankings'),
     showingGlobalRank: ko.observable(true),
     notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false))
