@@ -111,6 +111,8 @@ socket.on('connect', function() {
         vm.playerId(data.playerId);
         localStorageSet('playerId', data.playerId);
         vm.loggedIn(true);
+        vm.games(data.games);
+        vm.players(data.players);
     });
     socket.on('updategames', function(data) {
         vm.games(data.games);

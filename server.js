@@ -78,17 +78,18 @@ io.on('connection', function (socket) {
 
     socket.on('registerplayer', function (data) {
         dataAccess.register(data.playerId, data.playerName).then(function (playerId) {
-            socket.emit('handshake', {
-                activeUsers: activeUsers,
-                playerId: playerId,
-                games: filterGames()
-            });
-
             socket.playerId = playerId;
 
             players[playerId] = {
                 playerName: data.playerName
             };
+
+            socket.emit('handshake', {
+                activeUsers: activeUsers,
+                playerId: playerId,
+                games: filterGames(),
+                players: filterPlayers()
+            });
 
             broadcastPlayers(socket);
 
