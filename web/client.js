@@ -127,7 +127,6 @@ socket.on('gamerequirespassword', function() {
 });
 socket.on('disconnect', function () {
     vm.bannerMessage('Disconnected');
-    $('#privateGameCreatedModal').modal('hide');//close the modal in case it was open when we disconnected
     vm.state.state.name(null); // Opens the welcome screen.
     vm.needName(false);
     vm.loggedIn(false);
@@ -172,11 +171,6 @@ socket.on('chat', function (data) {
 socket.on('created', function(data) {
     if (data.gameName) {
         location.hash = data.gameName;
-
-        if (data.password) {
-            //if you created a private game, we show you the welcome modal
-            $('#privateGameCreatedModal').modal({})
-        }
     }
 });
 socket.on('error', function (data) {
@@ -196,10 +190,6 @@ function playAgain() {
 function join(form, event, gameName) {
     if (isInvalidPlayerName()) {
         return;
-    }
-    //This seems clunky
-    if (form && form.privateGameName && form.privateGameName.value) {
-        gameName = form.privateGameName.value;
     }
     if (gameName) {
         //Firefox encodes URLs copied from the address bar.
@@ -611,12 +601,6 @@ function showChat() {
 }
 function playing() {
     return vm.state && vm.state.state && vm.state.state.name() != null;
-}
-function privateGame() {
-    return playing() && vm.state.gameName && vm.state.gameName();
-}
-function calculatedGameUrl() {
-    return window.location.protocol + '//' + window.location.host + '/#' + vm.state.gameName();
 }
 function localStorageGet(key) {
     return window.localStorage ? window.localStorage.getItem(key) : null;
