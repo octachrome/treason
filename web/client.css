@@ -81,6 +81,12 @@ div.global-chat {
     margin-bottom: 10px;
     word-wrap: break-word;
 }
+div.global-chat-users {
+    height: 300px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+}
 .label-revealed {
     background-color: #aaa;
 }
