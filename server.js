@@ -170,9 +170,17 @@ io.on('connection', function (socket) {
     });
 
     socket.on('sendglobalchatmessage', function (data) {
+        if (data.length > 300) {
+            data = data.slice(0, 300) + '...';
+        }
+
         var now = new Date();
-        var globalMessage =  '[' + now.getHours() + ':' + now.getMinutes() + '] ' + players[socket.playerId].playerName + ': ' + data;
-        var localMessage = '[' + now.getHours() + ':' + now.getMinutes() + '] You: ' + data;
+        var timeStamp = '[' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2) + '] ';
+        var playerName = players[socket.playerId].playerName;
+
+        var globalMessage =  timeStamp + playerName + ': ' + data;
+        var localMessage = timeStamp + ' You: ' + data;
+
         socket.emit('globalchatmessage', localMessage);
         socket.broadcast.emit('globalchatmessage', globalMessage);
     });
