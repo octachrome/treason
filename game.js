@@ -70,6 +70,7 @@ module.exports = function createGame(options) {
     game.password = password;
     game.currentState = currentState;
     game.gameType = gameType;
+    game.playersInGame = playersInGame;
     game.playerJoined = playerJoined;
     game._test_setTurnState = _test_setTurnState;
     game._test_setInfluence = _test_setInfluence;
@@ -1052,6 +1053,10 @@ module.exports = function createGame(options) {
 
     function gameType() {
         return gameStats.gameType;
+    }
+
+    function playersInGame() {
+        return state.players;
     }
 
     function sendChatMessage(playerIdx, message) {

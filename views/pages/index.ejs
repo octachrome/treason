@@ -70,34 +70,34 @@
         <div class="modal fade" id="joinGameModal" tabindex="-1" role="dialog" aria-labelledby="joinGameLabel">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
-                    <div class="modal-header">
+                    <div class="modal-header" data-bind="with: gameInfo">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="joinGameModalTitle">Game #101</h4>
+                        <h4 class="modal-title" id="joinGameModalTitle" data-bind="text: 'Game ' + gameName"></h4>
                     </div>
                     <div class="modal-body">
-                        <p>Game is currently waiting for players.</p>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Player</th>
-                                        <!--<th>Human</th>-->
-                                        <!--<th>Rank</th>-->
-                                        <!--<th>Disconnects</th>-->
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Steve</td>
-                                        <!--<td>yes</td>
-                                        <td>113</td>
-                                        <td>0</td>-->
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <div data-bind="with: gameInfo">
+                            <p>State: <span data-bind="text: status"></span></p>
+                            <p>Mode: <span data-bind="text: type"></span></p>
 
-                        <p><button class="btn btn-default btn-block" data-bind="enable: playerName, click: join" data-dismiss="modal">Join game</button></p>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Player</th>
+                                            <th>Human</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-bind="foreach: players">
+                                        <tr>
+                                            <td data-bind="text: playerName"></td>
+                                            <td data-bind="text: ai == true ? 'no' : 'yes'"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p><button class="btn btn-default btn-block" data-bind="click: join.bind(null, null, null, gameName)" data-dismiss="modal">Join game</button></p>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -187,8 +187,8 @@
                         </thead>
                         <tbody>
                             <!-- ko foreach: games() -->
-                            <tr data-toggle="modal" data-target="#joinGameModal">
-                                <td><a href="" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a></td>
+                            <tr data-toggle="modal" data-target="#joinGameModal" data-bind="attr: {'data-game-name': $data.gameName}">
+                                <td data-bind="text: $data.gameName"><!--<a href="" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a>--></td>
                                 <td data-bind="text: $data.status"></td>
                                 <td data-bind="text: $data.type"></td>
                                 <td data-bind="text: $data.passwordRequired"></td>

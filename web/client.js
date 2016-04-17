@@ -29,7 +29,8 @@ vm = {
     loggedIn: ko.observable(false),
     games: ko.observableArray([]),
     players: ko.observableArray([]),
-    password: ko.observable('')
+    password: ko.observable(''),
+    gameInfo: ko.observable()
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -727,4 +728,18 @@ $(window).on('keydown', function (event) {
             }
         });
     }
+});
+
+$('document').ready(function() {
+    $('#joinGameModal').on('show.bs.modal', function(event) {
+        var gameName = $(event.relatedTarget).data('game-name');
+        var games = vm.games();
+        for (var i = 0; i < games.length; i++) {
+            var game = games[i];
+            if (game.gameName == gameName) {
+                vm.gameInfo(game);
+                break;
+            }
+        }
+    });
 });

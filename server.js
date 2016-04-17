@@ -117,6 +117,7 @@ io.on('connection', function (socket) {
     });
 
     function joinGame(gameName, playerName, password) {
+        console.log('player ' + playerName +' tried to join game '+ gameName + ' with password ' + password);
         var game = games[gameName];
 
         if (game) {
@@ -251,12 +252,29 @@ function filterGames() {
         if (games.hasOwnProperty(gameName)) {
             var game = games[gameName];
             if (game) {
-                gamesList.push({
+                var playerList = [];
+                var playersInGame = game.playersInGame();
+
+                for (var i = 0; i < playersInGame.length; i++) {
+                    var player = playersInGame[i];
+
+                    var clientPlayer = {
+                        playerName: player.name,
+                        ai: player.ai
+                    };
+
+                    playerList.push(clientPlayer);
+                }
+
+                var clientGame = {
                     gameName: gameName,
                     status: game.currentState(),
                     type: game.gameType(),
-                    passwordRequired: game.password() ? 'yes' : 'no'
-                });
+                    passwordRequired: game.password() ? 'yes' : 'no',
+                    players: playerList
+                };
+
+                gamesList.push(clientGame);
             }
         }
     }
