@@ -20,7 +20,7 @@ vm = {
     chosenExchangeOptions: ko.observable({}),
     sidebar: ko.observable('chat'),
     history: ko.observableArray(),
-    gameUrl: ko.observable(''),
+    currentGame: ko.observable(''),
     needName: ko.observable(false),
     rankings: ko.observable({}),
     rankButtonText: ko.observable('Show my rankings'),
@@ -73,9 +73,9 @@ if (window.location.href.indexOf('amazonaws') >= 0) {
 
 $(window).on('hashchange load', function() {
     if (location.hash) {
-        vm.gameUrl(location.hash);
+        vm.currentGame(location.hash);
         if (vm.playerName()) {
-            join(null, null, vm.gameUrl());
+            join(null, null, vm.currentGame());
         } else {
             vm.needName(true);
         }
@@ -195,7 +195,7 @@ socket.on('gamenotfound', function (data) {
 
 function playAgain() {
     // If we were playing a private game, rejoin the same one. Otherwise, join a new public game.
-    join(null, null, vm.gameUrl());
+    join(null, null, vm.currentGame());
 }
 function join(form, event, gameName) {
     if (isInvalidPlayerName()) {

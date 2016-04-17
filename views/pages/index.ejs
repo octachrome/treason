@@ -51,14 +51,11 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="passwordRequiredTitle">Create New Game</h4>
+                        <h4 class="modal-title" id="passwordRequiredTitle">This game requires a password</h4>
                     </div>
                     <div class="modal-body">
-                        <form data-bind="submit: join">
-                            <p><input type="text" placeholder="Type password here" data-bind="textInput: password"/></p>
-                            <p><button class="btn btn-default" type="submit" data-bind="enable: password">Join game</button></p>
-                            <input type="hidden" data-bind="value: gameUrl()" name="privateGameName"/>
-                        </form>
+                        <p><input type="text" placeholder="Type password here" data-bind="textInput: password"/></p>
+                        <p><button class="btn btn-default" type="submit" data-bind="click: join, enable: password">Join game</button></p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -78,6 +75,7 @@
                         <div data-bind="with: gameInfo">
                             <p>State: <span data-bind="text: status"></span></p>
                             <p>Mode: <span data-bind="text: type"></span></p>
+                            <p data-bind="visible: passwordRequired">Password: <input type="text" placeholder="Password" data-bind="textInput: $parent.password"/></p>
 
                             <div class="table-responsive">
                                 <table class="table">
@@ -120,11 +118,10 @@
                 </form>
                 <!-- /ko -->
                 <!-- ko if: needName() -->
-                <p>Please enter a name to be able to join <span data-bind="text: gameUrl()"></span></p>
+                <p>Please enter a name to be able to join <span data-bind="text: currentGame()"></span></p>
                 <form data-bind="submit: join">
                     <p><input class="name-input" type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
                     <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join game</button></p>
-                    <input type="hidden" data-bind="value: gameUrl()" name="privateGameName"/>
                 </form>
                 <!-- /ko -->
                 <p><a href="rules.html" target="blank">How to play</a></p>
@@ -191,7 +188,7 @@
                                 <td data-bind="text: $data.gameName"><!--<a href="" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a>--></td>
                                 <td data-bind="text: $data.status"></td>
                                 <td data-bind="text: $data.type"></td>
-                                <td data-bind="text: $data.passwordRequired"></td>
+                                <td data-bind="text: $data.passwordRequired ? 'yes' : 'no'"></td>
                             </tr>
                             <!-- /ko -->
                         </tbody>

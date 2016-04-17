@@ -289,7 +289,7 @@ function filterGames() {
                     gameName: gameName,
                     status: game.currentState(),
                     type: game.gameType(),
-                    passwordRequired: game.password() ? 'yes' : 'no',
+                    passwordRequired: game.password() ? true : false,
                     players: playerList
                 };
 
