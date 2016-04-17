@@ -30,7 +30,9 @@ vm = {
     games: ko.observableArray([]),
     players: ko.observableArray([]),
     password: ko.observable(''),
-    gameInfo: ko.observable()
+    gameInfo: ko.observable(),
+    globalChatMessages: ko.observableArray(['Welcome to the Treason Coup global chat']),
+    globalMessage: ko.observable('')
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -120,6 +122,9 @@ socket.on('connect', function() {
     });
     socket.on('updateplayers', function(data) {
         vm.players(data.players);
+    });
+    socket.on('globalchatmessage', function(data) {
+        vm.globalChatMessages.push(data);
     });
 });
 
@@ -634,6 +639,12 @@ function animateHistory(e) {
     } else {
         el.effect('slide', {direction: 'left'}, 400)
             .effect('highlight', {color: '#ddeeff'}, 1000);
+    }
+}
+function sendGlobalMessage() {
+    if (vm.globalMessage() != '') {
+        socket.emit('sendglobalchatmessage', vm.globalMessage());
+        vm.globalMessage('');
     }
 }
 

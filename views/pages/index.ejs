@@ -226,9 +226,9 @@
         <div class="row-fluid well">
             <div class="col-xs-10">
                 <div class="global-chat">
-                    <p>[22:40] Dave: let's play. Anyone up for a game?</p>
-                    <p>[22:42] Steve: I'm up for one or two</p>
-                    <p>[22:45] Dave: I've created game #101, join that one</p>
+                    <!-- ko foreach: globalChatMessages() -->
+                        <p data-bind="text: $data"></p>
+                    <!-- /ko -->
                 </div>
             </div>
             <div class="col-xs-2">
@@ -250,8 +250,10 @@
                 </div>
             </div>
 
-            <div class="">
-                <input id="lobbyChat" type="text" class="form-control" placeholder="Global chat message">
+            <div>
+                <form data-bind="submit: sendGlobalMessage">
+                    <input id="lobbyChat" placeholder="Global chat message" type="text" class="form-control" data-bind='value: globalMessage, valueUpdate: "afterkeydown"' />
+                </form>
             </div>
         </div>
         <!-- /ko -->

@@ -169,6 +169,14 @@ io.on('connection', function (socket) {
         });
     });
 
+    socket.on('sendglobalchatmessage', function (data) {
+        var now = new Date();
+        var globalMessage =  '[' + now.getHours() + ':' + now.getMinutes() + '] ' + players[socket.playerId].playerName + ': ' + data;
+        var localMessage = '[' + now.getHours() + ':' + now.getMinutes() + '] You: ' + data;
+        socket.emit('globalchatmessage', localMessage);
+        socket.broadcast.emit('globalchatmessage', globalMessage);
+    });
+
     socket.on('disconnect', function () {
         broadcastGames(socket);
 
