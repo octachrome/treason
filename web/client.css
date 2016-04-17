@@ -199,3 +199,7 @@ div.global-chat {
 h4 {
     margin-top: 26px;
 }
+.games-list-container {
+    max-height: 320px;
+    overflow-y: auto;
+}
