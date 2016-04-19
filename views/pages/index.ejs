@@ -184,6 +184,11 @@
                             </tr>
                         </thead>
                         <tbody>
+                            <!-- ko if: games().length == 0-->
+                            <tr>
+                                <td colspan="4">No games in progress. Why not <button class="btn btn-default" data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create</button> one right now?</td>
+                            </tr>
+                            <!-- /ko -->
                             <!-- ko foreach: games() -->
                             <tr data-toggle="modal" data-target="#joinGameModal" data-bind="attr: {'data-game-name': $data.gameName}">
                                 <td data-bind="text: $data.gameName"><!--<a href="" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a>--></td>
@@ -225,16 +230,16 @@
                         <div class="table-responsive global-chat-users">
                             <table class="table">
                                 <thead>
-                                <tr>
-                                    <th>Players Online: <span data-bind="text: activeUsers"></span></th>
-                                </tr>
+                                    <tr>
+                                        <th>Players Online: <span data-bind="text: activeUsers"></span></th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                <!-- ko foreach: players() -->
-                                <tr>
-                                    <td data-bind="text: $data.playerName"></td>
-                                </tr>
-                                <!-- /ko -->
+                                    <!-- ko foreach: players() -->
+                                    <tr>
+                                        <td data-bind="text: $data.playerName"></td>
+                                    </tr>
+                                    <!-- /ko -->
                                 </tbody>
                             </table>
                         </div>
@@ -253,20 +258,20 @@
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>Wins</th>
-                        </tr>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Wins</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        <!-- ko foreach: rankings() -->
-                        <tr data-bind="css: $data.isPlayer ? 'success' : ''">
-                            <td data-bind="text: $data.rank"></td>
-                            <td data-bind="text: $data.playerName"></td>
-                            <td data-bind="text: $data.wins - $data.winsAI"></td>
-                        </tr>
-                        <!-- /ko -->
+                            <!-- ko foreach: rankings() -->
+                            <tr data-bind="css: $data.isPlayer ? 'success' : ''">
+                                <td data-bind="text: $data.rank"></td>
+                                <td data-bind="text: $data.playerName"></td>
+                                <td data-bind="text: $data.wins - $data.winsAI"></td>
+                            </tr>
+                            <!-- /ko -->
                         </tbody>
                     </table>
                 </div>
