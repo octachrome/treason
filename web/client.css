@@ -75,18 +75,6 @@ div.chat {
     margin-bottom: 10px;
     word-wrap: break-word;
 }
-div.global-chat {
-    height: 300px;
-    overflow-y: scroll;
-    margin-bottom: 10px;
-    word-wrap: break-word;
-}
-div.global-chat-users {
-    height: 300px;
-    overflow-y: scroll;
-    margin-bottom: 10px;
-    word-wrap: break-word;
-}
 .label-revealed {
     background-color: #aaa;
 }
@@ -202,10 +190,19 @@ div.global-chat-users {
 .name-input {
     width: 160px;
 }
-h4 {
-    margin-top: 26px;
-}
 .games-list-container {
-    max-height: 320px;
+    max-height: 290px;
     overflow-y: auto;
+}
+.global-chat {
+    height: 300px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+}
+.global-chat-users {
+    height: 300px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    word-wrap: break-word;
 }
