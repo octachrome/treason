@@ -168,9 +168,14 @@
         <div class="row">
             <div class="col-sm-8">
 
-                <div>
-                    <button class="btn btn-default" data-bind="click: join" data-dismiss="modal">Quick Play</button>
-                    <button class="btn btn-default" data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create Game</button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-default" data-bind="click: join" data-dismiss="modal">Quick Play</button>
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create Game</a></li>
+                    </ul>
                 </div>
 
                 <div class="table-responsive games-list-container">
