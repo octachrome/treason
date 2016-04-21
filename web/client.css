@@ -206,3 +206,11 @@ div.chat {
     margin-bottom: 10px;
     word-wrap: break-word;
 }
+.game-name-highlight:focus, .game-name-highlight:hover {
+    color: #23527c;
+    text-decoration: underline;
+}
+.game-name-highlight {
+    color: #3b94d9;
+    cursor: pointer;
+}

@@ -200,7 +200,7 @@
                             <!-- /ko -->
                             <!-- ko foreach: games() -->
                             <tr data-toggle="modal" data-target="#joinGameModal" data-bind="attr: {'data-game-name': $data.gameName}">
-                                <td data-bind="text: $data.gameName"><!--<a href="" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a>--></td>
+                                <td data-bind="text: $data.gameName" class="game-name-highlight"><!--<a href="" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a>--></td>
                                 <td data-bind="text: $data.status"></td>
                                 <td data-bind="text: $data.type"></td>
                                 <td data-bind="text: $data.passwordRequired ? 'yes' : 'no'"></td>
