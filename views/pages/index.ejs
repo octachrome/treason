@@ -36,7 +36,7 @@
                         <h4 class="modal-title" id="newGameModalTitle">Create New Game</h4>
                     </div>
                     <div class="modal-body">
-                        <p><input type="text" placeholder="No password" data-bind="textInput: password"/></p>
+                        <p><input type="text" placeholder="Type a password" data-bind="textInput: password"/></p>
                         <p><button class="btn btn-default" data-bind="click: create" data-dismiss="modal">Create game</button></p>
                     </div>
                     <div class="modal-footer">
@@ -168,14 +168,18 @@
         <div class="row">
             <div class="col-sm-8">
 
-                <div class="btn-group">
-                    <button type="button" class="btn btn-default" data-bind="click: join" data-dismiss="modal">Quick Play</button>
-                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                        <li><a data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create Game</a></li>
-                    </ul>
+                <div>
+                    <button class="btn btn-default" data-bind="click: join" data-dismiss="modal">Quick Play</button>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default" data-bind="click: create" data-dismiss="modal">Create Game</button>
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="" data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create Private Game</a></li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="table-responsive games-list-container">
@@ -191,7 +195,7 @@
                         <tbody>
                             <!-- ko if: games().length == 0-->
                             <tr>
-                                <td colspan="4">No games in progress. Why not <button class="btn btn-default" data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create</button> one right now?</td>
+                                <td colspan="4">No games in progress. Why not <button class="btn btn-default" data-toggle="modal" data-dismiss="modal" data-bind="click: create">Create</button> one right now?</td>
                             </tr>
                             <!-- /ko -->
                             <!-- ko foreach: games() -->
