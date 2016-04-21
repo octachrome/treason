@@ -77,6 +77,11 @@ io.on('connection', function (socket) {
     });
 
     socket.on('registerplayer', function (data) {
+        if (isInvalidPlayerName(data.playerName)) {
+            //Do not even attempt to register invalid player names
+            return;
+        }
+
         dataAccess.register(data.playerId, data.playerName).then(function (playerId) {
             socket.playerId = playerId;
 

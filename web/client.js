@@ -218,6 +218,10 @@ function join(form, event, gameName) {
 }
 
 function enter(form, event) {
+    if (isInvalidPlayerName()) {
+        return;
+    }
+
     socket.emit('registerplayer', {
         playerName: vm.playerName(),
         playerId: vm.playerId()
