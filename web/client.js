@@ -252,6 +252,11 @@ var showRankings = _.debounce(function (form, event) {
     }
 }, 500, true);
 
+function clearName() {
+    vm.playerName('');
+    location.reload();
+}
+
 function isInvalidPlayerName() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/) || !vm.playerName().trim()) {
         alert('Enter a valid name');
