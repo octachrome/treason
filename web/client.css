@@ -195,13 +195,13 @@ div.chat {
     overflow-y: auto;
 }
 .global-chat {
-    height: 300px;
+    height: 250px;
     overflow-y: scroll;
     margin-bottom: 10px;
     word-wrap: break-word;
 }
 .global-chat-users {
-    height: 300px;
+    height: 250px;
     overflow-y: scroll;
     margin-bottom: 10px;
     word-wrap: break-word;
@@ -213,4 +213,10 @@ div.chat {
 .game-name-highlight {
     color: #3b94d9;
     cursor: pointer;
+}
+.join-buttons {
+    width: 150px;
+}
+.join-buttons button:first-child {
+    width: 120px;
 }
