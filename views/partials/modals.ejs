@@ -25,7 +25,7 @@
             </div>
             <div class="modal-body">
                 <p><input type="text" placeholder="Type password here" data-bind="textInput: password"/></p>
-                <p><button class="btn btn-default" type="submit" data-bind="click: join, enable: password">Join game</button></p>
+                <p><button class="btn btn-default" type="submit" data-dismiss="modal" data-bind="click: join.bind(null, null, null, currentGame()), enable: password">Join game</button></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

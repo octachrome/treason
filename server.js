@@ -129,7 +129,10 @@ io.on('connection', function (socket) {
                 createNetPlayer(game, socket, playerName);
                 broadcastGames(socket);
             } else {
-                socket.emit('gamerequirespassword', 'Failed to join game, incorrect password');
+                socket.emit('gamerequirespassword', {
+                    message: 'Failed to join game, incorrect password',
+                    gameName: gameName
+                });
             }
         } else {
             socket.emit('gamenotfound', 'Failed to join game, game not found');

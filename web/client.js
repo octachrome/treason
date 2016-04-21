@@ -131,8 +131,12 @@ socket.on('connect', function() {
     });
 });
 
-socket.on('gamerequirespassword', function() {
-    $('#passwordRequiredModal').modal('show');
+socket.on('gamerequirespassword', function(data) {
+    vm.currentGame(data.gameName);
+    setTimeout(function() {
+        //The fading modal has a problem with displaying on top of itself
+        $('#passwordRequiredModal').modal('show');
+    }, 750);
 });
 socket.on('disconnect', function () {
     vm.bannerMessage('Disconnected');
