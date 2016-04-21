@@ -1,0 +1,75 @@
+<div class="modal fade" id="newGameModal" tabindex="-1" role="dialog" aria-labelledby="newGameLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="newGameModalTitle">Create New Game</h4>
+            </div>
+            <div class="modal-body">
+                <p><input type="text" placeholder="Type a password" data-bind="textInput: password"/></p>
+                <p><button class="btn btn-default" data-bind="click: create" data-dismiss="modal">Create game</button></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="passwordRequiredModal" tabindex="-1" role="dialog" aria-labelledby="passwordRequiredLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="passwordRequiredTitle">This game requires a password</h4>
+            </div>
+            <div class="modal-body">
+                <p><input type="text" placeholder="Type password here" data-bind="textInput: password"/></p>
+                <p><button class="btn btn-default" type="submit" data-bind="click: join, enable: password">Join game</button></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="joinGameModal" tabindex="-1" role="dialog" aria-labelledby="joinGameLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" data-bind="with: gameInfo">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="joinGameModalTitle" data-bind="text: 'Game ' + gameName"></h4>
+            </div>
+            <div class="modal-body">
+                <div data-bind="with: gameInfo">
+                    <p>State: <span data-bind="text: status"></span></p>
+                    <p>Mode: <span data-bind="text: type"></span></p>
+                    <p data-bind="visible: passwordRequired">Password: <input type="text" placeholder="Password" data-bind="textInput: $parent.password"/></p>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th>Human</th>
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: players">
+                                <tr>
+                                    <td data-bind="text: playerName"></td>
+                                    <td data-bind="text: ai == true ? 'no' : 'yes'"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p><button class="btn btn-default btn-block" data-bind="click: join.bind(null, null, null, gameName)" data-dismiss="modal">Join game</button></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
