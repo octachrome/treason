@@ -355,6 +355,8 @@ module.exports = function createGame(options) {
             }
             deck = buildDeck();
 
+            var nonObservers = [];
+
             for (var i = 0; i < state.numPlayers; i++) {
                 var player = state.players[i];
 
@@ -367,6 +369,8 @@ module.exports = function createGame(options) {
                     if (!player.ai) {
                         gameStats.humanPlayers++;
                     }
+
+                    nonObservers.push(i);
                 }
             }
 
@@ -375,7 +379,7 @@ module.exports = function createGame(options) {
                 firstPlayer = options.firstPlayer;
             }
             else {
-                firstPlayer = rand(state.numPlayers);
+                firstPlayer = nonObservers[rand(nonObservers.length)];
             }
             turnHistGroup++;
             setState({
