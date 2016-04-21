@@ -2,13 +2,13 @@
     <div class="col-sm-3">
         <br/>
         <div class="btn-group join-buttons">
-            <button type="button" class="btn btn-primary" data-bind="click: create" data-dismiss="modal">Quick Play</button>
+            <button type="button" class="btn btn-primary" data-bind="click: join">Quick Play</button>
             <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" role="menu">
-                <li><a href="" data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create Game</a></li>
-                <li><a href="" data-toggle="modal" data-dismiss="modal" data-target="#newGameModal">Create Private Game</a></li>
+                <li><a href="" data-bind="click: create">Create Game</a></li>
+                <li><a href="" data-toggle="modal" data-target="#newGameModal">Create Private Game</a></li>
             </ul>
         </div>
         <br/>
