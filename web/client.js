@@ -125,6 +125,9 @@ socket.on('connect', function() {
     });
     socket.on('globalchatmessage', function(data) {
         vm.globalChatMessages.push(data);
+
+        var globalMessageContainer = $('#global-chat-container');
+        globalMessageContainer[0].scrollTop = globalMessageContainer[0].scrollHeight;
     });
 });
 
