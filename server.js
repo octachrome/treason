@@ -56,7 +56,7 @@ var gameId = 1;
 var games = {};
 var players = {};
 var sockets = {};
-// Players who have not joined a game in the last 30 minutes are not counted as actuve users.
+// Players who have not joined a game in the last 30 minutes are not counted as active users.
 var TIMEOUT = 30 * 60 * 1000;
 
 io.on('connection', function (socket) {
@@ -125,41 +125,6 @@ io.on('connection', function (socket) {
         }
     });
 
-    function joinGame(gameName, playerName, password) {
-        var game = games[gameName];
-
-        if (game) {
-            if (!game.password() || game.password() === password) {
-                playerJoinsGame(game, socket, playerName, gameName);
-            } else {
-                socket.emit('gamerequirespassword', {
-                    message: 'Failed to join game, incorrect password',
-                    gameName: gameName
-                });
-            }
-        } else {
-            socket.emit('gamenotfound', 'Failed to join game, game not found');
-        }
-    }
-
-    function quickJoin(playerName) {
-        //discover a game to join
-        var game;
-        for (var gameName in games) {
-            if (games.hasOwnProperty(gameName)) {
-                game = games[gameName];
-                if (game && game.canJoin() && !game.password()) {
-                    playerJoinsGame(game, socket, playerName, gameName);
-                    break;
-                }
-            }
-        }
-
-        if (!game) {
-            createNewGame(socket);
-        }
-    }
-
     socket.on('create', function(data) {
         if (isInvalidPlayerName(data.playerName)) {
             return;
@@ -204,6 +169,41 @@ io.on('connection', function (socket) {
         socket = null;
     });
 });
+
+function joinGame(gameName, playerName, password) {
+    var game = games[gameName];
+
+    if (game) {
+        if (!game.password() || game.password() === password) {
+            playerJoinsGame(game, socket, playerName, gameName);
+        } else {
+            socket.emit('gamerequirespassword', {
+                message: 'Failed to join game, incorrect password',
+                gameName: gameName
+            });
+        }
+    } else {
+        socket.emit('gamenotfound', 'Failed to join game, game not found');
+    }
+}
+
+function quickJoin(playerName) {
+    //discover a game to join
+    var game;
+    for (var gameName in games) {
+        if (games.hasOwnProperty(gameName)) {
+            game = games[gameName];
+            if (game && game.canJoin() && !game.password()) {
+                playerJoinsGame(game, socket, playerName, gameName);
+                break;
+            }
+        }
+    }
+
+    if (!game) {
+        createNewGame(socket);
+    }
+}
 
 function playerJoinsGame(game, socket, playerName, gameName) {
     createNetPlayer(game, socket, playerName);
