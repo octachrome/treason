@@ -224,7 +224,8 @@ function createNewGame(socket, password) {
         moveDelay: 1000,
         gameName: gameName,
         created: new Date(),
-        password: password || ''
+        password: password || '',
+        callback: broadcastGames
     });
 
     games[gameName] = game;

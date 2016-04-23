@@ -52,6 +52,8 @@ module.exports = function createGame(options) {
         password: options.password
     };
 
+    var stateChangedCallback = options.callback;
+
     var rand = randomGen.create(options.randomSeed);
 
     dataAccess.setDebug(options.debug);
@@ -305,6 +307,9 @@ module.exports = function createGame(options) {
     }
 
     function emitState() {
+        if (stateChangedCallback) {
+            stateChangedCallback();
+        }
         state.stateId++;
         debug(state);
         for (var i = 0; i < state.players.length; i++) {
