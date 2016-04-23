@@ -173,8 +173,12 @@ io.on('connection', function (socket) {
 
     socket.on('disconnect', function () {
         if (socket.playerId) {
-            socket.broadcast.emit('globalchatmessage', players[socket.playerId].playerName + ' has left the lobby.');
-            delete players[socket.playerId];
+            //If a client never registered but only connected, it would not have a player property
+            var player = players[socket.playerId];
+            if (player) {
+                socket.broadcast.emit('globalchatmessage', player.playerName + ' has left the lobby.');
+                delete players[socket.playerId];
+            }
         }
 
         delete sockets[socket.id];
