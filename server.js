@@ -97,7 +97,7 @@ io.on('connection', function (socket) {
                 players: filterPlayers()
             });
 
-            broadcastPlayers(socket);
+            broadcastPlayers();
 
             //Now that we know who you are, we can highlight you in the rankings
             dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
@@ -212,7 +212,7 @@ function playerJoinsGame(game, socket, playerName, gameName) {
         password: game.password()
     });
 
-    broadcastGames(socket);
+    broadcastGames();
 }
 
 function createNewGame(socket, password) {
@@ -238,33 +238,23 @@ function createNewGame(socket, password) {
         password: password
     });
 
-    broadcastGames(socket);
+    broadcastGames();
 }
 
 function isInvalidPlayerName(playerName) {
     return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/ || !playerName.trim());
 }
 
-function broadcastGames(socket) {
+function broadcastGames() {
     var gamesList = filterGames();
-
-    socket.emit('updategames', {
-        games: gamesList
-    });
-
-    socket.broadcast.emit('updategames', {
+    io.sockets.emit('updategames', {
         games: gamesList
     });
 }
 
-function broadcastPlayers(socket) {
+function broadcastPlayers() {
     var playerList = filterPlayers();
-
-    socket.emit('updateplayers', {
-        players: playerList
-    });
-
-    socket.broadcast.emit('updateplayers', {
+    io.sockets.emit('updateplayers', {
         players: playerList
     });
 }
