@@ -126,8 +126,7 @@ io.on('connection', function (socket) {
 
         if (game) {
             if (!game.password() || game.password() === password) {
-                createNetPlayer(game, socket, playerName);
-                broadcastGames(socket);
+                playerJoinsGame(game, socket, playerName, gameName);
             } else {
                 socket.emit('gamerequirespassword', {
                     message: 'Failed to join game, incorrect password',
@@ -146,8 +145,7 @@ io.on('connection', function (socket) {
             if (games.hasOwnProperty(gameName)) {
                 game = games[gameName];
                 if (game && game.canJoin() && !game.password()) {
-                    createNetPlayer(game, socket, playerName);
-                    broadcastGames(socket);
+                    playerJoinsGame(game, socket, playerName, gameName);
                     break;
                 }
             }
@@ -202,6 +200,16 @@ io.on('connection', function (socket) {
         socket = null;
     });
 });
+
+function playerJoinsGame(game, socket, playerName, gameName) {
+    createNetPlayer(game, socket, playerName);
+    socket.emit('joined', {
+        gameName: gameName,
+        password: game.password()
+    });
+
+    broadcastGames(socket);
+}
 
 function createNewGame(socket, password) {
     var gameName = '#' + gameId++;

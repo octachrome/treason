@@ -73,7 +73,13 @@ if (window.location.href.indexOf('amazonaws') >= 0) {
 
 $(window).on('hashchange load', function() {
     if (location.hash) {
-        vm.currentGame(location.hash);
+        if (location.hash.indexOf('-') > 0) {
+            var gameDetails = location.hash.split(/(.+)-(.+)?/);
+            vm.currentGame(gameDetails[1]);
+            vm.password(gameDetails[2]);
+        } else {
+            vm.currentGame(location.hash);
+        }
         if (vm.playerName()) {
             join(null, null, vm.currentGame());
         } else {
@@ -182,9 +188,18 @@ socket.on('chat', function (data) {
     $('.chat').scrollTop(10000);
 });
 socket.on('created', function(data) {
-    if (data.gameName) {
-        location.hash = data.gameName;
+    vm.password(data.password);
+    vm.currentGame(data.gameName);
+    join(null, null, vm.currentGame());
+});
+socket.on('joined', function(data) {
+    var hash;
+    if (data.password) {
+        hash = data.gameName + '-' + data.password;
+    } else {
+        hash = data.gameName;
     }
+    history.pushState(null, '', hash);
 });
 socket.on('error', function (data) {
     alert(data);
