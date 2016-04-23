@@ -188,21 +188,19 @@ function joinGame(socket, gameName, playerName, password) {
 }
 
 function quickJoin(socket, playerName) {
-    //discover a game to join
-    var game;
+    //Discover a game to join. This should prefer the older games in the list
     for (var gameName in games) {
         if (games.hasOwnProperty(gameName)) {
-            game = games[gameName];
+            var game = games[gameName];
             if (game && game.canJoin() && !game.password()) {
                 playerJoinsGame(game, socket, playerName, gameName);
-                break;
+                return;
             }
         }
     }
 
-    if (!game) {
-        createNewGame(socket);
-    }
+    //Failed to find a game, make a new one instead
+    createNewGame(socket);
 }
 
 function playerJoinsGame(game, socket, playerName, gameName) {
@@ -290,7 +288,8 @@ function filterGames() {
 
                     var clientPlayer = {
                         playerName: player.name,
-                        ai: player.ai
+                        ai: player.ai,
+                        observer: player.isObserver
                     };
 
                     playerList.push(clientPlayer);
