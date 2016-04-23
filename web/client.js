@@ -248,9 +248,13 @@ function enter(form, event) {
     });
 }
 
-var create = _.debounce(function (form, event) {
+var create = _.debounce(function (form, event, publicGame) {
     if (isInvalidPlayerName()) {
         return;
+    }
+
+    if (publicGame) {
+        vm.password('');
     }
 
     socket.emit('create', {
