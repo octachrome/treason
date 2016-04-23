@@ -119,9 +119,9 @@ io.on('connection', function (socket) {
         }
 
         if (gameName) {
-            joinGame(gameName, playerName, password);
+            joinGame(socket, gameName, playerName, password);
         } else {
-            quickJoin(playerName);
+            quickJoin(socket, playerName);
         }
     });
 
@@ -170,7 +170,7 @@ io.on('connection', function (socket) {
     });
 });
 
-function joinGame(gameName, playerName, password) {
+function joinGame(socket, gameName, playerName, password) {
     var game = games[gameName];
 
     if (game) {
@@ -187,7 +187,7 @@ function joinGame(gameName, playerName, password) {
     }
 }
 
-function quickJoin(playerName) {
+function quickJoin(socket, playerName) {
     //discover a game to join
     var game;
     for (var gameName in games) {
