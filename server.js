@@ -56,19 +56,23 @@ var gameId = 1;
 var games = {};
 var players = {};
 var sockets = {};
-// Players who have not joined a game in the last 30 minutes are not counted as active users.
+// Sockets which have not been active in the last 30 minutes are disconnected.
 var TIMEOUT = 30 * 60 * 1000;
 
 io.on('connection', function (socket) {
     var timestamp = new Date().getTime();
     sockets[socket.id] = timestamp;
-    var activeUsers = 0;
-    for (var id in sockets) {
-        if (timestamp - sockets[id] > TIMEOUT) {
-            delete sockets[id];
-            delete players[id];
-        } else {
-            activeUsers++;
+
+    for (var socketId in sockets) {
+        if (sockets.hasOwnProperty(socketId)) {
+            if (timestamp - sockets[socketId] > TIMEOUT) {
+                delete sockets[socketId];
+                if (socket.playerId) {
+                    delete players[socket.playerId];
+                }
+                //Disconnect idle sockets
+                socket.disconnect();
+            }
         }
     }
 
@@ -91,7 +95,6 @@ io.on('connection', function (socket) {
             };
 
             socket.emit('handshake', {
-                activeUsers: activeUsers,
                 playerId: playerId,
                 games: filterGames(),
                 players: filterPlayers()
@@ -107,8 +110,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('join', function (data) {
-        var timestamp = new Date().getTime();
-        sockets[socket.id] = timestamp;
+        refreshSocket(socket);
 
         var playerName = data.playerName;
         var gameName = data.gameName;
@@ -133,18 +135,24 @@ io.on('connection', function (socket) {
     });
 
     socket.on('showrankings', function () {
+        refreshSocket(socket);
+
         dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
             socket.emit('rankings', result);
         });
     });
 
     socket.on('showmyrank', function () {
+        refreshSocket(socket);
+
         dataAccess.getPlayerRankings(socket.playerId, true).then(function (result) {
             socket.emit('rankings', result);
         });
     });
 
     socket.on('sendglobalchatmessage', function (data) {
+        refreshSocket(socket);
+
         if (data.length > 300) {
             data = data.slice(0, 300) + '...';
         }
@@ -161,14 +169,21 @@ io.on('connection', function (socket) {
     });
 
     socket.on('disconnect', function () {
-        broadcastGames(socket);
-
         delete sockets[socket.id];
-        delete players[socket.id];
+        if (socket.playerId) {
+            delete players[socket.playerId];
+        }
+
+        broadcastGames();
+        broadcastPlayers();
         socket.removeAllListeners();
         socket = null;
     });
 });
+
+function refreshSocket(socket) {
+    sockets[socket.id] = new Date().getTime();
+}
 
 function joinGame(socket, gameName, playerName, password) {
     var game = games[gameName];

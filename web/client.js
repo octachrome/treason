@@ -13,7 +13,6 @@
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
     playerId: ko.observable(localStorageGet('playerId') || ''),
-    activeUsers: ko.observable(),
     bannerMessage: ko.observable(''),
     targetedAction: ko.observable(''),
     weAllowed: ko.observable(false),
@@ -116,7 +115,6 @@ socket.on('connect', function() {
         });
     }
     socket.on('handshake', function(data) {
-        vm.activeUsers(data.activeUsers);
         vm.playerId(data.playerId);
         localStorageSet('playerId', data.playerId);
         vm.loggedIn(true);
