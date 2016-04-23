@@ -61,17 +61,18 @@ var TIMEOUT = 30 * 60 * 1000;
 
 io.on('connection', function (socket) {
     var timestamp = new Date().getTime();
-    sockets[socket.id] = timestamp;
+
+    sockets[socket.id] = {
+        lastActive: timestamp,
+        socket: socket
+    };
 
     for (var socketId in sockets) {
         if (sockets.hasOwnProperty(socketId)) {
-            if (timestamp - sockets[socketId] > TIMEOUT) {
-                delete sockets[socketId];
-                if (socket.playerId) {
-                    delete players[socket.playerId];
-                }
+            var socketData = sockets[socketId];
+            if (timestamp - socketData.lastActive > TIMEOUT) {
                 //Disconnect idle sockets
-                socket.disconnect();
+                socketData.socket.disconnect();
             }
         }
     }
@@ -182,7 +183,7 @@ io.on('connection', function (socket) {
 });
 
 function refreshSocket(socket) {
-    sockets[socket.id] = new Date().getTime();
+    sockets[socket.id].lastActive = new Date().getTime();
 }
 
 function joinGame(socket, gameName, playerName, password) {
