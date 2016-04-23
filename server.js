@@ -56,6 +56,7 @@ var gameId = 1;
 var games = {};
 var players = {};
 var sockets = {};
+// Players who have not joined a game in the last 30 minutes are not counted as actuve users.
 var TIMEOUT = 30 * 60 * 1000;
 
 io.on('connection', function (socket) {
@@ -106,6 +107,9 @@ io.on('connection', function (socket) {
     });
 
     socket.on('join', function (data) {
+        var timestamp = new Date().getTime();
+        sockets[socket.id] = timestamp;
+
         var playerName = data.playerName;
         var gameName = data.gameName;
         var password = data.password;

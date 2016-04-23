@@ -22,7 +22,7 @@ vm = {
     history: ko.observableArray(),
     currentGame: ko.observable(''),
     needName: ko.observable(false),
-    rankings: ko.observable({}),
+    rankings: ko.observableArray(),
     rankButtonText: ko.observable('Show my rankings'),
     showingGlobalRank: ko.observable(true),
     notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false)),
@@ -162,16 +162,21 @@ socket.on('state', function (data) {
 });
 socket.on('history', function (data) {
     var items;
-    if (data.continuation && vm.history().length) {
-        // Collect related history items together.
-        items = vm.history()[0];
-    } else {
+    // Collect related history items together (but don't bother searching too far back).
+    for (var i = 0; i < 10 && i < vm.history().length; i++) {
+        if (vm.history()[i]()[0].histGroup == data.histGroup) {
+            items = vm.history()[i];
+            break;
+        }
+    }
+    if (!items) {
         items = ko.observableArray();
         vm.history.unshift(items);
     }
     items.push({
         icon: data.type,
-        message: formatMessage(data.message)
+        message: formatMessage(data.message),
+        histGroup: data.histGroup
     });
 });
 socket.on('chat', function (data) {
@@ -573,16 +578,16 @@ function labelClass(role, revealed) {
 }
 function roleDescription(role) {
     if (role === 'ambassador') {
-        return 'Draw two from the deck and optionally exchange your influences';
+        return 'Draw two from the deck and exchange your influences';
     }
     if (role === 'inquisitor') {
-        return 'Draw one from the deck OR look at one opponent\'s role and optionally swap it';
+        return 'Draw one from the deck and exchange OR look at one opponent\'s role and optionally force an exchange';
     }
     if (role === 'assassin') {
         return 'Pay $3 to reveal another player\'s influence; blocked by contessa';
     }
     if (role === 'captain') {
-        return 'Steal $2 from another player; blocked by captain and ambassador';
+        return 'Steal $2 from another player; blocked by captain and ' + getGameRole(['ambassador', 'inquisitor']);
     }
     if (role === 'contessa') {
         return 'Block assassination';

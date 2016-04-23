@@ -30,7 +30,8 @@ var updateViews = false;
 //NOTE: If you update any view, also increment this version
 var currentViewVersion = 1;
 
-var ready;
+// This ensures that unit tests do not try to record stats.
+var ready = Promise.reject(new Error('not initialized'));
 
 function init(dbname) {
     treasonDb = pr.wrapAll(connection.database(dbname));
