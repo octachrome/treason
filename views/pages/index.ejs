@@ -47,6 +47,13 @@
     </div>
 
     <div class="container" style="display: none" data-bind="visible: playing()">
+        <div class="row" data-bind="visible: password() != ''">
+            <div class="col-xs-12">
+                <p>
+                    Password: <span data-bind="text: password()"></span>
+                </p>
+            </div>
+        </div>
         <div class="row">
             <div class="col-xs-4">
                 <!-- Players and chat -->

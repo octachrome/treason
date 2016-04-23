@@ -204,6 +204,7 @@ socket.on('joined', function(data) {
     var hash;
     if (data.password) {
         hash = data.gameName + '-' + data.password;
+        vm.password(data.password);
     } else {
         hash = data.gameName;
     }
