@@ -103,6 +103,8 @@ io.on('connection', function (socket) {
 
             broadcastPlayers();
 
+            socket.broadcast.emit('globalchatmessage', data.playerName + ' has joined the lobby.');
+
             //Now that we know who you are, we can highlight you in the rankings
             dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
                 socket.emit('rankings', result);
@@ -170,10 +172,12 @@ io.on('connection', function (socket) {
     });
 
     socket.on('disconnect', function () {
-        delete sockets[socket.id];
         if (socket.playerId) {
+            socket.broadcast.emit('globalchatmessage', players[socket.playerId].playerName + ' has left the lobby.');
             delete players[socket.playerId];
         }
+
+        delete sockets[socket.id];
 
         broadcastGames();
         broadcastPlayers();
