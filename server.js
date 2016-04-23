@@ -125,7 +125,7 @@ io.on('connection', function (socket) {
         var game = games[gameName];
 
         if (game) {
-            if (game.password() === password) {
+            if (!game.password() || game.password() === password) {
                 createNetPlayer(game, socket, playerName);
                 broadcastGames(socket);
             } else {
