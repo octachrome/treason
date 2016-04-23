@@ -1051,7 +1051,14 @@ module.exports = function createGame(options) {
     }
 
     function currentState() {
-        return state.state.name;
+        switch (state.state.name) {
+            case stateNames.WAITING_FOR_PLAYERS:
+                return 'waiting for players';
+            case stateNames.GAME_WON:
+                return 'game over';
+            default:
+                return 'in progress';
+        }
     }
 
     function gameType() {
