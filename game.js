@@ -1056,14 +1056,27 @@ module.exports = function createGame(options) {
     }
 
     function currentState() {
+        var currentState;
         switch (state.state.name) {
             case stateNames.WAITING_FOR_PLAYERS:
-                return 'waiting for players';
+                currentState = 'waiting for players';
+                break;
             case stateNames.GAME_WON:
-                return 'game over';
+                currentState = 'game over';
+                break;
             default:
-                return 'in progress';
+                currentState = 'in progress';
         }
+
+        var players = 0;
+        for (var i = 0; i < state.players.length; i++) {
+            var player = state.players[i];
+            if (!player.isObserver) {
+                players++;
+            }
+        }
+
+        return currentState + ' (' + players + '/' + MAX_PLAYERS + ')';
     }
 
     function gameType() {
