@@ -198,6 +198,9 @@ socket.on('created', function(data) {
     join(null, null, vm.currentGame());
 });
 socket.on('joined', function(data) {
+    vm.history([]);
+    $('.chat').html('');
+
     var hash;
     if (data.password) {
         hash = data.gameName + '-' + data.password;
@@ -228,12 +231,6 @@ function join(form, event, gameName) {
     if (isInvalidPlayerName()) {
         return;
     }
-    if (gameName) {
-        //Firefox encodes URLs copied from the address bar.
-        gameName = decodeURIComponent(gameName);
-    }
-    vm.history([]);
-    $('.chat').html('');
     socket.emit('join', {
         playerName: vm.playerName(),
         gameName: gameName,
