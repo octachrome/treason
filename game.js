@@ -259,8 +259,8 @@ module.exports = function createGame(options) {
         proxies = [];
         setState({
             name: 'destroyed'
-        })
-        game.emit('end');
+        });
+        game.emit('teardown');
     }
 
     function afterPlayerDeath(playerIdx) {

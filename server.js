@@ -252,7 +252,7 @@ function createNewGame(socket, password) {
 
     games[gameName] = game;
 
-    game.once('end', function () {
+    game.once('teardown', function () {
         delete games[gameName];
     });
 
