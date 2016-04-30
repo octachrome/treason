@@ -171,7 +171,7 @@ var views = {
         all_players: {
             map: function (document) {
                 if (document.type === 'player') {
-                    emit(null, document.name);
+                    emit(null, document);
                 }
             }
         }
@@ -240,7 +240,8 @@ function calculateStats() {
         for (var i = 0; i < players.length; i++) {
             var player = players[i];
             if (stats[player.id]) {
-                stats[player.id].playerName = player.value;
+                stats[player.id].playerName = player.value.name;
+                stats[player.id].userAgent = player.value.userAgent;
             }
         }
 

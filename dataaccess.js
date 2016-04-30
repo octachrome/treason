@@ -152,7 +152,7 @@ function init(dbname) {
     });
 }
 
-var register = function (id, name) {
+var register = function (id, name, userAgent) {
     return ready.then(function() {
         debug('Player ' + name + ', trying to register with id ' + id);
 
@@ -166,12 +166,13 @@ var register = function (id, name) {
 
         return treasonDb.get(id)
             .then(function (result) {
-                if (result.name != name) {
-                    debug('Updating name of player ' + result.name + ' to ' + name);
+                if (result.name != name || userAgent != result.userAgent) {
+                    debug('Updating player ' + result.name + ' (new name ' + name + ')');
                     return treasonDb.merge(id, {
-                        name: name
+                        name: name,
+                        userAgent: userAgent
                     }).then(function (result) {
-                        debug('Updated name of playerId ' + id + ' to ' + name);
+                        debug('Updated playerId ' + id);
                     }).catch(function (error) {
                         debug('Failed to update player.');
                         debug(error);
@@ -189,7 +190,8 @@ var register = function (id, name) {
                 debug('Saving new id ' + id + ' for player ' + name);
                 return treasonDb.save(id, {
                     type: 'player',
-                    name: name
+                    name: name,
+                    userAgent: userAgent
                 }).then(function (result) {
                     debug('Allocated new id ' + id + ' to player: ' + name);
                 }).catch(function (error) {

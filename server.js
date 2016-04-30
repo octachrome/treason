@@ -78,7 +78,8 @@ io.on('connection', function (socket) {
     });
 
     socket.on('registerplayer', function (data) {
-        dataAccess.register(data.playerId, data.playerName).then(function (playerId) {
+        var userAgent = socket.request.headers['user-agent'];
+        dataAccess.register(data.playerId, data.playerName, userAgent).then(function (playerId) {
             socket.emit('handshake', {
                 activeUsers: activeUsers,
                 playerId: playerId
