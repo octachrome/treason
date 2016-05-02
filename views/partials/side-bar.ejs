@@ -34,5 +34,5 @@
     </li>
 </ul>
 <p><a href="rules.html" target="blank">How to play</a></p>
-<p><a href="/" onclick="return confirm('Are you sure you want to leave this game?')">Leave game</a></p>
+<p><a data-bind="click: leaveGame">Leave game</a></p>
 <p><a href="javascript:;" data-bind="visible: notifsSupported, text: notifToggleText, click: toggleNotifs"></a></p>

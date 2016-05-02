@@ -18,6 +18,7 @@ function createNetPlayer(game, socket, playerName) {
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
         onChatMessage: onChatMessage,
+        onPlayerLeft: onPlayerLeft,
         playerId: socket.playerId
     };
 
@@ -63,24 +64,26 @@ function createNetPlayer(game, socket, playerName) {
         }
     };
 
-    var onDisconnect = function onDisconnect(data) {
-        var rejoined = data.gameName === gameProxy.getGameName();
+    var onPlayerLeft = function () {
+        socket.removeListener('command', onCommand);
+        socket.removeListener('chat', sendChatMessage);
+        socket.removeListener('disconnect', leaveGame);
+        socket.removeListener('join', leaveGame);
+    };
+
+    var leaveGame = function () {
         if (gameProxy != null) {
-            socket.removeListener('command', onCommand);
-            socket.removeListener('chat', sendChatMessage);
-            socket.removeListener('disconnect', onDisconnect);
-            socket.removeListener('join', onDisconnect);
-            gameProxy.playerLeft(rejoined);
+            gameProxy.playerLeft();
             gameProxy = null;
             game = null;
         }
-    };
+    }
 
     socket.on('command', onCommand);
     socket.on('chat', sendChatMessage);
-    socket.on('disconnect', onDisconnect);
+    socket.on('disconnect', leaveGame);
     // If the player joins another game, leave this one.
-    socket.on('join', onDisconnect);
+    socket.on('join', leaveGame);
 
     function handleError(e) {
         var message;

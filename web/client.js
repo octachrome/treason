@@ -548,6 +548,12 @@ function interrogate(forceExchange) {
         forceExchange: forceExchange
     });
 }
+function leaveGame() {
+    if (confirm('Are you sure you want to leave this game?')) {
+        command('leave');
+        vm.state.state.name(null); // Opens the welcome screen. This is hacky.
+    }
+}
 function formatMessage(message) {
     for (var i = 0; i < vm.state.players().length; i++) {
         var playerName;

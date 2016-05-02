@@ -173,10 +173,11 @@ module.exports = function createGame(options) {
             throw new GameException('Unknown player disconnected');
         }
         var player = state.players[playerIdx];
-        if (!player) {
+        var playerObj = players[playerIdx];
+        if (!player || !playerObj) {
             throw new GameException('Unknown player disconnected');
         }
-        var playerId = players[playerIdx].playerId;
+        var playerId = playerObj.playerId;
         var historySuffix = [];
         if (state.state.name == stateNames.WAITING_FOR_PLAYERS || player.isObserver) {
             state.players.splice(playerIdx, 1);
@@ -221,6 +222,10 @@ module.exports = function createGame(options) {
                     }
                 }
             }
+        }
+
+        if (playerObj.onPlayerLeft) {
+            playerObj.onPlayerLeft();
         }
 
         addHistory('player-left', nextAdhocHistGroup(), player.name + ' left the game' + (rejoined ? ' to play again' : ''));
@@ -416,6 +421,9 @@ module.exports = function createGame(options) {
         }
         if (command.command == 'start') {
             start(command.gameType);
+
+        } else if (command.command == 'leave') {
+            playerLeft(playerIdx);
 
         } else if (command.command == 'add-ai') {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
