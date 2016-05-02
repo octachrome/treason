@@ -207,7 +207,7 @@ socket.on('joined', function(data) {
     } else {
         hash = data.gameName;
     }
-    history.pushState(null, '', hash);
+    history.replaceState(null, '', hash);
 });
 socket.on('error', function (data) {
     alert(data);
