@@ -55,28 +55,8 @@ var createNetPlayer = require('./net-player');
 var gameId = 1;
 var games = {};
 var players = {};
-var sockets = {};
-// Sockets which have not been active in the last 30 minutes are disconnected.
-var TIMEOUT = 30 * 60 * 1000;
 
 io.on('connection', function (socket) {
-    var timestamp = new Date().getTime();
-
-    sockets[socket.id] = {
-        lastActive: timestamp,
-        socket: socket
-    };
-
-    for (var socketId in sockets) {
-        if (sockets.hasOwnProperty(socketId)) {
-            var socketData = sockets[socketId];
-            if (timestamp - socketData.lastActive > TIMEOUT) {
-                //Disconnect idle sockets
-                socketData.socket.disconnect();
-            }
-        }
-    }
-
     //Emit the global rankings upon connect
     dataAccess.getPlayerRankings().then(function (result) {
         socket.emit('rankings', result);
@@ -113,8 +93,6 @@ io.on('connection', function (socket) {
     });
 
     socket.on('join', function (data) {
-        refreshSocket(socket);
-
         var playerName = data.playerName;
         var gameName = data.gameName;
         var password = data.password;
@@ -138,24 +116,18 @@ io.on('connection', function (socket) {
     });
 
     socket.on('showrankings', function () {
-        refreshSocket(socket);
-
         dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
             socket.emit('rankings', result);
         });
     });
 
     socket.on('showmyrank', function () {
-        refreshSocket(socket);
-
         dataAccess.getPlayerRankings(socket.playerId, true).then(function (result) {
             socket.emit('rankings', result);
         });
     });
 
     socket.on('sendglobalchatmessage', function (data) {
-        refreshSocket(socket);
-
         if (data.length > 300) {
             data = data.slice(0, 300) + '...';
         }
@@ -181,18 +153,12 @@ io.on('connection', function (socket) {
             }
         }
 
-        delete sockets[socket.id];
-
         broadcastGames();
         broadcastPlayers();
         socket.removeAllListeners();
         socket = null;
     });
 });
-
-function refreshSocket(socket) {
-    sockets[socket.id].lastActive = new Date().getTime();
-}
 
 function joinGame(socket, gameName, playerName, password) {
     var game = games[gameName];
