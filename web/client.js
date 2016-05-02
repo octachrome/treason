@@ -552,6 +552,10 @@ function leaveGame() {
     if (confirm('Are you sure you want to leave this game?')) {
         command('leave');
         vm.state.state.name(null); // Opens the welcome screen. This is hacky.
+        vm.currentGame('');
+        vm.password('');
+        vm.gameInfo('');
+        history.replaceState(null, '', location.href.split('#')[0]);
     }
 }
 function formatMessage(message) {
