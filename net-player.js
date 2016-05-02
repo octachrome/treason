@@ -48,7 +48,7 @@ function createNetPlayer(game, socket, playerName) {
         });
     }
 
-    var onCommand = function(data) {
+    function onCommand(data) {
         try {
             if (gameProxy != null) {
                 gameProxy.command(data);
@@ -56,22 +56,22 @@ function createNetPlayer(game, socket, playerName) {
         } catch(e) {
             handleError(e);
         }
-    };
+    }
 
-    var sendChatMessage = function (message) {
+    function sendChatMessage(message) {
         if (gameProxy != null) {
             gameProxy.sendChatMessage(message);
         }
-    };
+    }
 
-    var onPlayerLeft = function () {
+    function onPlayerLeft() {
         socket.removeListener('command', onCommand);
         socket.removeListener('chat', sendChatMessage);
         socket.removeListener('disconnect', leaveGame);
         socket.removeListener('join', leaveGame);
-    };
+    }
 
-    var leaveGame = function () {
+    function leaveGame() {
         if (gameProxy != null) {
             gameProxy.playerLeft();
             gameProxy = null;
