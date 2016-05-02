@@ -246,8 +246,7 @@ function createNewGame(socket, password) {
         moveDelay: 1000,
         gameName: gameName,
         created: new Date(),
-        password: password || '',
-        callback: broadcastGames
+        password: password || ''
     });
 
     games[gameName] = game;
@@ -256,12 +255,14 @@ function createNewGame(socket, password) {
         delete games[gameName];
     });
 
+    game.on('statechange', function () {
+        broadcastGames();
+    });
+
     socket.emit('created', {
         gameName: gameName,
         password: password
     });
-
-    broadcastGames();
 }
 
 function isInvalidPlayerName(playerName) {
