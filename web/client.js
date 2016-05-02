@@ -80,7 +80,8 @@ $(window).on('hashchange load', function() {
             vm.currentGame(location.hash);
         }
         if (vm.playerName()) {
-            join(null, null, vm.currentGame());
+            initCurrentGameInfo(vm.currentGame());
+            $('#joinGameModal').modal('show');
         } else {
             vm.needName(true);
         }
@@ -745,6 +746,16 @@ function toggleNotifs() {
         vm.notifsEnabled(false);
     }
 }
+function initCurrentGameInfo(gameName) {
+    var games = vm.games();
+    for (var i = 0; i < games.length; i++) {
+        var game = games[i];
+        if (game.gameName == gameName) {
+            vm.gameInfo(game);
+            break;
+        }
+    }
+}
 
 $(window).on('resize', function () {
     $('.activity').height($(window).height() - 40);
@@ -778,15 +789,13 @@ $(window).on('keydown', function (event) {
 });
 
 $('document').ready(function() {
-    $('#joinGameModal').on('show.bs.modal', function(event) {
+    var $joinGameModal = $('#joinGameModal');
+    $joinGameModal.on('show.bs.modal', function(event) {
         var gameName = $(event.relatedTarget).data('game-name');
-        var games = vm.games();
-        for (var i = 0; i < games.length; i++) {
-            var game = games[i];
-            if (game.gameName == gameName) {
-                vm.gameInfo(game);
-                break;
-            }
-        }
+        initCurrentGameInfo(gameName);
+    });
+
+    $joinGameModal.on('hidden.bs.modal', function(event) {
+        vm.gameInfo('');
     });
 });

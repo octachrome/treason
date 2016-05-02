@@ -37,11 +37,14 @@
 <div class="modal fade" id="joinGameModal" tabindex="-1" role="dialog" aria-labelledby="joinGameLabel">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header" data-bind="with: gameInfo">
+            <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title" id="joinGameModalTitle" data-bind="text: 'Game ' + gameName"></h4>
+                <h4 class="modal-title" id="joinGameModalTitle" data-bind="text: gameInfo() ? 'Game ' + gameInfo().gameName : 'Game not found'"></h4>
             </div>
             <div class="modal-body">
+                <div data-bind="visible: !gameInfo()">
+                    The game was not found. Please check the URL and try again.
+                </div>
                 <div data-bind="with: gameInfo">
                     <p>State: <span data-bind="text: status"></span></p>
                     <p>Mode: <span data-bind="text: type"></span></p>
