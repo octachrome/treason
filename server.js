@@ -253,6 +253,7 @@ function createNewGame(socket, password) {
 
     game.once('teardown', function () {
         delete games[gameName];
+        broadcastGames();
     });
 
     game.on('statechange', function () {
