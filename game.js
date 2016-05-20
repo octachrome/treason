@@ -49,7 +49,9 @@ module.exports = function createGame(options) {
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
         },
-        password: options.password
+        password: options.password,
+        restarting: false,
+        canStart: false
     };
 
     var rand = randomGen.create(options.randomSeed);
@@ -83,30 +85,7 @@ module.exports = function createGame(options) {
 
     function playerJoined(player) {
         var isObserver = !canJoin();
-
-        var playerState = {
-            name: playerName(player.name),
-            cash: 2,
-            influenceCount: 2,
-            influence: [
-                {
-                    role: 'not dealt',
-                    revealed: false
-                },
-                {
-                    role: 'not dealt',
-                    revealed: false
-                }
-            ],
-            isObserver: isObserver,
-            ai: !!player.ai
-        };
-
-        if (isObserver) {
-            playerState.cash = 0;
-            playerState.influenceCount = 0;
-            playerState.influence = [];
-        }
+        var playerState = createPlayerState(player, isObserver);
 
         var playerIdx = state.players.length;
         state.players.push(playerState);
@@ -122,6 +101,35 @@ module.exports = function createGame(options) {
         }
         proxies.push(proxy);
         return proxy;
+    }
+
+    function createPlayerState(player, isObserver) {
+        var playerState = {
+            name: playerName(player.name),
+            cash: 2,
+            influenceCount: 2,
+            influence: [
+                {
+                    role: 'not dealt',
+                    revealed: false
+                },
+                {
+                    role: 'not dealt',
+                    revealed: false
+                }
+            ],
+            isObserver: isObserver,
+            ai: !!player.ai,
+            isReady: false
+        };
+
+        if (isObserver) {
+            playerState.cash = 0;
+            playerState.influenceCount = 0;
+            playerState.influence = [];
+        }
+
+        return playerState;
     }
 
     // Related history items are grouped together using history group ids, defined below.
@@ -236,6 +244,99 @@ module.exports = function createGame(options) {
             destroyGame();
         }
         emitState();
+    }
+
+    function playerReady(playerIndex) {
+        var gamePlayers = gamePlayerStats();
+
+        //Solo players can just start straight away
+        if (gamePlayers.humanPlayers == 1) {
+            debug('Starting new solo player game');
+            resetGame();
+            return;
+        }
+
+        var player = state.players[playerIndex];
+
+        //The player is ready and the game can be started again, so he starts it
+        debug('player is ready' +player.isReady);
+        debug(' can start ' + state.canStart);
+        if (player.isReady && state.canStart) {
+            resetGame();
+            return;
+        }
+
+        //The player was not ready, but is trying to ready up after enough other players have filled up the ready list
+        if (gamePlayers.playersReady == MAX_PLAYERS && !player.isReady) {
+            //You snooze, you lose
+            sendChatMessage(playerIndex, 'This game has reached the maximum capacity, no more players can ready up.');
+            return;
+        }
+
+        //This is a multi player game and people are readying up
+        if (gamePlayers.humanPlayers > 1) {
+            //The player is clicking ready for the first time
+            if (!player.isReady) {
+                addHistory('player-ready', nextAdhocHistGroup(), player.name + ' is ready to play again');
+                player.isReady = true;
+                gamePlayers = gamePlayerStats();
+
+                if (gamePlayers.playersReady > 1 && !state.restarting) {
+                    state.restarting = true;
+                    addHistory('readying-to-start-game', nextAdhocHistGroup(), 'A new game can be started soon');
+                    setTimeout(function() {
+                        addHistory('ready-to-start-game', nextAdhocHistGroup(), 'Game can now be started again, click play again to start game');
+                        state.canStart = true;
+                    }, 5000);
+                }
+            }
+        }
+    }
+
+    function resetGame() {
+        state.players = [];
+        //Anyone who is ready is a player. Anyone who is not is an observer. Try to backfill AIs if the previous game had some
+        for (var i = 0; i < players.length; i++) {
+            var player = players[i];
+            if (!player.isReady) {
+                state.players.push(createPlayerState(player, true));
+            }
+        }
+
+        gameStats = dataAccess.constructGameStats();
+
+        if (state.state != stateNames.WAITING_FOR_PLAYERS) {
+            setState({
+                name: stateNames.WAITING_FOR_PLAYERS
+            });
+            state.canStart = false;
+            state.restarting = false;
+            emitState();
+        }
+    }
+
+    function gamePlayerStats() {
+        var playerStats = {
+            aiPlayers: 0,
+            humanPlayers: 0,
+            observers: 0,
+            playersReady: 0
+        };
+
+        for (var i = 0; i < state.players.length; i++) {
+            var player = state.players[i];
+            if (player.ai) {
+                playerStats.aiPlayers++;
+            } else if (!player.isObserver) {
+                playerStats.humanPlayers++;
+                if (player.isReady && !player.ai) {
+                    playerStats.playersReady++;
+                }
+            } else {
+                playerStats.observers++;
+            }
+        }
+        return playerStats;
     }
 
     function removeAiPlayer() {
@@ -424,6 +525,9 @@ module.exports = function createGame(options) {
 
         } else if (command.command == 'leave') {
             playerLeft(playerIdx);
+
+        } else if (command.command == 'ready') {
+            playerReady(playerIdx);
 
         } else if (command.command == 'add-ai') {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {

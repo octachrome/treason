@@ -224,8 +224,7 @@ socket.on('gamenotfound', function (data) {
 });
 
 function playAgain() {
-    // If we were playing a private game, rejoin the same one. Otherwise, join a new public game.
-    join(null, null, vm.currentGame());
+    command('ready');
 }
 function join(form, event, gameName) {
     if (isInvalidPlayerName()) {
