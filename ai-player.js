@@ -108,10 +108,6 @@ function createAiPlayer(game, options) {
             lastRoleClaim = null;
         }
 
-        console.log(JSON.stringify(state, null, 2));
-        console.log(currentPlayer);
-        console.log(aiPlayer);
-
         if (state.state.name == stateNames.START_OF_TURN && currentPlayer == aiPlayer) {
             playOurTurn();
         } else if (state.state.name == stateNames.ACTION_RESPONSE && aiPlayer != currentPlayer) {
