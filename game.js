@@ -980,9 +980,9 @@ module.exports = function createGame(options) {
     function playAction(playerIdx, actionState) {
         debug('playing action');
         var target, message, revealedRole;
-        var player = state.players[playerIdx];
+        var playerState = state.players[playerIdx];
         var action = actions[actionState.action];
-        player.cash += action.gain || 0;
+        playerState.cash += action.gain || 0;
         if (actionState.action == 'assassinate') {
             message = format('{%d} assassinated {%d}', playerIdx, actionState.target);
             target = state.players[actionState.target];
@@ -1028,13 +1028,13 @@ module.exports = function createGame(options) {
             addHistory('steal', curTurnHistGroup(), '{%d} stole from {%d}', playerIdx, actionState.target);
             if (target.cash >= 2) {
                 target.cash -= 2;
-                player.cash += 2;
+                playerState.cash += 2;
             } else {
-                player.cash += target.cash;
+                playerState.cash += target.cash;
                 target.cash = 0;
             }
         } else if (actionState.action == 'exchange') {
-            var exchangeOptions = [deck.pop()].concat(getInfluence(player));
+            var exchangeOptions = [deck.pop()].concat(getInfluence(playerState));
             if (state.roles.indexOf('ambassador') !== -1) {
                 // Ambassadors draw two cards; inquisitors draw one.
                 exchangeOptions.unshift(deck.pop());
@@ -1087,9 +1087,9 @@ module.exports = function createGame(options) {
         }
     }
 
-    function indexOfInfluence(player, role) {
-        for (var i = 0; i < player.influence.length; i++) {
-            if (player.influence[i].role == role && !player.influence[i].revealed) {
+    function indexOfInfluence(playerState, role) {
+        for (var i = 0; i < playerState.influence.length; i++) {
+            if (playerState.influence[i].role == role && !playerState.influence[i].revealed) {
                 return i;
             }
         }
@@ -1182,8 +1182,8 @@ module.exports = function createGame(options) {
 
         var players = 0;
         for (var i = 0; i < state.players.length; i++) {
-            var player = state.players[i];
-            if (!player.isObserver) {
+            var playerState = state.players[i];
+            if (!playerState.isObserver) {
                 players++;
             }
         }
