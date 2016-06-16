@@ -449,8 +449,8 @@ module.exports = function createGame(options) {
         }
         // If a player is exchanging or interrogating, show the roles to that player alone.
         if (state.state.playerIdx != playerIdx) {
-            masked.state.exchangeOptions = [];
-            masked.state.confession = null;
+            delete masked.state.exchangeOptions;
+            delete masked.state.confession;
         }
         masked.playerIdx = playerIdx;
         return masked;
