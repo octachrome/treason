@@ -181,11 +181,11 @@ module.exports = function createGame(options) {
             throw new GameException('Unknown player disconnected');
         }
         var playerState = state.players[playerIdx];
-        var playerObj = playerIfaces[playerIdx];
-        if (!playerState || !playerObj) {
+        var playerIface = playerIfaces[playerIdx];
+        if (!playerState || !playerIface) {
             throw new GameException('Unknown player disconnected');
         }
-        var playerId = playerObj.playerId;
+        var playerId = playerIface.playerId;
         var historySuffix = [];
         if (state.state.name == stateNames.WAITING_FOR_PLAYERS || playerState.isObserver) {
             state.players.splice(playerIdx, 1);
@@ -232,8 +232,8 @@ module.exports = function createGame(options) {
             }
         }
 
-        if (playerObj.onPlayerLeft) {
-            playerObj.onPlayerLeft();
+        if (playerIface.onPlayerLeft) {
+            playerIface.onPlayerLeft();
         }
 
         addHistory('player-left', nextAdhocHistGroup(), playerState.name + ' left the game' + (rejoined ? ' to play again' : ''));
@@ -297,9 +297,9 @@ module.exports = function createGame(options) {
         state.players = [];
         //Anyone who is ready is a player. Anyone who is not is an observer. Try to backfill AIs if the previous game had some
         for (var i = 0; i < playerIfaces.length; i++) {
-            var player = playerIfaces[i];
-            if (!player.isReady) {
-                state.players.push(createPlayerState(player, true));
+            var playerIface = playerIfaces[i];
+            if (!playerIface.isReady) {
+                state.players.push(createPlayerState(playerIface, true));
             }
         }
 
