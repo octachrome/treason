@@ -198,36 +198,34 @@ module.exports = function createGame(options) {
             }
         } else {
             playerIfaces[playerIdx] = null;
-            if (state.state.name != stateNames.GAME_WON) {
-                // Reveal all the player's influence.
-                var influence = playerState.influence;
-                for (var j = 0; j < influence.length; j++) {
-                    if (!influence[j].revealed) {
-                        historySuffix.push(format('{%d} revealed %s', playerIdx, influence[j].role));
-                        influence[j].revealed = true;
-                    }
+            // Reveal all the player's influence.
+            var influence = playerState.influence;
+            for (var j = 0; j < influence.length; j++) {
+                if (!influence[j].revealed) {
+                    historySuffix.push(format('{%d} revealed %s', playerIdx, influence[j].role));
+                    influence[j].revealed = true;
                 }
-                //If the player was eliminated already or an observer, we do not record a disconnect
-                if (playerId && playerState.influenceCount > 0) {
-                    //Record the stats on the game
-                    gameStats.playerDisconnect.unshift(playerId);
-                    //Record the stats individually, in case the game does not finish
-                    //Should not be recorded if the player is the last human player
-                    if (!onlyAiLeft()) {
-                        dataAccess.recordPlayerDisconnect(playerId);
-                    }
+            }
+            //If the player was eliminated already or an observer, we do not record a disconnect
+            if (playerId && playerState.influenceCount > 0) {
+                //Record the stats on the game
+                gameStats.playerDisconnect.unshift(playerId);
+                //Record the stats individually, in case the game does not finish
+                //Should not be recorded if the player is the last human player
+                if (!onlyAiLeft()) {
+                    dataAccess.recordPlayerDisconnect(playerId);
                 }
-                playerState.influenceCount = 0;
-                var end = checkForGameEnd();
-                if (!end) {
-                    if (state.state.playerIdx == playerIdx) {
-                        nextTurn();
-                    } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx) {
-                        nextTurn();
-                    } else if ((state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.BLOCK_RESPONSE)
-                        && !allows[playerIdx]) {
-                        allow(playerIdx);
-                    }
+            }
+            playerState.influenceCount = 0;
+            var end = checkForGameEnd();
+            if (!end) {
+                if (state.state.playerIdx == playerIdx) {
+                    nextTurn();
+                } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx) {
+                    nextTurn();
+                } else if ((state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.BLOCK_RESPONSE)
+                    && !allows[playerIdx]) {
+                    allow(playerIdx);
                 }
             }
         }
@@ -350,7 +348,7 @@ module.exports = function createGame(options) {
         }
         if (winnerIdx != null) {
             setState({
-                name: stateNames.GAME_WON,
+                name: stateNames.WAITING_FOR_PLAYERS,
                 winnerIdx: winnerIdx,
                 playerIdx: null
             });
@@ -389,7 +387,6 @@ module.exports = function createGame(options) {
 
     function emitState() {
         if (state.state.name === stateNames.WAITING_FOR_PLAYERS
-            || state.state.name === stateNames.GAME_WON
             || state.state.name === stateNames.START_OF_TURN) {
             game.emit('statechange');
         }
@@ -477,7 +474,8 @@ module.exports = function createGame(options) {
             turnHistGroup++;
             setState({
                 name: stateNames.START_OF_TURN,
-                playerIdx: firstPlayer
+                playerIdx: firstPlayer,
+                winnerIdx: null
             });
         }
     }
@@ -504,7 +502,7 @@ module.exports = function createGame(options) {
             playerLeft(playerIdx);
 
         } else if (command.command == 'ready') {
-            if (state.state.name != stateNames.GAME_WON) {
+            if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
                 throw new GameException('Incorrect state');
             }
             playerReady(playerIdx);
@@ -1058,7 +1056,7 @@ module.exports = function createGame(options) {
 
     function nextTurn() {
         debug('next turn');
-        if (state.state.name != stateNames.GAME_WON) {
+        if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
             turnHistGroup++;
             setState({
                 name: stateNames.START_OF_TURN,
@@ -1152,9 +1150,6 @@ module.exports = function createGame(options) {
         switch (state.state.name) {
             case stateNames.WAITING_FOR_PLAYERS:
                 currentState = 'waiting for players';
-                break;
-            case stateNames.GAME_WON:
-                currentState = 'game over';
                 break;
             default:
                 currentState = 'in progress';

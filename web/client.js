@@ -334,12 +334,11 @@ function theyHaveWon() {
     return vm.state.state.winnerIdx() != null && vm.state.state.winnerIdx() != vm.state.playerIdx();
 }
 function canPlayAgain() {
-    return theyAreInState('game-won') || weAreInState('game-won');
+    return vm.state.state.name() == 'waiting-for-players';
 }
 function readyToPlay() {
     var player = ourPlayer();
-    return player && player.isReady() &&
-        (vm.state.state.name() == 'waiting-for-players' || vm.state.state.name() == 'game-won');
+    return player && player.isReady() && vm.state.state.name() == 'waiting-for-players';
 }
 function weAreAlive() {
     return ourInfluenceCount() > 0;
@@ -736,11 +735,11 @@ function notifyPlayerOfState() {
     else if (weMustReveal()) {
         notifyPlayer('You must reveal an influence');
     }
-    else if (weAreInState(states.GAME_WON)) {
+    else if (weHaveWon()) {
         notifyPlayer('You have won!');
     }
-    else if (theyAreInState(states.GAME_WON)) {
-        notifyPlayer(currentPlayerName() + ' has won!');
+    else if (theyHaveWon()) {
+        notifyPlayer(winnerName() + ' has won!');
     }
 }
 function notifsSupported() {
