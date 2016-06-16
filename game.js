@@ -60,7 +60,7 @@ module.exports = function createGame(options) {
 
     var gameStats = dataAccess.constructGameStats();
 
-    var players = [];
+    var playerIfaces = [];
     var allows = [];
     var proxies = [];
 
@@ -89,7 +89,7 @@ module.exports = function createGame(options) {
 
         var playerIdx = state.players.length;
         state.players.push(playerState);
-        players.push(player);
+        playerIfaces.push(player);
         state.numPlayers++;
 
         addHistory('player-joined', nextAdhocHistGroup(), playerState.name + ' joined the game' + (isObserver ? ' as an observer' : ''));
@@ -181,7 +181,7 @@ module.exports = function createGame(options) {
             throw new GameException('Unknown player disconnected');
         }
         var playerState = state.players[playerIdx];
-        var playerObj = players[playerIdx];
+        var playerObj = playerIfaces[playerIdx];
         if (!playerState || !playerObj) {
             throw new GameException('Unknown player disconnected');
         }
@@ -189,7 +189,7 @@ module.exports = function createGame(options) {
         var historySuffix = [];
         if (state.state.name == stateNames.WAITING_FOR_PLAYERS || playerState.isObserver) {
             state.players.splice(playerIdx, 1);
-            players.splice(playerIdx, 1);
+            playerIfaces.splice(playerIdx, 1);
             proxies.splice(playerIdx, 1);
             state.numPlayers--;
             // Rewire the player proxies with the new player index
@@ -197,7 +197,7 @@ module.exports = function createGame(options) {
                 createGameProxy(i, proxies[i]);
             }
         } else {
-            players[playerIdx] = null;
+            playerIfaces[playerIdx] = null;
             if (state.state.name != stateNames.GAME_WON) {
                 // Reveal all the player's influence.
                 var influence = playerState.influence;
@@ -296,8 +296,8 @@ module.exports = function createGame(options) {
     function resetGame() {
         state.players = [];
         //Anyone who is ready is a player. Anyone who is not is an observer. Try to backfill AIs if the previous game had some
-        for (var i = 0; i < players.length; i++) {
-            var player = players[i];
+        for (var i = 0; i < playerIfaces.length; i++) {
+            var player = playerIfaces[i];
             if (!player.isReady) {
                 state.players.push(createPlayerState(player, true));
             }
@@ -340,8 +340,8 @@ module.exports = function createGame(options) {
     }
 
     function removeAiPlayer() {
-        for (var i = players.length - 1; i > 0; i--) {
-            if (players[i] && players[i].ai) {
+        for (var i = playerIfaces.length - 1; i > 0; i--) {
+            if (playerIfaces[i] && playerIfaces[i].ai) {
                 playerLeft(i);
                 return;
             }
@@ -349,8 +349,8 @@ module.exports = function createGame(options) {
     }
 
     function onlyAiLeft() {
-        for (var i = 0; i < players.length; i++) {
-            if (players[i] && !players[i].ai) {
+        for (var i = 0; i < playerIfaces.length; i++) {
+            if (playerIfaces[i] && !playerIfaces[i].ai) {
                 return false;
             }
         }
@@ -359,7 +359,7 @@ module.exports = function createGame(options) {
 
     function destroyGame() {
         debug('destroying game');
-        players = [];
+        playerIfaces = [];
         proxies = [];
         setState({
             name: 'destroyed'
@@ -368,7 +368,7 @@ module.exports = function createGame(options) {
     }
 
     function afterPlayerDeath(playerIdx) {
-        gameStats.playerRank.unshift(players[playerIdx].playerId);
+        gameStats.playerRank.unshift(playerIfaces[playerIdx].playerId);
         addHistory('player-died', nextAdhocHistGroup(), '{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
@@ -390,7 +390,7 @@ module.exports = function createGame(options) {
                 name: stateNames.GAME_WON,
                 playerIdx: winnerIdx
             });
-            var playerId = players[winnerIdx].playerId;
+            var playerId = playerIfaces[winnerIdx].playerId;
             gameStats.playerRank.unshift(playerId);
             dataAccess.recordGameData(gameStats);
             game.emit('end');
@@ -426,8 +426,8 @@ module.exports = function createGame(options) {
 
     function emitStateAsync(playerIdx, state) {
         setTimeout(function () {
-            if (players[playerIdx] != null) {
-                players[playerIdx].onStateChange(state);
+            if (playerIfaces[playerIdx] != null) {
+                playerIfaces[playerIdx].onStateChange(state);
             }
         }, 0);
     }
@@ -1151,8 +1151,8 @@ module.exports = function createGame(options) {
 
     function addHistoryAsync(dest, type, histGroup, message) {
         setTimeout(function () {
-            if (players[dest] != null) {
-                players[dest].onHistoryEvent(message, type, histGroup);
+            if (playerIfaces[dest] != null) {
+                playerIfaces[dest].onHistoryEvent(message, type, histGroup);
             }
         }, 0);
     }
@@ -1180,15 +1180,15 @@ module.exports = function createGame(options) {
                 currentState = 'in progress';
         }
 
-        var players = 0;
+        var playerCount = 0;
         for (var i = 0; i < state.players.length; i++) {
             var playerState = state.players[i];
             if (!playerState.isObserver) {
-                players++;
+                playerCount++;
             }
         }
 
-        return currentState + ' (' + players + '/' + MAX_PLAYERS + ')';
+        return currentState + ' (' + playerCount + '/' + MAX_PLAYERS + ')';
     }
 
     function gameType() {
@@ -1201,14 +1201,14 @@ module.exports = function createGame(options) {
 
     function sendChatMessage(playerIdx, message) {
         message = escape(message).substring(0, 1000);
-        for (var i = 0; i < players.length; i++) {
+        for (var i = 0; i < playerIfaces.length; i++) {
             sendChatMessageAsync(i, playerIdx, message);
         }
     }
 
     function sendChatMessageAsync(dest, playerIdx, message) {
-        if (players[dest] != null) {
-            players[dest].onChatMessage(playerIdx, message);
+        if (playerIfaces[dest] != null) {
+            playerIfaces[dest].onChatMessage(playerIdx, message);
         }
     }
 
