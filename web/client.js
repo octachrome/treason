@@ -44,6 +44,7 @@ vm.state = ko.mapping.fromJS({
     state: {
         name: null,
         playerIdx: null,
+        winnerIdx: null,
         blockingRole: null,
         action: null,
         target: null,
@@ -311,42 +312,54 @@ function canRemoveAi() {
 function removeAi() {
     command('remove-ai');
 }
+function canStartGame() {
+    var readyCount = 0;
+    vm.state.players().forEach(function (player) {
+        if (player.isReady()) {
+            readyCount++;
+        }
+    });
+    return readyCount >= 2;
+}
 function weAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() == vm.state.playerIdx();
 }
 function theyAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() != vm.state.playerIdx();
 }
-function gameOver() {
+function weHaveWon() {
+    return vm.state.state.winnerIdx() == vm.state.playerIdx();
+}
+function theyHaveWon() {
+    return vm.state.state.winnerIdx() != null && vm.state.state.winnerIdx() != vm.state.playerIdx();
+}
+function canPlayAgain() {
     return theyAreInState('game-won') || weAreInState('game-won');
+}
+function readyToPlay() {
+    var player = ourPlayer();
+    return player && player.isReady() &&
+        (vm.state.state.name() == 'waiting-for-players' || vm.state.state.name() == 'game-won');
 }
 function weAreAlive() {
     return ourInfluenceCount() > 0;
 }
 function currentPlayerName() {
-    if (vm.state.state.playerIdx() != null) {
-        var player = vm.state.players()[vm.state.state.playerIdx()];
-        if (player) {
-            return player.name();
-        }
-    }
-    return '';
+    return playerName(vm.state.state.playerIdx());
 }
 function targetPlayerName() {
-    if (vm.state.state.target() != null) {
-        var player = vm.state.players()[vm.state.state.target()];
-        if (player) {
-            return player.name();
-        }
-    }
-    return '';
+    return playerName(vm.state.state.target());
 }
 function toRevealPlayerName() {
-    if (vm.state.state.playerToReveal() != null) {
-        var player = vm.state.players()[vm.state.state.playerToReveal()];
-        if (player) {
-            return player.name();
-        }
+    return playerName(vm.state.state.playerToReveal());
+}
+function winnerName() {
+    return playerName(vm.state.state.winnerIdx());
+}
+function playerName(playerIdx) {
+    var player = vm.state.players()[playerIdx];
+    if (player) {
+        return player.name();
     }
     return '';
 }

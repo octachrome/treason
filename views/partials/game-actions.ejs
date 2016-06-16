@@ -1,14 +1,28 @@
 <div class="action-bar">
-    <div data-bind="visible: state.state.name() == 'waiting-for-players'">
+    <!-- Start/end of game -->
+    <div data-bind="visible: readyToPlay()">
         <p>Waiting for players</p>
         <p>
             <button class="btn btn-default" data-bind="enable: canAddAi(), event: {vclick: addAi}">Add AI</button>
             <button class="btn btn-default" data-bind="enable: canRemoveAi(), event: {vclick: removeAi}">Remove AI</button>
             <br/>
-            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'normal')}, visible: state.numPlayers() >= 2">Start normal game</button>
-            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'inquisitors')}, visible: state.numPlayers() >= 2">Start inquisitor game</button>
+            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'normal')}, visible: canStartGame()">Start normal game</button>
+            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'inquisitors')}, visible: canStartGame()">Start inquisitor game</button>
         </p>
     </div>
+    <!-- ko if: !readyToPlay() -->
+    <div data-bind="visible: weHaveWon()">
+        You have won!<br/>
+    </div>
+    <div data-bind="visible: theyHaveWon()">
+        <span data-bind="text: winnerName()"></span> has won!<br/>
+    </div>
+    <div data-bind="visible: canPlayAgain()">
+        <button class="btn btn-default" data-bind="event: {vclick: playAgain}">Play again</button>
+    </div>
+    <!-- /ko -->
+
+    <!-- During game -->
     <div data-bind="visible: weAreInState('start-of-turn')">
         <!-- ko if: !targetedAction() -->
             Your turn:<br/>
@@ -139,15 +153,6 @@
                 <span>Challenge</span>
             </button>
         <!-- /ko -->
-    </div>
-    <div data-bind="visible: weAreInState('game-won')">
-        You have won!<br/>
-    </div>
-    <div data-bind="visible: theyAreInState('game-won')">
-        <span data-bind="text: currentPlayerName()"></span> has won!<br/>
-    </div>
-    <div data-bind="visible: gameOver()">
-        <button class="btn btn-default" data-bind="event: {vclick: playAgain}">Play again</button>
     </div>
     <div data-bind="visible: weMustReveal()">
         <span data-bind="text: stateMessage()"></span><br/><br/>

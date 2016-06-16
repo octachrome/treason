@@ -1,6 +1,14 @@
 <ul class="list-group" data-bind="foreach: state.players">
     <li class="list-group-item" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
-        <div class="row">
+        <div class="row" data-bind="visible: readyToPlay()">
+            <div class="col-xs-6">
+                <span data-bind="text: name, css: { 'dead-player' : !isReady() }"></span>
+            </div>
+            <div class="col-xs-6">
+            <!-- todo: show ready state -->
+            </div>
+        </div>
+        <div class="row" data-bind="visible: !readyToPlay()">
             <div class="col-xs-6">
                 <span data-bind="text: name, css: { 'dead-player' : influenceCount() == 0 }"></span>
                 <span class="badge" data-bind="text: '$' + cash(), visible: influenceCount() != 0"></span>

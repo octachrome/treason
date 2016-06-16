@@ -106,21 +106,21 @@ module.exports = function createGame(options) {
     function createPlayerState(player, isObserver) {
         var playerState = {
             name: playerName(player.name),
-            cash: 2,
-            influenceCount: 2,
+            cash: 8, // todo
+            influenceCount: 1, // todo
             influence: [
-                {
+/*                {
                     role: 'not dealt',
                     revealed: false
                 },
-                {
+*/                {
                     role: 'not dealt',
                     revealed: false
                 }
             ],
             isObserver: isObserver,
             ai: !!player.ai,
-            isReady: false
+            isReady: true
         };
 
         if (isObserver) {
@@ -247,55 +247,18 @@ module.exports = function createGame(options) {
     }
 
     function playerReady(playerIndex) {
-        var gamePlayers = gamePlayerStats();
-
-        //Solo players can just start straight away
-        if (gamePlayers.humanPlayers == 1) {
-            debug('Starting new solo player game');
-            resetGame();
-            return;
-        }
-
         var playerState = state.players[playerIndex];
 
-        //The player is ready and the game can be started again, so he starts it
-        debug('player is ready' +playerState.isReady);
-        debug(' can start ' + state.canStart);
-        if (playerState.isReady && state.canStart) {
-            resetGame();
-            return;
-        }
-
-        //The player was not ready, but is trying to ready up after enough other players have filled up the ready list
-        if (gamePlayers.playersReady == MAX_PLAYERS && !playerState.isReady) {
-            //You snooze, you lose
-            sendChatMessage(playerIndex, 'This game has reached the maximum capacity, no more players can ready up.');
-            return;
-        }
-
-        //This is a multi player game and people are readying up
-        if (gamePlayers.humanPlayers > 1) {
-            //The player is clicking ready for the first time
-            if (!playerState.isReady) {
-                addHistory('player-ready', nextAdhocHistGroup(), playerState.name + ' is ready to play again');
-                playerState.isReady = true;
-                gamePlayers = gamePlayerStats();
-
-                if (gamePlayers.playersReady > 1 && !state.restarting) {
-                    state.restarting = true;
-                    addHistory('readying-to-start-game', nextAdhocHistGroup(), 'A new game can be started soon');
-                    setTimeout(function() {
-                        addHistory('ready-to-start-game', nextAdhocHistGroup(), 'Game can now be started again, click play again to start game');
-                        state.canStart = true;
-                    }, 5000);
-                }
-            }
+        if (!playerState.isReady) {
+            playerState.isReady = true;
+            addHistory('player-ready', nextAdhocHistGroup(), playerState.name + ' is ready to play again');
         }
     }
 
     function resetGame() {
         state.players = [];
         //Anyone who is ready is a player. Anyone who is not is an observer. Try to backfill AIs if the previous game had some
+        // todo: isReady is not on this object
         for (var i = 0; i < playerIfaces.length; i++) {
             var playerIface = playerIfaces[i];
             if (!playerIface.isReady) {
@@ -388,8 +351,10 @@ module.exports = function createGame(options) {
         if (winnerIdx != null) {
             setState({
                 name: stateNames.GAME_WON,
-                playerIdx: winnerIdx
+                winnerIdx: winnerIdx,
+                playerIdx: null
             });
+            resetReadyStates();
             var playerId = playerIfaces[winnerIdx].playerId;
             gameStats.playerRank.unshift(playerId);
             dataAccess.recordGameData(gameStats);
@@ -397,6 +362,18 @@ module.exports = function createGame(options) {
             return true;
         } else {
             return false;
+        }
+    }
+
+    function resetReadyStates() {
+        for (var i = 0; i < state.players.length; i++) {
+            var playerState = state.players[i];
+            if (playerState.ai) {
+                playerState.isReady = true;
+            }
+            else {
+                playerState.isReady = false;
+            }
         }
     }
 
@@ -477,7 +454,7 @@ module.exports = function createGame(options) {
                 var playerState = state.players[i];
 
                 if (!playerState.isObserver) {
-                    for (var j = 0; j < 2; j++) {
+                    for (var j = 0; j < 1; j++) { // todo
                         playerState.influence[j].role = deck.pop();
                     }
 
@@ -527,6 +504,9 @@ module.exports = function createGame(options) {
             playerLeft(playerIdx);
 
         } else if (command.command == 'ready') {
+            if (state.state.name != stateNames.GAME_WON) {
+                throw new GameException('Incorrect state');
+            }
             playerReady(playerIdx);
 
         } else if (command.command == 'add-ai') {
