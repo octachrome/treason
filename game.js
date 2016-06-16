@@ -877,7 +877,7 @@ module.exports = function createGame(options) {
 
     function challenge(playerIdx, challengedPlayerIdx, challegedRole) {
         var revealedRole, endOfTurn;
-        var player = state.players[playerIdx];
+        var playerState = state.players[playerIdx];
         var challengedPlayer = state.players[challengedPlayerIdx];
         if (!challengedPlayer) {
             throw new GameException('Cannot identify challenged player');
@@ -902,9 +902,9 @@ module.exports = function createGame(options) {
                 playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRole);
 
             // If the challenger is losing their last influence,
-            if (player.influenceCount <= 1) {
+            if (playerState.influenceCount <= 1) {
                 // Then the challenger is dead. Reveal an influence.
-                revealedRole = revealFirstInfluence(player);
+                revealedRole = revealFirstInfluence(playerState);
                 addHistory('incorrect-challenge', curTurnHistGroup(), '%s; {%d} revealed %s', message, playerIdx, revealedRole);
 
                 endOfTurn = afterIncorrectChallenge();
@@ -965,12 +965,12 @@ module.exports = function createGame(options) {
         }
     }
 
-    function revealFirstInfluence(player) {
-        var influence = player.influence;
+    function revealFirstInfluence(playerState) {
+        var influence = playerState.influence;
         for (var j = 0; j < influence.length; j++) {
             if (!influence[j].revealed) {
                 influence[j].revealed = true;
-                player.influenceCount--;
+                playerState.influenceCount--;
                 return influence[j].role;
             }
         }
