@@ -180,14 +180,14 @@ module.exports = function createGame(options) {
         if (playerIdx == null || playerIdx < 0 || playerIdx >= state.numPlayers) {
             throw new GameException('Unknown player disconnected');
         }
-        var player = state.players[playerIdx];
+        var playerState = state.players[playerIdx];
         var playerObj = players[playerIdx];
-        if (!player || !playerObj) {
+        if (!playerState || !playerObj) {
             throw new GameException('Unknown player disconnected');
         }
         var playerId = playerObj.playerId;
         var historySuffix = [];
-        if (state.state.name == stateNames.WAITING_FOR_PLAYERS || player.isObserver) {
+        if (state.state.name == stateNames.WAITING_FOR_PLAYERS || playerState.isObserver) {
             state.players.splice(playerIdx, 1);
             players.splice(playerIdx, 1);
             proxies.splice(playerIdx, 1);
@@ -200,7 +200,7 @@ module.exports = function createGame(options) {
             players[playerIdx] = null;
             if (state.state.name != stateNames.GAME_WON) {
                 // Reveal all the player's influence.
-                var influence = player.influence;
+                var influence = playerState.influence;
                 for (var j = 0; j < influence.length; j++) {
                     if (!influence[j].revealed) {
                         historySuffix.push(format('{%d} revealed %s', playerIdx, influence[j].role));
@@ -208,7 +208,7 @@ module.exports = function createGame(options) {
                     }
                 }
                 //If the player was eliminated already or an observer, we do not record a disconnect
-                if (playerId && player.influenceCount > 0) {
+                if (playerId && playerState.influenceCount > 0) {
                     //Record the stats on the game
                     gameStats.playerDisconnect.unshift(playerId);
                     //Record the stats individually, in case the game does not finish
@@ -217,7 +217,7 @@ module.exports = function createGame(options) {
                         dataAccess.recordPlayerDisconnect(playerId);
                     }
                 }
-                player.influenceCount = 0;
+                playerState.influenceCount = 0;
                 var end = checkForGameEnd();
                 if (!end) {
                     if (state.state.playerIdx == playerIdx) {
@@ -236,7 +236,7 @@ module.exports = function createGame(options) {
             playerObj.onPlayerLeft();
         }
 
-        addHistory('player-left', nextAdhocHistGroup(), player.name + ' left the game' + (rejoined ? ' to play again' : ''));
+        addHistory('player-left', nextAdhocHistGroup(), playerState.name + ' left the game' + (rejoined ? ' to play again' : ''));
         for (var k = 0; k < historySuffix.length; k++) {
             addHistory('player-left', curAdhocHistGroup(), historySuffix[k]);
         }
@@ -256,18 +256,18 @@ module.exports = function createGame(options) {
             return;
         }
 
-        var player = state.players[playerIndex];
+        var playerState = state.players[playerIndex];
 
         //The player is ready and the game can be started again, so he starts it
-        debug('player is ready' +player.isReady);
+        debug('player is ready' +playerState.isReady);
         debug(' can start ' + state.canStart);
-        if (player.isReady && state.canStart) {
+        if (playerState.isReady && state.canStart) {
             resetGame();
             return;
         }
 
         //The player was not ready, but is trying to ready up after enough other players have filled up the ready list
-        if (gamePlayers.playersReady == MAX_PLAYERS && !player.isReady) {
+        if (gamePlayers.playersReady == MAX_PLAYERS && !playerState.isReady) {
             //You snooze, you lose
             sendChatMessage(playerIndex, 'This game has reached the maximum capacity, no more players can ready up.');
             return;
@@ -276,9 +276,9 @@ module.exports = function createGame(options) {
         //This is a multi player game and people are readying up
         if (gamePlayers.humanPlayers > 1) {
             //The player is clicking ready for the first time
-            if (!player.isReady) {
-                addHistory('player-ready', nextAdhocHistGroup(), player.name + ' is ready to play again');
-                player.isReady = true;
+            if (!playerState.isReady) {
+                addHistory('player-ready', nextAdhocHistGroup(), playerState.name + ' is ready to play again');
+                playerState.isReady = true;
                 gamePlayers = gamePlayerStats();
 
                 if (gamePlayers.playersReady > 1 && !state.restarting) {
@@ -324,12 +324,12 @@ module.exports = function createGame(options) {
         };
 
         for (var i = 0; i < state.players.length; i++) {
-            var player = state.players[i];
-            if (player.ai) {
+            var playerState = state.players[i];
+            if (playerState.ai) {
                 playerStats.aiPlayers++;
-            } else if (!player.isObserver) {
+            } else if (!playerState.isObserver) {
                 playerStats.humanPlayers++;
-                if (player.isReady && !player.ai) {
+                if (playerState.isReady && !playerState.ai) {
                     playerStats.playersReady++;
                 }
             } else {
@@ -400,11 +400,11 @@ module.exports = function createGame(options) {
         }
     }
 
-    function getInfluence(player) {
+    function getInfluence(playerState) {
         var influence = [];
-        for (var i = 0; i < player.influence.length; i++) {
-            if (!player.influence[i].revealed) {
-                influence.push(player.influence[i].role);
+        for (var i = 0; i < playerState.influence.length; i++) {
+            if (!playerState.influence[i].revealed) {
+                influence.push(playerState.influence[i].role);
             }
         }
         return influence;
@@ -474,15 +474,15 @@ module.exports = function createGame(options) {
             var nonObservers = [];
 
             for (var i = 0; i < state.numPlayers; i++) {
-                var player = state.players[i];
+                var playerState = state.players[i];
 
-                if (!player.isObserver) {
+                if (!playerState.isObserver) {
                     for (var j = 0; j < 2; j++) {
-                        player.influence[j].role = deck.pop();
+                        playerState.influence[j].role = deck.pop();
                     }
 
                     gameStats.players++;
-                    if (!player.ai) {
+                    if (!playerState.ai) {
                         gameStats.humanPlayers++;
                     }
 
@@ -513,8 +513,8 @@ module.exports = function createGame(options) {
         debug('command from player: ' + playerIdx);
         debug(command);
         var i, action, message;
-        var player = state.players[playerIdx];
-        if (player == null) {
+        var playerState = state.players[playerIdx];
+        if (playerState == null) {
             throw new GameException('Unknown player');
         }
         if (command.stateId != state.stateId) {
@@ -555,10 +555,10 @@ module.exports = function createGame(options) {
             if (action.roles && !getGameRole(action.roles)) {
                 throw new GameException('Action not allowed in this game');
             }
-            if (player.cash >= 10 && command.action != 'coup') {
+            if (playerState.cash >= 10 && command.action != 'coup') {
                 throw new GameException('You must coup with >= 10 cash');
             }
-            if (player.cash < action.cost) {
+            if (playerState.cash < action.cost) {
                 throw new GameException('Not enough cash');
             }
             if (action.targeted) {
@@ -572,7 +572,7 @@ module.exports = function createGame(options) {
                     throw new GameException('Cannot target dead player');
                 }
             }
-            player.cash -= action.cost;
+            playerState.cash -= action.cost;
             if (action.roles == null && action.blockedBy == null) {
                 if (playAction(playerIdx, command, false)) {
                     nextTurn();
@@ -601,7 +601,7 @@ module.exports = function createGame(options) {
             }
 
         } else if (command.command == 'challenge') {
-            if (player.influenceCount == 0) {
+            if (playerState.influenceCount == 0) {
                 throw new GameException('Dead players cannot challenge');
             }
             if (state.state.name == stateNames.ACTION_RESPONSE) {
@@ -634,11 +634,11 @@ module.exports = function createGame(options) {
             if (state.state.playerToReveal != playerIdx) {
                 throw new GameException('Not your turn to reveal an influence');
             }
-            for (i = 0; i < player.influence.length; i++) {
-                var influence = player.influence[i];
+            for (i = 0; i < playerState.influence.length; i++) {
+                var influence = playerState.influence[i];
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
-                    player.influenceCount--;
+                    playerState.influenceCount--;
                     addHistory(state.state.reason, curTurnHistGroup(), '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
                     if (state.state.reason == 'incorrect-challenge') {
                         if (afterIncorrectChallenge()) {
@@ -659,7 +659,7 @@ module.exports = function createGame(options) {
             throw new GameException('Could not reveal role');
 
         } else if (command.command == 'block') {
-            if (player.influenceCount == 0) {
+            if (playerState.influenceCount == 0) {
                 throw new GameException('Dead players cannot block');
             }
             if (state.state.name != stateNames.ACTION_RESPONSE && state.state.name != stateNames.FINAL_ACTION_RESPONSE) {
@@ -699,7 +699,7 @@ module.exports = function createGame(options) {
             resetAllows(playerIdx);
 
         } else if (command.command == 'allow') {
-            if (player.influenceCount == 0) {
+            if (playerState.influenceCount == 0) {
                 throw new GameException('Dead players cannot allow actions');
             }
             var stateChanged = allow(playerIdx);
@@ -718,7 +718,7 @@ module.exports = function createGame(options) {
             if (!command.roles) {
                 throw new GameException('Must specify roles to exchange');
             }
-            if (command.roles.length != player.influenceCount) {
+            if (command.roles.length != playerState.influenceCount) {
                 throw new GameException('Wrong number of roles');
             }
             var unchosen = arrayDifference(state.state.exchangeOptions, command.roles);
@@ -726,9 +726,9 @@ module.exports = function createGame(options) {
                 throw new GameException('Invalid choice of roles');
             }
             // Assign the roles the player selected.
-            for (i = 0; i < player.influence.length; i++) {
-                if (!player.influence[i].revealed) {
-                    player.influence[i].role = command.roles.pop()
+            for (i = 0; i < playerState.influence.length; i++) {
+                if (!playerState.influence[i].revealed) {
+                    playerState.influence[i].role = command.roles.pop()
                 }
             }
             // Return the other roles to the deck.
