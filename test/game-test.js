@@ -393,6 +393,7 @@ describe('Game', function () {
             beforeEach(function () {
                 game._test_setInfluence(0, 'ambassador', 'assassin');
                 game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setInfluence(2, 'ambassador', 'ambassador');
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
@@ -420,6 +421,7 @@ describe('Game', function () {
             beforeEach(function () {
                 game._test_setInfluence(0, 'ambassador', 'assassin');
                 game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setInfluence(2, 'ambassador', 'ambassador');
                 game._test_setTurnState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: 0,

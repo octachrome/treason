@@ -31,6 +31,8 @@ var nextGameId = 1;
 
 var MIN_PLAYERS = 2;
 var MAX_PLAYERS = 6;
+var INITIAL_CASH = 2;
+var INFLUENCES = 2;
 
 var epithets = fs.readFileSync(__dirname + '/epithets.txt', 'utf8').split(/\r?\n/);
 
@@ -106,28 +108,13 @@ module.exports = function createGame(options) {
     function createPlayerState(player, isObserver) {
         var playerState = {
             name: playerName(player.name),
-            cash: 8, // todo
-            influenceCount: 1, // todo
-            influence: [
-/*                {
-                    role: 'not dealt',
-                    revealed: false
-                },
-*/                {
-                    role: 'not dealt',
-                    revealed: false
-                }
-            ],
+            cash: 0,
+            influenceCount: 0,
+            influence: [],
             isObserver: isObserver,
             ai: !!player.ai,
             isReady: true
         };
-
-        if (isObserver) {
-            playerState.cash = 0;
-            playerState.influenceCount = 0;
-            playerState.influence = [];
-        }
 
         return playerState;
     }
@@ -450,10 +437,20 @@ module.exports = function createGame(options) {
             for (var i = 0; i < state.numPlayers; i++) {
                 var playerState = state.players[i];
 
-                if (!playerState.isObserver) {
-                    for (var j = 0; j < 1; j++) { // todo
-                        playerState.influence[j].role = deck.pop();
+                playerState.influences = [];
+                playerState.influenceCount = 0;
+
+                if (playerState.isObserver) {
+                    playerState.cash = 0;
+                } else {
+                    for (var j = 0; j < INFLUENCES; j++) {
+                        playerState.influence[j] = {
+                            role: deck.pop(),
+                            revealed: false
+                        };
                     }
+                    playerState.influenceCount = INFLUENCES;
+                    playerState.cash = INITIAL_CASH;
 
                     gameStats.players++;
                     if (!playerState.ai) {
@@ -1199,14 +1196,12 @@ module.exports = function createGame(options) {
         var playerIdx = args.shift();
         var influence = state.players[playerIdx].influence;
         state.players[playerIdx].influenceCount = args.length;
-        for (var i = 0; i < influence.length; i++) {
+        for (var i = 0; i < INFLUENCES; i++) {
             var role = args.shift();
-            if (role) {
-                influence[i].role = role;
-                influence[i].revealed = false;
-            } else {
-                influence[i].revealed = true;
-            }
+            influence[i] = {
+                role: role || 'ambassador',
+                revealed: !role
+            };
         }
     }
 

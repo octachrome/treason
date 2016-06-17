@@ -22,7 +22,7 @@ describe('AI', function () {
         aiPlayer = createAiPlayer(game, {
             searchHorizon: 7,
             chanceToBluff: 1,
-            randomSeed: 2 // Make AI decisions predictably random.
+            randomSeed: 1 // Make AI decisions predictably random.
         });
         var testPlayers = new TestPlayers(game);
         testPlayer = testPlayers.createTestPlayer();
@@ -216,11 +216,11 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should bluff captain (random)', function () {
+            it('Then the AI should bluff duke or captain', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
                     expect(state.state.playerIdx).to.be(AI_IDX);
-                    expect(state.state.action).to.be('steal');
+                    expect(state.state.action).to.match(/tax|steal/);
                 });
             });
         });
