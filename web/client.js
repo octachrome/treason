@@ -225,6 +225,7 @@ socket.on('gamenotfound', function (data) {
 });
 
 function playAgain() {
+    vm.history([]);
     command('ready');
 }
 function join(form, event, gameName) {
