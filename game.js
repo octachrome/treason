@@ -51,17 +51,14 @@ module.exports = function createGame(options) {
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
         },
-        password: options.password,
-        restarting: false,
-        canStart: false
+        password: options.password
     };
 
     var rand = randomGen.create(options.randomSeed);
 
     dataAccess.setDebug(options.debug);
 
-    var gameStats = dataAccess.constructGameStats();
-
+    var gameStats;
     var playerIfaces = [];
     var allows = [];
     var proxies = [];
@@ -240,53 +237,6 @@ module.exports = function createGame(options) {
         }
     }
 
-    function resetGame() {
-        state.players = [];
-        //Anyone who is ready is a player. Anyone who is not is an observer. Try to backfill AIs if the previous game had some
-        // todo: isReady is not on this object
-        for (var i = 0; i < playerIfaces.length; i++) {
-            var playerIface = playerIfaces[i];
-            if (!playerIface.isReady) {
-                state.players.push(createPlayerState(playerIface, true));
-            }
-        }
-
-        gameStats = dataAccess.constructGameStats();
-
-        if (state.state != stateNames.WAITING_FOR_PLAYERS) {
-            setState({
-                name: stateNames.WAITING_FOR_PLAYERS
-            });
-            state.canStart = false;
-            state.restarting = false;
-            emitState();
-        }
-    }
-
-    function gamePlayerStats() {
-        var playerStats = {
-            aiPlayers: 0,
-            humanPlayers: 0,
-            observers: 0,
-            playersReady: 0
-        };
-
-        for (var i = 0; i < state.players.length; i++) {
-            var playerState = state.players[i];
-            if (playerState.ai) {
-                playerStats.aiPlayers++;
-            } else if (!playerState.isObserver) {
-                playerStats.humanPlayers++;
-                if (playerState.isReady && !playerState.ai) {
-                    playerStats.playersReady++;
-                }
-            } else {
-                playerStats.observers++;
-            }
-        }
-        return playerStats;
-    }
-
     function removeAiPlayer() {
         for (var i = playerIfaces.length - 1; i > 0; i--) {
             if (playerIfaces[i] && playerIfaces[i].ai) {
@@ -421,60 +371,73 @@ module.exports = function createGame(options) {
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
             throw new GameException('Incorrect state');
         }
-        if (state.numPlayers >= MIN_PLAYERS) {
-            gameStats.gameType = gameType || 'original';
-            state.roles = ['duke', 'captain', 'assassin', 'contessa'];
-            if (gameStats.gameType === 'inquisitors') {
-                state.roles.push('inquisitor');
-            }
-            else {
-                state.roles.push('ambassador');
-            }
-            deck = buildDeck();
-
-            var nonObservers = [];
-
-            for (var i = 0; i < state.numPlayers; i++) {
-                var playerState = state.players[i];
-
-                playerState.influences = [];
-                playerState.influenceCount = 0;
-
-                if (playerState.isObserver) {
-                    playerState.cash = 0;
-                } else {
-                    for (var j = 0; j < INFLUENCES; j++) {
-                        playerState.influence[j] = {
-                            role: deck.pop(),
-                            revealed: false
-                        };
-                    }
-                    playerState.influenceCount = INFLUENCES;
-                    playerState.cash = INITIAL_CASH;
-
-                    gameStats.players++;
-                    if (!playerState.ai) {
-                        gameStats.humanPlayers++;
-                    }
-
-                    nonObservers.push(i);
-                }
-            }
-
-            var firstPlayer;
-            if (typeof options.firstPlayer === 'number') {
-                firstPlayer = options.firstPlayer;
-            }
-            else {
-                firstPlayer = nonObservers[rand(nonObservers.length)];
-            }
-            turnHistGroup++;
-            setState({
-                name: stateNames.START_OF_TURN,
-                playerIdx: firstPlayer,
-                winnerIdx: null
-            });
+        if (countReadyPlayers() < MIN_PLAYERS) {
+            throw new GameException('Not enough players are ready to play');
         }
+        gameStats = dataAccess.constructGameStats();
+        gameStats.gameType = gameType || 'original';
+        state.roles = ['duke', 'captain', 'assassin', 'contessa'];
+        if (gameStats.gameType === 'inquisitors') {
+            state.roles.push('inquisitor');
+        }
+        else {
+            state.roles.push('ambassador');
+        }
+        deck = buildDeck();
+
+        var nonObservers = [];
+
+        for (var i = 0; i < state.numPlayers; i++) {
+            var playerState = state.players[i];
+
+            playerState.influences = [];
+            playerState.influenceCount = 0;
+
+            if (playerState.isObserver) {
+                playerState.cash = 0;
+            } else {
+                for (var j = 0; j < INFLUENCES; j++) {
+                    playerState.influence[j] = {
+                        role: deck.pop(),
+                        revealed: false
+                    };
+                }
+                playerState.influenceCount = INFLUENCES;
+                playerState.cash = INITIAL_CASH;
+
+                gameStats.players++;
+                if (!playerState.ai) {
+                    gameStats.humanPlayers++;
+                }
+
+                nonObservers.push(i);
+            }
+        }
+
+        var firstPlayer;
+        if (typeof options.firstPlayer === 'number') {
+            firstPlayer = options.firstPlayer;
+        }
+        else {
+            firstPlayer = nonObservers[rand(nonObservers.length)];
+        }
+        turnHistGroup++;
+        setState({
+            name: stateNames.START_OF_TURN,
+            playerIdx: firstPlayer,
+            winnerIdx: null
+        });
+    }
+
+    function countReadyPlayers() {
+        var readyCount = 0;
+        for (var i = 0; i < state.numPlayers; i++) {
+            var playerState = state.players[i];
+            if (playerState.isReady && !playerState.isObserver) {
+                readyCount++;
+            }
+        }
+        return readyCount;
     }
 
     function getGameRole(roles) {
@@ -1164,7 +1127,7 @@ module.exports = function createGame(options) {
     }
 
     function gameType() {
-        return gameStats.gameType;
+        return gameStats && gameStats.gameType || 'original';
     }
 
     function playersInGame() {
