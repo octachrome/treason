@@ -333,7 +333,9 @@ function createAiPlayer(game, options) {
         var influence = ourInfluence();
         debug('influence: ' + influence);
 
-        if (influence.indexOf('assassin') >= 0 && aiPlayer.cash >= 3 && assassinTarget() != null) {
+        if (aiPlayer.cash >= 10) {
+            playAction('coup', strongestPlayer());
+        } else if (influence.indexOf('assassin') >= 0 && aiPlayer.cash >= 3 && assassinTarget() != null) {
             playAction('assassinate', assassinTarget());
         } else if (aiPlayer.cash >= 7) {
             playAction('coup', strongestPlayer());
