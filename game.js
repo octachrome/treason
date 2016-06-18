@@ -30,9 +30,9 @@ var EventEmitter = require('events').EventEmitter;
 var nextGameId = 1;
 
 var MIN_PLAYERS = 2;
-var MAX_PLAYERS = 2; // todo
-var INITIAL_CASH = 20;
-var INFLUENCES = 1;
+var MAX_PLAYERS = 6;
+var INITIAL_CASH = 2;
+var INFLUENCES = 2;
 
 var epithets = fs.readFileSync(__dirname + '/epithets.txt', 'utf8').split(/\r?\n/);
 
@@ -83,13 +83,13 @@ module.exports = function createGame(options) {
     game._test_setDeck = _test_setDeck;
     game._test_resetAllows = resetAllows;
 
-    function playerJoined(player) {
+    function playerJoined(playerIface) {
         var isObserver = !canJoin();
-        var playerState = createPlayerState(player, isObserver);
+        var playerState = createPlayerState(playerIface, isObserver);
 
         var playerIdx = state.players.length;
         state.players.push(playerState);
-        playerIfaces.push(player);
+        playerIfaces.push(playerIface);
         state.numPlayers++;
 
         addHistory('player-joined', nextAdhocHistGroup(), playerState.name + ' joined the game' + (isObserver ? ' as an observer' : ''));
@@ -100,14 +100,14 @@ module.exports = function createGame(options) {
         return proxy;
     }
 
-    function createPlayerState(player, isObserver) {
+    function createPlayerState(playerIface, isObserver) {
         var playerState = {
-            name: playerName(player.name),
+            name: playerName(playerIface.name),
             cash: 0,
             influenceCount: 0,
             influence: [],
             isObserver: false,
-            ai: !!player.ai,
+            ai: !!playerIface.ai,
             isReady: isObserver ? 'observe' : true
         };
 
@@ -246,15 +246,17 @@ module.exports = function createGame(options) {
 
     function removeAiPlayer() {
         // Try to remove an observing AI first.
-        for (var i = playerIfaces.length - 1; i > 0; i--) {
-            if (playerIfaces[i] && playerIfaces[i].ai && playerStates[i].isReady === 'observe') {
+        for (var i = state.players.length - 1; i > 0; i--) {
+            var playerState = state.players[i];
+            if (playerState && playerState.ai && playerState.isReady === 'observe') {
                 playerLeft(i);
                 return;
             }
         }
         // If there are none, remove an AI who would play.
-        for (var i = playerIfaces.length - 1; i > 0; i--) {
-            if (playerIfaces[i] && playerIfaces[i].ai) {
+        for (var i = state.players.length - 1; i > 0; i--) {
+            playerState = state.players[i];
+            if (playerState && playerState.ai) {
                 playerLeft(i);
                 return;
             }
@@ -262,8 +264,8 @@ module.exports = function createGame(options) {
     }
 
     function onlyAiLeft() {
-        for (var i = 0; i < playerIfaces.length; i++) {
-            if (playerIfaces[i] && !playerIfaces[i].ai) {
+        for (var i = 0; i < state.players.length; i++) {
+            if (state.players[i] && !state.players[i].ai) {
                 return false;
             }
         }
