@@ -220,3 +220,8 @@ div.chat {
 .join-buttons button:first-child {
     width: 120px;
 }
+.observer {
+    color: #aaa;
+    margin-left: 3px;
+    font-size: larger;
+}

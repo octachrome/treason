@@ -1,17 +1,19 @@
 <ul class="list-group" data-bind="foreach: state.players">
     <li class="list-group-item" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
-        <div class="row" data-bind="visible: readyToPlay()">
+        <div class="row" data-bind="visible: waitingToPlay()">
             <div class="col-xs-6">
-                <span data-bind="text: name, css: { 'dead-player' : !isReady() }"></span>
+                <span data-bind="text: name, css: { 'dead-player' : isReady() == 'observe' }"></span>
+                <span class="glyphicon glyphicon-eye-open observer" data-bind="visible: isReady() == 'observe'"></span>
             </div>
             <div class="col-xs-6">
-            <!-- todo: show ready state -->
+                <span class="badge" data-bind="text: (isReady() ? 'ready' : 'not ready')"></span>
             </div>
         </div>
-        <div class="row" data-bind="visible: !readyToPlay()">
+        <div class="row" data-bind="visible: !waitingToPlay()">
             <div class="col-xs-6">
                 <span data-bind="text: name, css: { 'dead-player' : influenceCount() == 0 }"></span>
-                <span class="badge" data-bind="text: '$' + cash(), visible: influenceCount() != 0"></span>
+                <span class="badge" data-bind="text: '$' + cash(), visible: !isObserver()"></span>
+                <span class="glyphicon glyphicon-eye-open observer" data-bind="visible: isObserver()"></span>
             </div>
             <div class="col-xs-6">
                 <!-- ko foreach: influence -->

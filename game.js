@@ -45,6 +45,7 @@ module.exports = function createGame(options) {
         gameId: gameId,
         players: [],
         numPlayers: 0,
+        maxPlayers: MAX_PLAYERS,
         gameName: options.gameName,
         created: options.created,
         roles: [],
@@ -110,7 +111,7 @@ module.exports = function createGame(options) {
             influence: [],
             isObserver: isObserver,
             ai: !!player.ai,
-            isReady: true
+            isReady: isObserver ? 'observe' : true
         };
 
         return playerState;
@@ -232,7 +233,16 @@ module.exports = function createGame(options) {
         var playerState = state.players[playerIndex];
 
         if (!playerState.isReady) {
-            playerState.isReady = true;
+            if (countReadyPlayers() < MAX_PLAYERS) {
+                playerState.isReady = true;
+            }
+            else if (countReadyPlayers(true) < MAX_PLAYERS) {
+                kickAi();
+                playerState.isReady = true;
+            }
+            else {
+                playerState.isReady = 'observe';
+            }
             addHistory('player-ready', nextAdhocHistGroup(), playerState.name + ' is ready to play again');
         }
     }
@@ -301,10 +311,17 @@ module.exports = function createGame(options) {
     }
 
     function resetReadyStates() {
+        var readyCount = 0;
         for (var i = 0; i < state.players.length; i++) {
             var playerState = state.players[i];
             if (playerState.ai) {
-                playerState.isReady = true;
+                if (readyCount < MAX_PLAYERS) {
+                    playerState.isReady = true;
+                    readyCount++;
+                }
+                else {
+                    playerState.isReady = 'observe';
+                }
             }
             else {
                 playerState.isReady = false;
@@ -429,15 +446,25 @@ module.exports = function createGame(options) {
         });
     }
 
-    function countReadyPlayers() {
+    function countReadyPlayers(skipAi) {
         var readyCount = 0;
         for (var i = 0; i < state.numPlayers; i++) {
             var playerState = state.players[i];
-            if (playerState.isReady && !playerState.isObserver) {
+            if (playerState.isReady === true && (!skipAi || !playerState.ai)) { // it could also equal 'observe'
                 readyCount++;
             }
         }
         return readyCount;
+    }
+
+    function kickAi() {
+        for (var i = state.numPlayers - 1; i >= 0; i--) {
+            var playerState = state.players[i];
+            if (playerState.ai) {
+                playerLeft(i);
+                return;
+            }
+        }
     }
 
     function getGameRole(roles) {

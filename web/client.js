@@ -39,6 +39,7 @@ vm.state = ko.mapping.fromJS({
     players: [],
     playerIdx: null,
     numPlayers: null,
+    maxPlayers: null,
     gameName: null,
     roles: [],
     state: {
@@ -300,7 +301,7 @@ function start(gameType) {
     });
 }
 function canAddAi() {
-    return vm.state.players().length < 6;
+    return vm.state.players().length < vm.state.maxPlayers();
 }
 function addAi() {
     command('add-ai');
@@ -314,6 +315,10 @@ function removeAi() {
     command('remove-ai');
 }
 function canStartGame() {
+    var p = ourPlayer();
+    if (!p || p.isReady() !== true) {
+        return false;
+    }
     var readyCount = 0;
     vm.state.players().forEach(function (player) {
         if (player.isReady()) {
@@ -337,7 +342,7 @@ function theyHaveWon() {
 function canPlayAgain() {
     return vm.state.state.name() == 'waiting-for-players';
 }
-function readyToPlay() {
+function waitingToPlay() {
     var player = ourPlayer();
     return player && player.isReady() && vm.state.state.name() == 'waiting-for-players';
 }

@@ -1,6 +1,6 @@
 <div class="action-bar">
     <!-- Start/end of game -->
-    <div data-bind="visible: readyToPlay()">
+    <div data-bind="visible: waitingToPlay()">
         <p>Waiting for players</p>
         <p>
             <button class="btn btn-default" data-bind="enable: canAddAi(), event: {vclick: addAi}">Add AI</button>
@@ -10,7 +10,7 @@
             <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'inquisitors')}, visible: canStartGame()">Start inquisitor game</button>
         </p>
     </div>
-    <!-- ko if: !readyToPlay() -->
+    <!-- ko if: !waitingToPlay() -->
     <div data-bind="visible: weHaveWon()">
         You have won!<br/>
     </div>
