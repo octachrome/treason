@@ -412,7 +412,7 @@ module.exports = function createGame(options) {
         for (var i = 0; i < state.numPlayers; i++) {
             var playerState = state.players[i];
 
-            playerState.influences = [];
+            playerState.influence = [];
             playerState.influenceCount = 0;
 
             if (playerState.isReady !== true) { // it could also be false or 'observe'
