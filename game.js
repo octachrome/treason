@@ -84,7 +84,18 @@ module.exports = function createGame(options) {
     game._test_resetAllows = resetAllows;
 
     function playerJoined(playerIface) {
-        var isObserver = !canJoin();
+        var isObserver;
+        if (countReadyPlayers() < MAX_PLAYERS) {
+            isObserver = false;
+        }
+        else if (countReadyPlayers(true) < MAX_PLAYERS) {
+            makeAiObserver();
+            isObserver = false;
+        }
+        else {
+            isObserver = true;
+        }
+
         var playerState = createPlayerState(playerIface, isObserver);
 
         var playerIdx = state.players.length;
