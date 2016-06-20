@@ -512,17 +512,18 @@ module.exports = function createGame(options) {
         if (playerState == null) {
             throw new GameException('Unknown player');
         }
-        if (command.stateId != state.stateId) {
+        if (command.command == 'leave') {
+            // You can always leave, even if your state id is old.
+            playerLeft(playerIdx);
+        }
+        else if (command.stateId != state.stateId) {
             throw new GameException('Stale state (' + command.stateId + '!=' + state.stateId + ')');
         }
-        if (command.command == 'start') {
+        else if (command.command == 'start') {
             if (playerState.isReady !== true) {
                 throw new GameException('You cannot start the game');
             }
             start(command.gameType);
-
-        } else if (command.command == 'leave') {
-            playerLeft(playerIdx);
 
         } else if (command.command == 'ready') {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
