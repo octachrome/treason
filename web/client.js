@@ -301,12 +301,17 @@ function start(gameType) {
     });
 }
 function canAddAi() {
-    return vm.state.players().length < vm.state.maxPlayers();
+    var p = ourPlayer();
+    return p && p.isReady() === true && countReadyPlayers() < vm.state.maxPlayers();
 }
 function addAi() {
     command('add-ai');
 }
 function canRemoveAi() {
+    var p = ourPlayer();
+    if (!p || p.isReady() !== true) {
+        return false;
+    }
     return vm.state.players().some(function (player) {
         return player.ai();
     });
@@ -316,16 +321,16 @@ function removeAi() {
 }
 function canStartGame() {
     var p = ourPlayer();
-    if (!p || p.isReady() !== true) {
-        return false;
-    }
+    return p && p.isReady() === true && countReadyPlayers() >= 2;
+}
+function countReadyPlayers() {
     var readyCount = 0;
     vm.state.players().forEach(function (player) {
         if (player.isReady()) {
             readyCount++;
         }
     });
-    return readyCount >= 2;
+    return readyCount;
 }
 function weAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() == vm.state.playerIdx();

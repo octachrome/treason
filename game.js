@@ -244,6 +244,13 @@ module.exports = function createGame(options) {
         }
     }
 
+    function addAiPlayer() {
+        if (countReadyPlayers() >= MAX_PLAYERS) {
+            throw new GameException('Cannot add AI player: game is full');
+        }
+        createAiPlayer(game, options);
+    }
+
     function removeAiPlayer() {
         // Try to remove an observing AI first.
         for (var i = state.players.length - 1; i > 0; i--) {
@@ -498,7 +505,7 @@ module.exports = function createGame(options) {
             throw new GameException('Stale state (' + command.stateId + '!=' + state.stateId + ')');
         }
         if (command.command == 'start') {
-            if (playerState.isReady === 'true') {
+            if (playerState.isReady !== true) {
                 throw new GameException('You cannot start the game');
             }
             start(command.gameType);
@@ -516,11 +523,17 @@ module.exports = function createGame(options) {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
                 throw new GameException('Incorrect state');
             }
-            createAiPlayer(game, options);
+            if (playerState.isReady !== true) {
+                throw new GameException('You cannot add AI players');
+            }
+            addAiPlayer();
 
         } else if (command.command == 'remove-ai') {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
                 throw new GameException('Incorrect state');
+            }
+            if (playerState.isReady !== true) {
+                throw new GameException('You cannot remove AI players');
             }
             removeAiPlayer();
 
