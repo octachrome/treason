@@ -69,6 +69,9 @@ function createNetPlayer(game, socket, playerName) {
         socket.removeListener('chat', sendChatMessage);
         socket.removeListener('disconnect', leaveGame);
         socket.removeListener('join', leaveGame);
+        setTimeout(function () {
+            socket.emit('state', null);
+        });
     }
 
     function leaveGame() {

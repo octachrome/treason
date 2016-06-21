@@ -184,13 +184,22 @@ socket.on('disconnect', function () {
     location = location.href.split('#')[0]
 });
 socket.on('state', function (data) {
-    ko.mapping.fromJS(data, vm.state);
-    vm.targetedAction('');
-    vm.weAllowed(false);
-    vm.chosenExchangeOptions({});
-    $('.activity').scrollTop(0);
-    $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
-    notifyPlayerOfState();
+    if (!data) {
+        // Null state means we left the game - reset observables.
+        vm.state.state.name(null);
+        vm.currentGame('');
+        vm.password('');
+        vm.gameInfo('');
+    }
+    else {
+        ko.mapping.fromJS(data, vm.state);
+        vm.targetedAction('');
+        vm.weAllowed(false);
+        vm.chosenExchangeOptions({});
+        $('.activity').scrollTop(0);
+        $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
+        notifyPlayerOfState();
+    }
 });
 socket.on('history', function (data) {
     var items;
@@ -607,10 +616,6 @@ function leaveGame() {
 function onLeaveGame(oldUrl) {
     if (confirm('Are you sure you want to leave this game?')) {
         command('leave');
-        vm.state.state.name(null); // Opens the welcome screen. This is hacky.
-        vm.currentGame('');
-        vm.password('');
-        vm.gameInfo('');
     }
     else {
         history.pushState(null, '', oldUrl);
