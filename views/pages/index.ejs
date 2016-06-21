@@ -27,8 +27,6 @@
 <body>
     <div class="banner" data-bind="visible: bannerVisible, html: bannerMessage"></div>
     <div class="container" data-bind="visible: !playing()">
-        <% include ../partials/modals.ejs %>
-
         <div class="row">
             <div class="col-sm-11">
                 <h3>Treason Coup</h3>
@@ -77,5 +75,6 @@
             </div>
         </div>
     </div>
+    <% include ../partials/modals.ejs %>
 </body>
 </html>
