@@ -21,6 +21,26 @@
  *     password is wrong/missing        (none)
  *     game does not exist              (none)
  * in game (/#3)                    playing
+ * in password game (/#3-pwd)       playing
+ *
+ * Proposed:
+ * user visits URL /#3
+ *   state="joining #3"
+ *     join dialog shown
+ *       user clicks join
+ *         join msg sent to server
+ *           server replies joined
+ *             state="playing #3"
+ *           server replies password required
+ *             state="joining #3", "password required"
+ *               user enters password and joins
+ *                 server replies joined
+ *                   state="playing #3"
+ *                 server replies password incorrect
+ *                   state="joining #3", "password required", "password incorrect"
+ * user clicks game #2 in lobby
+ *   URL changes to /#2
+ *     etc.
  */
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
