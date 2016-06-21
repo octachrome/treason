@@ -204,7 +204,7 @@ function playerJoinsGame(game, socket, playerName, gameName) {
 }
 
 function createNewGame(socket, password) {
-    var gameName = '#' + gameId++;
+    var gameName = '' + gameId++;
 
     var game = createGame({
         debug: argv.debug,

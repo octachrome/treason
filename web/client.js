@@ -10,6 +10,18 @@
  *     CA 94042
  *     USA
  */
+/*
+ * UI states:
+ * logged out (/)                   !playing && !loggedIn
+ *   joining a game (/#3)               && needName
+ * in lobby                         !playing && loggedIn
+ *   creating a private game (/)        (none)
+ *   joining a game from click (/)      (none)
+ *   joining a game from url (/#3)      (none)
+ *     password is wrong/missing        (none)
+ *     game does not exist              (none)
+ * in game (/#3)                    playing
+ */
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''),
     playerId: ko.observable(localStorageGet('playerId') || ''),
@@ -30,7 +42,7 @@ vm = {
     players: ko.observableArray([]),
     password: ko.observable(''),
     gameInfo: ko.observable(),
-    globalChatMessages: ko.observableArray(['Welcome to the Treason Coup global chat']),
+    globalChatMessages: ko.observableArray(['Welcome to Treason Coup']),
     globalMessage: ko.observable('')
 };
 vm.state = ko.mapping.fromJS({
@@ -72,21 +84,20 @@ if (window.location.href.indexOf('amazonaws') >= 0) {
     vm.bannerMessage('Update your bookmarks to <a href="http://coup.thebrown.net">http://coup.thebrown.net</a>');
 }
 
-$(window).on('hashchange load', function() {
-    if (location.hash) {
-        if (location.hash.indexOf('-') > 0) {
-            var gameDetails = location.hash.split(/(.+)-(.+)?/);
-            vm.currentGame(gameDetails[1]);
-            vm.password(gameDetails[2]);
-        } else {
-            vm.currentGame(location.hash);
-        }
+$(window).on('hashchange load', function (event) {
+    var hash = location.hash.match(/#(.+)(?:-(.+))?/);
+    if (hash) {
+        vm.currentGame(hash[1]);
+        vm.password(hash[2] || null);
         if (vm.playerName()) {
             initCurrentGameInfo(vm.currentGame());
             $('#joinGameModal').modal('show');
         } else {
             vm.needName(true);
         }
+    }
+    else if (playing()) {
+        onLeaveGame(event.originalEvent.oldURL);
     }
 });
 
@@ -204,12 +215,12 @@ socket.on('joined', function(data) {
 
     var hash;
     if (data.password) {
-        hash = data.gameName + '-' + data.password;
+        hash = '#' + data.gameName + '-' + data.password;
         vm.password(data.password);
     } else {
-        hash = data.gameName;
+        hash = '#' + data.gameName;
     }
-    history.replaceState(null, '', hash);
+    history.pushState(null, '', hash);
 });
 socket.on('error', function (data) {
     alert(data);
@@ -571,13 +582,18 @@ function interrogate(forceExchange) {
     });
 }
 function leaveGame() {
+    location.hash = '';
+}
+function onLeaveGame(oldUrl) {
     if (confirm('Are you sure you want to leave this game?')) {
         command('leave');
         vm.state.state.name(null); // Opens the welcome screen. This is hacky.
         vm.currentGame('');
         vm.password('');
         vm.gameInfo('');
-        history.replaceState(null, '', location.href.split('#')[0]);
+    }
+    else {
+        history.pushState(null, '', oldUrl);
     }
 }
 function formatMessage(message) {
