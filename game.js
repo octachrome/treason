@@ -119,7 +119,8 @@ module.exports = function createGame(options) {
             influence: [],
             isObserver: false,
             ai: !!playerIface.ai,
-            isReady: isObserver ? 'observe' : true
+            isReady: isObserver ? 'observe' : true,
+            connected: true
         };
 
         return playerState;
@@ -184,6 +185,8 @@ module.exports = function createGame(options) {
             forceRemovePlayer(playerIdx);
         } else {
             playerIfaces[playerIdx] = null;
+            playerState.connected = false;
+            playerState.isReady = false;
             if (!playerState.isObserver) {
                 // Reveal all the player's influence.
                 var influence = playerState.influence;

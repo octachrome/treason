@@ -403,7 +403,7 @@ function countReadyPlayers() {
 function countNonReadyPlayers() {
     var nonReadyCount = 0;
     vm.state.players().forEach(function (player) {
-        if (!player.isReady()) {
+        if (player.connected() && !player.isReady()) {
             nonReadyCount++;
         }
     });
