@@ -43,27 +43,26 @@
  *     etc.
  */
 vm = {
-    playerName: ko.observable(localStorageGet('playerName') || ''),
-    playerId: ko.observable(localStorageGet('playerId') || ''),
-    bannerMessage: ko.observable(''),
-    targetedAction: ko.observable(''),
-    weAllowed: ko.observable(false),
-    chosenExchangeOptions: ko.observable({}),
-    sidebar: ko.observable('chat'),
-    history: ko.observableArray(),
-    currentGame: ko.observable(''),
-    needName: ko.observable(false),
-    rankings: ko.observableArray(),
-    rankButtonText: ko.observable('Show my rankings'),
-    showingGlobalRank: ko.observable(true),
-    notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false)),
-    loggedIn: ko.observable(false),
-    games: ko.observableArray([]),
-    players: ko.observableArray([]),
-    password: ko.observable(''),
-    gameInfo: ko.observable(),
-    globalChatMessages: ko.observableArray(['Welcome to Treason Coup']),
-    globalMessage: ko.observable('')
+    playerName: ko.observable(localStorageGet('playerName') || ''), // The name of the current player.
+    playerId: ko.observable(localStorageGet('playerId') || ''), // The id of the current user.
+    bannerMessage: ko.observable(''), // Shown in a banner at the top of the screen.
+    targetedAction: ko.observable(''), // During a coup, steal or assassination, the player that the user is targeting.
+    weAllowed: ko.observable(false), // If true, the user has allowed the current action.
+    chosenExchangeOptions: ko.observable({}), // During an exchange, the roles that the user has selected so far.
+    sidebar: ko.observable('chat'), // Which pane is shown in the sidebar: chat or cheat sheet.
+    history: ko.observableArray(), // List of all history items in the game in play.
+    needName: ko.observable(false), // If true, the user is trying to join a game but they haven't logged in.
+    rankings: ko.observableArray(), // List of the displayed player rankings.
+    showingGlobalRank: ko.observable(true), // If true, global rankings are shown; if false, your rankings are shown.
+    notifsEnabled: ko.observable(JSON.parse(localStorageGet('notifsEnabled') || false)), // True if notifications are enabled.
+    loggedIn: ko.observable(false), // True if the user has a player name and id.
+    games: ko.observableArray([]), // List of all public games.
+    players: ko.observableArray([]), // List of all online players (in the global chat).
+    password: ko.observable(''), // The password that the user is typing in the join game modal dialog.
+    currentGame: ko.observable(''), // The id of the game currently shown in the join game modal dialog.
+    gameInfo: ko.observable(), // Info about the game  currently shown in the join game modal dialog.
+    globalChatMessages: ko.observableArray(['Welcome to Treason Coup']), // The global chat messages that have been received.
+    globalMessage: ko.observable('') // The message the user is typing into the global chat box.
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -98,6 +97,9 @@ vm.notifsEnabled.subscribe(function (enabled) {
 });
 vm.notifToggleText = ko.computed(function () {
     return vm.notifsEnabled() ? 'Disable notifications' : 'Enable notifications';
+});
+vm.rankButtonText = ko.computed(function () {
+    return vm.showingGlobalRank() ? 'Show my rankings' : 'Show global rankings';
 });
 
 if (window.location.href.indexOf('amazonaws') >= 0) {
@@ -310,11 +312,9 @@ var create = _.debounce(function (form, event, publicGame) {
 var showRankings = _.debounce(function (form, event) {
     if (vm.showingGlobalRank()) {
         vm.showingGlobalRank(false);
-        vm.rankButtonText('Show global rankings');
         socket.emit('showmyrank');
     } else {
         vm.showingGlobalRank(true);
-        vm.rankButtonText('Show my rankings');
         socket.emit('showrankings');
     }
 }, 500, true);
