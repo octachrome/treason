@@ -181,14 +181,7 @@ module.exports = function createGame(options) {
         var playerId = playerIface.playerId;
         var historySuffix = [];
         if (state.state.name == stateNames.WAITING_FOR_PLAYERS) {
-            state.players.splice(playerIdx, 1);
-            playerIfaces.splice(playerIdx, 1);
-            proxies.splice(playerIdx, 1);
-            state.numPlayers--;
-            // Rewire the player proxies with the new player index
-            for (var i = playerIdx; i < state.numPlayers; i++) {
-                createGameProxy(i, proxies[i]);
-            }
+            forceRemovePlayer(playerIdx);
         } else {
             playerIfaces[playerIdx] = null;
             if (!playerState.isObserver) {
@@ -237,6 +230,17 @@ module.exports = function createGame(options) {
             destroyGame();
         }
         emitState(true);
+    }
+
+    function forceRemovePlayer(playerIdx) {
+        state.players.splice(playerIdx, 1);
+        playerIfaces.splice(playerIdx, 1);
+        proxies.splice(playerIdx, 1);
+        state.numPlayers--;
+        // Rewire the player proxies with the new player index
+        for (var i = playerIdx; i < state.numPlayers; i++) {
+            createGameProxy(i, proxies[i]);
+        }
     }
 
     function playerReady(playerIndex) {
@@ -439,10 +443,16 @@ module.exports = function createGame(options) {
             playerState.influence = [];
             playerState.influenceCount = 0;
 
+            if (!playerIfaces[i]) {
+                // This player left during the last game, and can now be fully removed safely.
+                forceRemovePlayer(i);
+                i--;
+                continue;
+            }
             if (playerState.isReady !== true) { // it could also be false or 'observe'
                 if (playerState.ai) {
                     // Remove AI observers on game start (but not before, for people still reviewing the last game).
-                    playerLeft(i);
+                    forceRemovePlayer(i);
                     i--;
                     continue;
                 }
