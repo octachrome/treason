@@ -62,7 +62,8 @@ vm = {
     currentGame: ko.observable(''), // The id of the game currently shown in the join game modal dialog.
     gameInfo: ko.observable(), // Info about the game  currently shown in the join game modal dialog.
     globalChatMessages: ko.observableArray(['Welcome to Treason Coup']), // The global chat messages that have been received.
-    globalMessage: ko.observable('') // The message the user is typing into the global chat box.
+    globalMessage: ko.observable(''), // The message the user is typing into the global chat box.
+    wantToStart: ko.observable(null) // The player clicked start, but not everyone is ready, so we're showing a confirm msg (holds the type of game the player wanted to start).
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -100,6 +101,15 @@ vm.notifToggleText = ko.computed(function () {
 });
 vm.rankButtonText = ko.computed(function () {
     return vm.showingGlobalRank() ? 'Show my rankings' : 'Show global rankings';
+});
+vm.canStartGame = ko.observable(function () {
+    var p = ourPlayer();
+    return p && p.isReady() === true && countReadyPlayers() >= 2;
+});
+vm.canStartGame.subscribe(function (canStart) {
+    if (!canStart) {
+        vm.wantToStart(null);
+    }
 });
 
 if (window.location.href.indexOf('amazonaws') >= 0) {
@@ -336,9 +346,20 @@ function isInvalidPlayerName() {
     return false;
 }
 function start(gameType) {
+    if (countNonReadyPlayers() > 0) {
+        vm.wantToStart(gameType);
+    }
+    else {
+        confirmStart(gameType);
+    }
+}
+function confirmStart(gameType) {
     command('start', {
-        gameType: gameType
+        gameType: gameType || vm.wantToStart()
     });
+}
+function cancelStart() {
+    vm.wantToStart(null);
 }
 function canAddAi() {
     var p = ourPlayer();
@@ -359,10 +380,6 @@ function canRemoveAi() {
 function removeAi() {
     command('remove-ai');
 }
-function canStartGame() {
-    var p = ourPlayer();
-    return p && p.isReady() === true && countReadyPlayers() >= 2;
-}
 function countReadyPlayers() {
     var readyCount = 0;
     vm.state.players().forEach(function (player) {
@@ -371,6 +388,15 @@ function countReadyPlayers() {
         }
     });
     return readyCount;
+}
+function countNonReadyPlayers() {
+    var nonReadyCount = 0;
+    vm.state.players().forEach(function (player) {
+        if (!player.isReady()) {
+            nonReadyCount++;
+        }
+    });
+    return nonReadyCount;
 }
 function weAreInState(stateName) {
     return vm.state.state.name() == stateName && vm.state.state.playerIdx() == vm.state.playerIdx();
