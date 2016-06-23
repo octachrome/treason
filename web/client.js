@@ -102,12 +102,23 @@ vm.notifToggleText = ko.computed(function () {
 vm.rankButtonText = ko.computed(function () {
     return vm.showingGlobalRank() ? 'Show my rankings' : 'Show global rankings';
 });
-vm.canStartGame = ko.observable(function () {
+vm.canStartGame = ko.computed(function () {
     var p = ourPlayer();
     return p && p.isReady() === true && countReadyPlayers() >= 2;
 });
+vm.waitingToPlay = ko.computed(function () {
+    var player = ourPlayer();
+    return player && player.isReady() && vm.state.state.name() == 'waiting-for-players';
+});
+// If players leave so the game cannot be started, hide the confirm msg about whether to start the game.
 vm.canStartGame.subscribe(function (canStart) {
     if (!canStart) {
+        vm.wantToStart(null);
+    }
+});
+// Reset wantToStart when a new game starts.
+vm.waitingToPlay.subscribe(function (waiting) {
+    if (!waiting) {
         vm.wantToStart(null);
     }
 });
@@ -412,10 +423,6 @@ function theyHaveWon() {
 }
 function canPlayAgain() {
     return vm.state.state.name() == 'waiting-for-players';
-}
-function waitingToPlay() {
-    var player = ourPlayer();
-    return player && player.isReady() && vm.state.state.name() == 'waiting-for-players';
 }
 function weAreAlive() {
     return ourInfluenceCount() > 0;

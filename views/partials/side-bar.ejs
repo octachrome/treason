@@ -1,6 +1,6 @@
 <ul class="list-group" data-bind="foreach: state.players">
     <li class="list-group-item" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
-        <div class="row" data-bind="visible: waitingToPlay()">
+        <div class="row" data-bind="visible: $root.waitingToPlay">
             <div class="col-xs-6">
                 <span data-bind="text: name, css: { 'dead-player' : isReady() == 'observe' }"></span>
                 <span class="glyphicon glyphicon-eye-open observer" data-bind="visible: isReady() == 'observe'"></span>
@@ -9,7 +9,7 @@
                 <span class="badge" data-bind="text: (isReady() ? 'ready' : 'not ready')"></span>
             </div>
         </div>
-        <div class="row" data-bind="visible: !waitingToPlay()">
+        <div class="row" data-bind="visible: !$root.waitingToPlay()">
             <div class="col-xs-6">
                 <span data-bind="text: name, css: { 'dead-player' : influenceCount() == 0 }"></span>
                 <span class="badge" data-bind="text: '$' + cash(), visible: !isObserver()"></span>

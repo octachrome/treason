@@ -1,6 +1,6 @@
 <div class="action-bar">
     <!-- Start/end of game -->
-    <div data-bind="visible: waitingToPlay()">
+    <div data-bind="visible: waitingToPlay">
         <p>Waiting for players</p>
         <p data-bind="visible: !wantToStart()">
             <button class="btn btn-default" data-bind="enable: canAddAi(), event: {vclick: addAi}">Add AI</button>
