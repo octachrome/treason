@@ -180,7 +180,7 @@ module.exports = function createGame(options) {
         }
         var playerId = playerIface.playerId;
         var historySuffix = [];
-        if (state.state.name == stateNames.WAITING_FOR_PLAYERS || playerState.isObserver) {
+        if (state.state.name == stateNames.WAITING_FOR_PLAYERS) {
             state.players.splice(playerIdx, 1);
             playerIfaces.splice(playerIdx, 1);
             proxies.splice(playerIdx, 1);
@@ -191,34 +191,36 @@ module.exports = function createGame(options) {
             }
         } else {
             playerIfaces[playerIdx] = null;
-            // Reveal all the player's influence.
-            var influence = playerState.influence;
-            for (var j = 0; j < influence.length; j++) {
-                if (!influence[j].revealed) {
-                    historySuffix.push(format('{%d} revealed %s', playerIdx, influence[j].role));
-                    influence[j].revealed = true;
+            if (!playerState.isObserver) {
+                // Reveal all the player's influence.
+                var influence = playerState.influence;
+                for (var j = 0; j < influence.length; j++) {
+                    if (!influence[j].revealed) {
+                        historySuffix.push(format('{%d} revealed %s', playerIdx, influence[j].role));
+                        influence[j].revealed = true;
+                    }
                 }
-            }
-            //If the player was eliminated already or an observer, we do not record a disconnect
-            if (playerId && playerState.influenceCount > 0) {
-                //Record the stats on the game
-                gameStats.playerDisconnect.unshift(playerId);
-                //Record the stats individually, in case the game does not finish
-                //Should not be recorded if the player is the last human player
-                if (!onlyAiLeft()) {
-                    dataAccess.recordPlayerDisconnect(playerId);
+                //If the player was eliminated already or an observer, we do not record a disconnect
+                if (playerId && playerState.influenceCount > 0) {
+                    //Record the stats on the game
+                    gameStats.playerDisconnect.unshift(playerId);
+                    //Record the stats individually, in case the game does not finish
+                    //Should not be recorded if the player is the last human player
+                    if (!onlyAiLeft()) {
+                        dataAccess.recordPlayerDisconnect(playerId);
+                    }
                 }
-            }
-            playerState.influenceCount = 0;
-            var end = checkForGameEnd();
-            if (!end) {
-                if (state.state.playerIdx == playerIdx) {
-                    nextTurn();
-                } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx) {
-                    nextTurn();
-                } else if ((state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.BLOCK_RESPONSE)
-                    && !allows[playerIdx]) {
-                    allow(playerIdx);
+                playerState.influenceCount = 0;
+                var end = checkForGameEnd();
+                if (!end) {
+                    if (state.state.playerIdx == playerIdx) {
+                        nextTurn();
+                    } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == playerIdx) {
+                        nextTurn();
+                    } else if ((state.state.name == stateNames.ACTION_RESPONSE || state.state.name == stateNames.BLOCK_RESPONSE)
+                        && !allows[playerIdx]) {
+                        allow(playerIdx);
+                    }
                 }
             }
         }
