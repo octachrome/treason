@@ -183,6 +183,7 @@ module.exports = function createGame(options) {
         var historySuffix = [];
         if (state.state.name == stateNames.WAITING_FOR_PLAYERS) {
             forceRemovePlayer(playerIdx);
+            promoteObserverToPlayer();
         } else {
             playerIfaces[playerIdx] = null;
             playerState.connected = false;
@@ -243,6 +244,18 @@ module.exports = function createGame(options) {
         // Rewire the player proxies with the new player index
         for (var i = playerIdx; i < state.numPlayers; i++) {
             createGameProxy(i, proxies[i]);
+        }
+    }
+
+    function promoteObserverToPlayer() {
+        if (countReadyPlayers() < MAX_PLAYERS) {
+            for (var i = 0; i < state.numPlayers; i++) {
+                var playerState = state.players[i];
+                if (playerState.isReady === 'observe') {
+                    playerState.isReady = true;
+                    break;
+                }
+            }
         }
     }
 
