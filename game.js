@@ -157,8 +157,8 @@ module.exports = function createGame(options) {
         proxy.command = function (data) {
             command(playerIdx, data);
         };
-        proxy.playerLeft = function (rejoined) {
-            playerLeft(playerIdx, rejoined);
+        proxy.playerLeft = function () {
+            playerLeft(playerIdx);
         };
         proxy.sendChatMessage = function (message) {
             sendChatMessage(playerIdx, message);
@@ -169,7 +169,7 @@ module.exports = function createGame(options) {
         return proxy;
     }
 
-    function playerLeft(playerIdx, rejoined) {
+    function playerLeft(playerIdx) {
         if (playerIdx == null || playerIdx < 0 || playerIdx >= state.numPlayers) {
             throw new GameException('Unknown player disconnected');
         }
@@ -227,7 +227,7 @@ module.exports = function createGame(options) {
             playerIface.onPlayerLeft();
         }
 
-        addHistory('player-left', nextAdhocHistGroup(), playerState.name + ' left the game' + (rejoined ? ' to play again' : ''));
+        addHistory('player-left', nextAdhocHistGroup(), playerState.name + ' left the game');
         for (var k = 0; k < historySuffix.length; k++) {
             addHistory('player-left', curAdhocHistGroup(), historySuffix[k]);
         }
