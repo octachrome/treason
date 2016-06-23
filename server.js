@@ -272,27 +272,12 @@ function filterGames() {
         if (games.hasOwnProperty(gameName)) {
             var game = games[gameName];
             if (game) {
-                var playerList = [];
-                var playersInGame = game.playersInGame();
-
-                for (var i = 0; i < playersInGame.length; i++) {
-                    var player = playersInGame[i];
-
-                    var clientPlayer = {
-                        playerName: player.name,
-                        ai: player.ai,
-                        observer: player.isObserver
-                    };
-
-                    playerList.push(clientPlayer);
-                }
-
                 var clientGame = {
                     gameName: gameName,
                     status: game.currentState(),
                     type: game.gameType(),
                     passwordRequired: game.password() ? true : false,
-                    players: playerList
+                    players: game.playersInGame()
                 };
 
                 gamesList.push(clientGame);

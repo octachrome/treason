@@ -234,7 +234,7 @@ module.exports = function createGame(options) {
         if (onlyAiLeft()) {
             destroyGame();
         }
-        emitState();
+        emitState(true);
     }
 
     function playerReady(playerIndex) {
@@ -365,9 +365,10 @@ module.exports = function createGame(options) {
         return influence;
     }
 
-    function emitState() {
+    function emitState(emitStateChangeEvent) {
         if (state.state.name === stateNames.WAITING_FOR_PLAYERS
-            || state.state.name === stateNames.START_OF_TURN) {
+            || state.state.name === stateNames.START_OF_TURN
+            || emitStateChangeEvent) {
             game.emit('statechange');
         }
         state.stateId++;
@@ -1189,7 +1190,7 @@ module.exports = function createGame(options) {
         var playerCount = 0;
         for (var i = 0; i < state.players.length; i++) {
             var playerState = state.players[i];
-            if (!playerState.isObserver) {
+            if (playerIfaces[i] && !playerState.isObserver) {
                 playerCount++;
             }
         }
@@ -1202,7 +1203,20 @@ module.exports = function createGame(options) {
     }
 
     function playersInGame() {
-        return state.players;
+        var playerList = [];
+        // Specifically check playerIfaces, because it is null if a player has left.
+        for (var i = 0; i < playerIfaces.length; i++) {
+            if (playerIfaces[i]) {
+                var playerState = state.players[i];
+                var clientPlayer = {
+                    playerName: playerState.name,
+                    ai: playerState.ai,
+                    observer: playerState.isObserver
+                };
+                playerList.push(clientPlayer);
+            }
+        }
+        return playerList;
     }
 
     function sendChatMessage(playerIdx, message) {
