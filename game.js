@@ -282,8 +282,9 @@ module.exports = function createGame(options) {
     }
 
     function onlyAiLeft() {
-        for (var i = 0; i < state.players.length; i++) {
-            if (state.players[i] && !state.players[i].ai) {
+        // Specifically check playerIfaces, because it is null if a player has left.
+        for (var i = 0; i < playerIfaces.length; i++) {
+            if (playerIfaces[i] && !playerIfaces[i].ai) {
                 return false;
             }
         }
