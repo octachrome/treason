@@ -20,6 +20,7 @@ var shared = require('./web/shared');
 var dataAccess = require('./dataaccess');
 var actions = shared.actions;
 var stateNames = shared.states;
+var GameTracker = require('./game-tracker');
 
 var format = require('util').format;
 var inherits = require('util').inherits;
@@ -56,6 +57,7 @@ module.exports = function createGame(options) {
     dataAccess.setDebug(options.debug);
 
     var gameStats = dataAccess.constructGameStats();
+    var gameTracker;
 
     var players = [];
     var allows = [];
@@ -185,6 +187,7 @@ module.exports = function createGame(options) {
         } else {
             players[playerIdx] = null;
             if (state.state.name != stateNames.GAME_WON) {
+                gameTracker.playerLeft(playerIdx);
                 // Reveal all the player's influence.
                 var influence = player.influence;
                 for (var j = 0; j < influence.length; j++) {
@@ -279,8 +282,10 @@ module.exports = function createGame(options) {
                 name: stateNames.GAME_WON,
                 playerIdx: winnerIdx
             });
+            gameTracker.gameOver(state);
             var playerId = players[winnerIdx].playerId;
             gameStats.playerRank.unshift(playerId);
+            gameStats.events = gameTracker.pack().toString('base64');
             dataAccess.recordGameData(gameStats);
             game.emit('end');
             return true;
@@ -354,6 +359,7 @@ module.exports = function createGame(options) {
                 state.roles.push('ambassador');
             }
             deck = buildDeck();
+            gameTracker = new GameTracker();
 
             var nonObservers = [];
 
@@ -386,6 +392,7 @@ module.exports = function createGame(options) {
                 name: stateNames.START_OF_TURN,
                 playerIdx: firstPlayer
             });
+            gameTracker.startOfTurn(state);
         }
     }
 
@@ -450,6 +457,7 @@ module.exports = function createGame(options) {
                     throw new GameException('Cannot target dead player');
                 }
             }
+            gameTracker.action(command.action, command.target);
             player.cash -= action.cost;
             if (action.roles == null && action.blockedBy == null) {
                 if (playAction(playerIdx, command, false)) {
@@ -566,6 +574,7 @@ module.exports = function createGame(options) {
             if (state.state.name == stateNames.ACTION_RESPONSE) {
                 addHistory(state.state.action, curTurnHistGroup(), state.state.message);
             }
+            gameTracker.block(target, command.blockingRole);
             setState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: state.state.playerIdx,
@@ -771,6 +780,7 @@ module.exports = function createGame(options) {
         var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole);
         if (influenceIdx != null) {
             // Player has role - challenge lost.
+            gameTracker.challenge(playerIdx, challengedPlayerIdx, false);
 
             // Deal the challenged player a replacement card.
             var oldRole = challengedPlayer.influence[influenceIdx].role;
@@ -807,6 +817,7 @@ module.exports = function createGame(options) {
             }
         } else {
             // Player does not have role - challenge won.
+            gameTracker.challenge(playerIdx, challengedPlayerIdx, true);
             var message = format('{%d} successfully challenged {%d}', playerIdx, challengedPlayerIdx);
 
             // If someone assassinates you, you bluff contessa, and they challenge you, then you lose two influence: one for the assassination, one for the successful challenge.
@@ -962,6 +973,7 @@ module.exports = function createGame(options) {
                 name: stateNames.START_OF_TURN,
                 playerIdx: nextPlayerIdx()
             });
+            gameTracker.startOfTurn(state);
         }
     }
 
