@@ -28,12 +28,12 @@
     <div class="banner" data-bind="visible: bannerVisible, html: bannerMessage"></div>
     <div class="container" data-bind="visible: !playing()">
         <div class="row">
-            <div class="col-sm-11">
+            <div class="col-sm-9">
                 <h3>Treason Coup</h3>
                 <p data-bind="text: version"></p>
             </div>
             <div class="col-sm-1">
-                <p><a href="" data-bind="click: clearName">Rename</a></p>
+                <p class="profile-button" data-bind="visible: loggedIn()"><a href="" data-bind="click: showUserProfileDialog"><i class="user" title="Profile"></i></a></p>
             </div>
         </div>
         <!-- ko if: !loggedIn() -->

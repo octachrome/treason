@@ -340,8 +340,12 @@ var showRankings = _.debounce(function (form, event) {
     }
 }, 500, true);
 
-function clearName() {
-    vm.playerName('');
+function showUserProfileDialog() {
+    $('#userProfileDialog').modal('show');
+    $('#userProfileDialog input').focus().select();
+}
+
+function confirmUserProfileDialog() {
     location.reload();
 }
 

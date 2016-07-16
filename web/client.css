@@ -60,6 +60,9 @@ i.challenge:before {
 i.allow:before {
     content: "\ea10";
 }
+i.user:before {
+    content: "\e971";
+}
 body {
     padding-top: 15px;
 }
@@ -224,4 +227,16 @@ div.chat {
     color: #aaa;
     margin-left: 3px;
     font-size: larger;
+}
+.profile-button {
+    text-align: right;
+}
+.profile-button a {
+    text-decoration: none;
+}
+.profile-button a:hover {
+    text-decoration: none;
+}
+h3 {
+    margin-top: 0;
 }
