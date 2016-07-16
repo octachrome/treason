@@ -240,3 +240,6 @@ div.chat {
 h3 {
     margin-top: 0;
 }
+.error {
+    color: red;
+}

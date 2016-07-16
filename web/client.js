@@ -59,11 +59,14 @@ vm = {
     games: ko.observableArray([]), // List of all public games.
     players: ko.observableArray([]), // List of all online players (in the global chat).
     password: ko.observable(''), // The password that the user is typing in the join game modal dialog.
+    incorrectPassword: ko.observable(false), // True if the user tried to join the game with the wrong password.
     currentGame: ko.observable(''), // The id of the game currently shown in the join game modal dialog.
     gameInfo: ko.observable(), // Info about the game  currently shown in the join game modal dialog.
     globalChatMessages: ko.observableArray(['Welcome to Treason Coup']), // The global chat messages that have been received.
     globalMessage: ko.observable(''), // The message the user is typing into the global chat box.
-    wantToStart: ko.observable(null) // The player clicked start, but not everyone is ready, so we're showing a confirm msg (holds the type of game the player wanted to start).
+    wantToStart: ko.observable(null), // The player clicked start, but not everyone is ready, so we're showing a confirm msg (holds the type of game the player wanted to start).
+    playingGame: ko.observable(null), // The id of the game that we are currently playing, or null if there is no active game.
+    playingPassword: ko.observable(null) // The password of the game that we are currently playing, or null if there is no active game.
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -90,8 +93,15 @@ vm.state = ko.mapping.fromJS({
 vm.playerName.subscribe(function (newName) {
     localStorageSet('playerName', newName);
 });
+vm.state.state.name.subscribe(function (stateName) {
+    if (!stateName) {
+        vm.playingGame(null);
+        vm.playingPassword(null);
+    }
+});
+vm.playing = vm.playingGame;
 vm.bannerVisible = ko.computed(function () {
-    return !playing() && vm.bannerMessage();
+    return !vm.playing() && vm.bannerMessage();
 });
 vm.notifsEnabled.subscribe(function (enabled) {
     localStorageSet('notifsEnabled', enabled);
@@ -127,19 +137,33 @@ if (window.location.href.indexOf('amazonaws') >= 0) {
     vm.bannerMessage('Update your bookmarks to <a href="http://coup.thebrown.net">http://coup.thebrown.net</a>');
 }
 
+function hashGameId() {
+    var hash = location.hash.match(/#([0-9]+)(?:-(.+))?/);
+    return hash && hash[1] || null;
+}
+function hashGamePassword() {
+    var hash = location.hash.match(/#([0-9]+)(?:-(.+))?/);
+    return hash && hash[2] || null;
+}
 $(window).on('hashchange load', function (event) {
-    var hash = location.hash.match(/#(.+)(?:-(.+))?/);
-    if (hash) {
-        vm.currentGame(hash[1]);
-        vm.password(hash[2] || null);
+    var gameId = hashGameId();
+    if (gameId == vm.playingGame()) {
+        // Already playing this game.
+        return;
+    }
+    if (gameId) {
+        vm.currentGame(gameId);
+        vm.password(hashGamePassword());
         if (vm.playerName()) {
             initCurrentGameInfo(vm.currentGame());
+            vm.incorrectPassword(false);
             $('#joinGameModal').modal('show');
+            $('#joinGameModal input').focus().select();
         } else {
             vm.needName(true);
         }
     }
-    else if (playing()) {
+    else if (vm.playing()) {
         onLeaveGame(event.originalEvent.oldURL);
     }
 });
@@ -191,14 +215,6 @@ socket.on('connect', function() {
         globalMessageContainer[0].scrollTop = globalMessageContainer[0].scrollHeight;
     });
 });
-
-socket.on('gamerequirespassword', function(data) {
-    vm.currentGame(data.gameName);
-    setTimeout(function() {
-        //The fading modal has a problem with displaying on top of itself
-        $('#passwordRequiredModal').modal('show');
-    }, 750);
-});
 socket.on('disconnect', function () {
     vm.bannerMessage('Disconnected');
     vm.state.state.name(null); // Opens the welcome screen.
@@ -213,6 +229,8 @@ socket.on('state', function (data) {
         vm.currentGame('');
         vm.password('');
         vm.gameInfo('');
+        vm.playingGame(null);
+        vm.playingPassword(null);
     }
     else {
         ko.mapping.fromJS(data, vm.state);
@@ -262,17 +280,19 @@ socket.on('created', function(data) {
     join(null, null, vm.currentGame());
 });
 socket.on('joined', function(data) {
+    vm.playingGame(data.gameName);
     vm.history([]);
     $('.chat').html('');
 
     var hash;
     if (data.password) {
+        vm.playingPassword(data.password);
         hash = '#' + data.gameName + '-' + data.password;
-        vm.password(data.password);
     } else {
         hash = '#' + data.gameName;
     }
     history.pushState(null, '', hash);
+    hideModals();
 });
 socket.on('error', function (data) {
     alert(data);
@@ -284,8 +304,12 @@ socket.on('rankings', function (data) {
     vm.rankings(data);
 });
 socket.on('gamenotfound', function (data) {
-    alert(data);
-    location = location.href.split('#')[0];
+    alert('Game not found');
+    location.hash = '';
+    hideModals();
+});
+socket.on('incorrectpassword', function () {
+    vm.incorrectPassword(true);
 });
 
 function playAgain() {
@@ -756,9 +780,6 @@ function showCheatSheet() {
 function showChat() {
     vm.sidebar('chat');
 }
-function playing() {
-    return vm.state && vm.state.state && vm.state.state.name() != null;
-}
 function localStorageGet(key) {
     return window.localStorage ? window.localStorage.getItem(key) : null;
 }
@@ -866,6 +887,9 @@ function initCurrentGameInfo(gameName) {
         }
     }
 }
+function hideModals() {
+    $('div.modal').modal('hide');
+}
 
 $(window).on('resize', function () {
     $('.activity').height($(window).height() - 40);
@@ -900,12 +924,22 @@ $(window).on('keydown', function (event) {
 
 $('document').ready(function() {
     var $joinGameModal = $('#joinGameModal');
-    $joinGameModal.on('show.bs.modal', function(event) {
+    $joinGameModal.on('show.bs.modal', function (event) {
         var gameName = $(event.relatedTarget).data('game-name');
         initCurrentGameInfo(gameName);
     });
-
-    $joinGameModal.on('hidden.bs.modal', function(event) {
+    $joinGameModal.on('hidden.bs.modal', function () {
+        // If the join game modal was cancelled, restore the original hash.
+        if (vm.playingGame() != hashGameId()) {
+            var hash = vm.playingGame() || '';
+            if (vm.playingPassword()) {
+                hash += '-' + vm.playingPassword();
+            }
+            location.hash = hash;
+        }
         vm.gameInfo('');
+    });
+    $('#newGameModal').on('shown.bs.modal', function () {
+        $('#newGameModal input').focus().select();
     });
 });

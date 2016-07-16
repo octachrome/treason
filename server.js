@@ -167,13 +167,10 @@ function joinGame(socket, gameName, playerName, password) {
         if (!game.password() || game.password() === password) {
             playerJoinsGame(game, socket, playerName, gameName);
         } else {
-            socket.emit('gamerequirespassword', {
-                message: 'Failed to join game, incorrect password',
-                gameName: gameName
-            });
+            socket.emit('incorrectpassword');
         }
     } else {
-        socket.emit('gamenotfound', 'Failed to join game, game not found');
+        socket.emit('gamenotfound');
     }
 }
 
