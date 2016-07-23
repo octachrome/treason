@@ -197,7 +197,7 @@ function randomGameName(playerName) {
     var i = 1;
     while (true) {
         var adjective = adjectives[rand(adjectives.length)];
-        var gameName =  playerName + "'s " + adjective + " game";
+        var gameName =  playerName + "'s_" + adjective + "_game";
         if (i > 100) {
             gameName += " (" + i + ")";
         }
