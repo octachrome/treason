@@ -18,6 +18,7 @@ function createNetPlayer(game, socket, playerName) {
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
         onChatMessage: onChatMessage,
+        onPlayerLeft: onPlayerLeft,
         playerId: socket.playerId
     };
 
@@ -47,7 +48,7 @@ function createNetPlayer(game, socket, playerName) {
         });
     }
 
-    var onCommand = function(data) {
+    function onCommand(data) {
         try {
             if (gameProxy != null) {
                 gameProxy.command(data);
@@ -55,32 +56,37 @@ function createNetPlayer(game, socket, playerName) {
         } catch(e) {
             handleError(e);
         }
-    };
+    }
 
-    var sendChatMessage = function (message) {
+    function sendChatMessage(message) {
         if (gameProxy != null) {
             gameProxy.sendChatMessage(message);
         }
-    };
+    }
 
-    var onDisconnect = function onDisconnect(data) {
-        var rejoined = data.gameName === gameProxy.getGameName();
+    function onPlayerLeft() {
+        socket.removeListener('command', onCommand);
+        socket.removeListener('chat', sendChatMessage);
+        socket.removeListener('disconnect', leaveGame);
+        socket.removeListener('join', leaveGame);
+        setTimeout(function () {
+            socket.emit('state', null);
+        });
+    }
+
+    function leaveGame() {
         if (gameProxy != null) {
-            socket.removeListener('command', onCommand);
-            socket.removeListener('chat', sendChatMessage);
-            socket.removeListener('disconnect', onDisconnect);
-            socket.removeListener('join', onDisconnect);
-            gameProxy.playerLeft(rejoined);
+            gameProxy.playerLeft();
             gameProxy = null;
             game = null;
         }
-    };
+    }
 
     socket.on('command', onCommand);
     socket.on('chat', sendChatMessage);
-    socket.on('disconnect', onDisconnect);
+    socket.on('disconnect', leaveGame);
     // If the player joins another game, leave this one.
-    socket.on('join', onDisconnect);
+    socket.on('join', leaveGame);
 
     function handleError(e) {
         var message;

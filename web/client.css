@@ -60,6 +60,9 @@ i.challenge:before {
 i.allow:before {
     content: "\ea10";
 }
+i.user:before {
+    content: "\e971";
+}
 body {
     padding-top: 15px;
 }
@@ -190,6 +193,53 @@ div.chat {
 .name-input {
     width: 160px;
 }
-h4 {
-    margin-top: 26px;
+.games-list-container {
+    max-height: 290px;
+    overflow-y: auto;
+}
+.global-chat {
+    height: 250px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+}
+.global-chat-users {
+    height: 250px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+}
+.game-name-highlight:focus, .game-name-highlight:hover {
+    color: #23527c;
+    text-decoration: underline;
+}
+.game-name-highlight {
+    color: #3b94d9;
+    cursor: pointer;
+}
+.join-buttons {
+    width: 150px;
+}
+.join-buttons button:first-child {
+    width: 120px;
+}
+.observer {
+    color: #aaa;
+    margin-left: 3px;
+    font-size: larger;
+}
+.profile-button {
+    text-align: right;
+}
+.profile-button a {
+    text-decoration: none;
+}
+.profile-button a:hover {
+    text-decoration: none;
+}
+h3 {
+    margin-top: 0;
+}
+.error {
+    color: red;
 }

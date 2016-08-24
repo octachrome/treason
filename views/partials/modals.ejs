@@ -1,0 +1,84 @@
+<div class="modal" id="newGameModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="newGameModalTitle">Create New Game</h4>
+            </div>
+            <div class="modal-body">
+                <form data-bind="submit: create">
+                    <p><input type="text" placeholder="Type a password" data-bind="textInput: password"/></p>
+                    <p><button type="submit" class="btn btn-default">Create game</button></p>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="joinGameModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="joinGameModalTitle" data-bind="text: gameInfo() ? 'Game ' + gameInfo().gameName : 'Game not found'"></h4>
+            </div>
+            <div class="modal-body">
+                <div data-bind="visible: !gameInfo()">
+                    The game was not found. Please check the URL and try again.
+                </div>
+                <div data-bind="with: gameInfo">
+                    <form data-bind="submit: join.bind(null, null, null, gameName)">
+                        <p>State: <span data-bind="text: status"></span></p>
+                        <p>Mode: <span data-bind="text: type"></span></p>
+                        <p data-bind="visible: passwordRequired">Password: <input type="text" placeholder="Password" data-bind="textInput: $parent.password"/></p>
+                        <p class="error" data-bind="visible: $root.incorrectPassword">Incorrect password</p>
+
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Player</th>
+                                        <th>Human</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-bind="foreach: players">
+                                    <tr>
+                                        <td data-bind="text: playerName"></td>
+                                        <td data-bind="text: ai == true ? 'no' : 'yes'"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <p><button type="submit" class="btn btn-default btn-block">Join game</button></p>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="userProfileDialog" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form data-bind="submit: confirmUserProfileDialog">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="passwordRequiredTitle">I shall henceforth be known as:</h4>
+                </div>
+                <div class="modal-body">
+                    <p><input type="text" placeholder="Name" data-bind="textInput: playerName"/></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-default">OK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

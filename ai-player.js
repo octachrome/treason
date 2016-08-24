@@ -38,7 +38,6 @@ function createAiPlayer(game, options) {
     }, options);
 
     var rand = randomGen.create(options.randomSeed);
-    var bluffChoice = rand.random() < options.chanceToBluff;
 
     var player = {
         name: aiPlayerNames[rand(aiPlayerNames.length)],
@@ -56,6 +55,7 @@ function createAiPlayer(game, options) {
         return;
     }
 
+    var bluffChoice;
     var state;
     var aiPlayer;
     var currentPlayer;
@@ -67,14 +67,25 @@ function createAiPlayer(game, options) {
     var timeout = null;
     // Roles that we have bluffed and then been called on - can no longer bluff these.
     var calledBluffs = [];
+    var needReset = true;
 
     function onStateChange(s) {
         state = s;
         if (timeout != null) {
             clearTimeout(timeout);
         }
-        var delay = rand.intBetween(options.moveDelay - options.moveDelaySpread, options.moveDelay + options.moveDelaySpread);
-        timeout = setTimeout(onStateChangeAsync, delay);
+        if (state.state.name === stateNames.WAITING_FOR_PLAYERS) {
+            needReset = true;
+        }
+        else {
+            // Reset when the game actually starts: the first state after WAITING_FOR_PLAYERS.
+            if (needReset) {
+                reset();
+                needReset = false;
+            }
+            var delay = rand.intBetween(options.moveDelay - options.moveDelaySpread, options.moveDelay + options.moveDelaySpread);
+            timeout = setTimeout(onStateChangeAsync, delay);
+        }
     }
 
     function onStateChangeAsync() {
@@ -82,8 +93,6 @@ function createAiPlayer(game, options) {
         aiPlayer = state.players[state.playerIdx];
         currentPlayer = state.players[state.state.playerIdx];
         targetPlayer = state.players[state.state.target];
-
-        initClaims();
 
         if (state.state.name == stateNames.ACTION_RESPONSE) {
             lastRoleClaim = {
@@ -115,6 +124,17 @@ function createAiPlayer(game, options) {
         }
     }
 
+    function reset() {
+        claims = [];
+        for (var i = 0; i < state.numPlayers; i++) {
+            claims[i] = {};
+        }
+
+        lastRoleClaim = null;
+        calledBluffs = [];
+        bluffChoice = rand.random() < options.chanceToBluff;
+    }
+
     function getRoleForAction(actionName) {
         var action = actions[actionName];
         if (!action) {
@@ -140,14 +160,6 @@ function createAiPlayer(game, options) {
             // If a player was incorrectly challenged, they swap the role, so an earlier claim is no longer valid.
             if (lastRoleClaim && claims[lastRoleClaim.playerIdx]) {
                 delete claims[lastRoleClaim.playerIdx][lastRoleClaim.role];
-            }
-        }
-    }
-
-    function initClaims() {
-        for (var i = 0; i < state.numPlayers; i++) {
-            if (!claims[i]) {
-                claims[i] = {};
             }
         }
     }
@@ -321,7 +333,9 @@ function createAiPlayer(game, options) {
         var influence = ourInfluence();
         debug('influence: ' + influence);
 
-        if (influence.indexOf('assassin') >= 0 && aiPlayer.cash >= 3 && assassinTarget() != null) {
+        if (aiPlayer.cash >= 10) {
+            playAction('coup', strongestPlayer());
+        } else if (influence.indexOf('assassin') >= 0 && aiPlayer.cash >= 3 && assassinTarget() != null) {
             playAction('assassinate', assassinTarget());
         } else if (aiPlayer.cash >= 7) {
             playAction('coup', strongestPlayer());

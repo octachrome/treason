@@ -1,9 +1,19 @@
 <ul class="list-group" data-bind="foreach: state.players">
     <li class="list-group-item" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
-        <div class="row">
+        <div class="row" data-bind="visible: $root.waitingToPlay">
+            <div class="col-xs-6">
+                <span data-bind="text: name, css: { 'dead-player' : isReady() == 'observe' }"></span>
+                <span class="glyphicon glyphicon-eye-open observer" data-bind="visible: isReady() == 'observe'"></span>
+            </div>
+            <div class="col-xs-6">
+                <span class="badge" data-bind="text: (isReady() ? 'ready' : 'not ready')"></span>
+            </div>
+        </div>
+        <div class="row" data-bind="visible: !$root.waitingToPlay()">
             <div class="col-xs-6">
                 <span data-bind="text: name, css: { 'dead-player' : influenceCount() == 0 }"></span>
-                <span class="badge" data-bind="text: '$' + cash(), visible: influenceCount() != 0"></span>
+                <span class="badge" data-bind="text: '$' + cash(), visible: !isObserver()"></span>
+                <span class="glyphicon glyphicon-eye-open observer" data-bind="visible: isObserver()"></span>
             </div>
             <div class="col-xs-6">
                 <!-- ko foreach: influence -->
@@ -34,5 +44,5 @@
     </li>
 </ul>
 <p><a href="rules.html" target="blank">How to play</a></p>
-<p><a href="/" onclick="return confirm('Are you sure you want to leave this game?')">Leave game</a></p>
+<p><a href="" data-bind="click: leaveGame">Leave game</a></p>
 <p><a href="javascript:;" data-bind="visible: notifsSupported, text: notifToggleText, click: toggleNotifs"></a></p>

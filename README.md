@@ -67,7 +67,7 @@ In state `reveal-influence`, the player in the `playerToReveal` field must revea
 
 The `exchange` state occurs after playing the exchange action; the player whose turn it is must choose which of their cards to exchange. The player chooses their roles from those in the `exchangeOptions` field, and then sends an `exchange` command with the `roles` field containing their choice in the form of an array.
 
-In state `game-won`, the player in the `state.playerIdx` field has won the game.
+When a player wins, the game returns to `waiting-for-players`, and the `state.winnerIdx` field is set to the winner.
 
 Commands sent to the server look like this:
 

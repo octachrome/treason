@@ -32,6 +32,8 @@ var nextGameId = 1;
 
 var MIN_PLAYERS = 2;
 var MAX_PLAYERS = 6;
+var INITIAL_CASH = 2;
+var INFLUENCES = 2;
 
 var epithets = fs.readFileSync(__dirname + '/epithets.txt', 'utf8').split(/\r?\n/);
 
@@ -44,22 +46,23 @@ module.exports = function createGame(options) {
         gameId: gameId,
         players: [],
         numPlayers: 0,
+        maxPlayers: MAX_PLAYERS,
         gameName: options.gameName,
         created: options.created,
         roles: [],
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
-        }
+        },
+        password: options.password
     };
 
     var rand = randomGen.create(options.randomSeed);
 
     dataAccess.setDebug(options.debug);
 
-    var gameStats = dataAccess.constructGameStats();
+    var gameStats;
     var gameTracker;
-
-    var players = [];
+    var playerIfaces = [];
     var allows = [];
     var proxies = [];
 
@@ -71,6 +74,10 @@ module.exports = function createGame(options) {
 
     var game = new EventEmitter();
     game.canJoin = canJoin;
+    game.password = password;
+    game.currentState = currentState;
+    game.gameType = gameType;
+    game.playersInGame = playersInGame;
     game.playerJoined = playerJoined;
     game._test_setTurnState = _test_setTurnState;
     game._test_setInfluence = _test_setInfluence;
@@ -78,47 +85,47 @@ module.exports = function createGame(options) {
     game._test_setDeck = _test_setDeck;
     game._test_resetAllows = resetAllows;
 
-    function playerJoined(player) {
-        var isObserver = !canJoin();
-
-        var playerState = {
-            name: playerName(player.name),
-            cash: 2,
-            influenceCount: 2,
-            influence: [
-                {
-                    role: 'not dealt',
-                    revealed: false
-                },
-                {
-                    role: 'not dealt',
-                    revealed: false
-                }
-            ],
-            isObserver: isObserver,
-            ai: !!player.ai
-        };
-
-        if (isObserver) {
-            playerState.cash = 0;
-            playerState.influenceCount = 0;
-            playerState.influence = [];
+    function playerJoined(playerIface) {
+        var isObserver;
+        if (countReadyPlayers() < MAX_PLAYERS) {
+            isObserver = false;
         }
+        else if (countReadyPlayers(true) < MAX_PLAYERS) {
+            makeAiObserver();
+            isObserver = false;
+        }
+        else {
+            isObserver = true;
+        }
+
+        var playerState = createPlayerState(playerIface, isObserver);
 
         var playerIdx = state.players.length;
         state.players.push(playerState);
-        players.push(player);
+        playerIfaces.push(playerIface);
         state.numPlayers++;
 
         addHistory('player-joined', nextAdhocHistGroup(), playerState.name + ' joined the game' + (isObserver ? ' as an observer' : ''));
         emitState();
 
         var proxy = createGameProxy(playerIdx);
-        if (isObserver) {
-            proxy.command = function () {};
-        }
         proxies.push(proxy);
         return proxy;
+    }
+
+    function createPlayerState(playerIface, isObserver) {
+        var playerState = {
+            name: playerName(playerIface.name),
+            cash: 0,
+            influenceCount: 0,
+            influence: [],
+            isObserver: false,
+            ai: !!playerIface.ai,
+            isReady: isObserver ? 'observe' : true,
+            connected: true
+        };
+
+        return playerState;
     }
 
     // Related history items are grouped together using history group ids, defined below.
@@ -153,8 +160,8 @@ module.exports = function createGame(options) {
         proxy.command = function (data) {
             command(playerIdx, data);
         };
-        proxy.playerLeft = function (rejoined) {
-            playerLeft(playerIdx, rejoined);
+        proxy.playerLeft = function () {
+            playerLeft(playerIdx);
         };
         proxy.sendChatMessage = function (message) {
             sendChatMessage(playerIdx, message);
@@ -165,31 +172,28 @@ module.exports = function createGame(options) {
         return proxy;
     }
 
-    function playerLeft(playerIdx, rejoined) {
+    function playerLeft(playerIdx) {
         if (playerIdx == null || playerIdx < 0 || playerIdx >= state.numPlayers) {
             throw new GameException('Unknown player disconnected');
         }
-        var player = state.players[playerIdx];
-        if (!player) {
+        var playerState = state.players[playerIdx];
+        var playerIface = playerIfaces[playerIdx];
+        if (!playerState || !playerIface) {
             throw new GameException('Unknown player disconnected');
         }
-        var playerId = players[playerIdx].playerId;
+        var playerId = playerIface.playerId;
         var historySuffix = [];
-        if (state.state.name == stateNames.WAITING_FOR_PLAYERS || player.isObserver) {
-            state.players.splice(playerIdx, 1);
-            players.splice(playerIdx, 1);
-            proxies.splice(playerIdx, 1);
-            state.numPlayers--;
-            // Rewire the player proxies with the new player index
-            for (var i = playerIdx; i < state.numPlayers; i++) {
-                createGameProxy(i, proxies[i]);
-            }
+        if (state.state.name == stateNames.WAITING_FOR_PLAYERS) {
+            forceRemovePlayer(playerIdx);
+            promoteObserverToPlayer();
         } else {
-            players[playerIdx] = null;
-            if (state.state.name != stateNames.GAME_WON) {
+            playerIfaces[playerIdx] = null;
+            playerState.connected = false;
+            playerState.isReady = false;
+            if (!playerState.isObserver) {
                 gameTracker.playerLeft(playerIdx);
                 // Reveal all the player's influence.
-                var influence = player.influence;
+                var influence = playerState.influence;
                 for (var j = 0; j < influence.length; j++) {
                     if (!influence[j].revealed) {
                         historySuffix.push(format('{%d} revealed %s', playerIdx, influence[j].role));
@@ -197,7 +201,7 @@ module.exports = function createGame(options) {
                     }
                 }
                 //If the player was eliminated already or an observer, we do not record a disconnect
-                if (playerId && player.influenceCount > 0) {
+                if (playerId && playerState.influenceCount > 0) {
                     //Record the stats on the game
                     gameStats.playerDisconnect.unshift(playerId);
                     //Record the stats individually, in case the game does not finish
@@ -206,7 +210,7 @@ module.exports = function createGame(options) {
                         dataAccess.recordPlayerDisconnect(playerId);
                     }
                 }
-                player.influenceCount = 0;
+                playerState.influenceCount = 0;
                 var end = checkForGameEnd();
                 if (!end) {
                     if (state.state.playerIdx == playerIdx) {
@@ -221,19 +225,81 @@ module.exports = function createGame(options) {
             }
         }
 
-        addHistory('player-left', nextAdhocHistGroup(), player.name + ' left the game' + (rejoined ? ' to play again' : ''));
+        if (playerIface.onPlayerLeft) {
+            playerIface.onPlayerLeft();
+        }
+
+        addHistory('player-left', nextAdhocHistGroup(), playerState.name + ' left the game');
         for (var k = 0; k < historySuffix.length; k++) {
             addHistory('player-left', curAdhocHistGroup(), historySuffix[k]);
         }
         if (onlyAiLeft()) {
             destroyGame();
         }
-        emitState();
+        emitState(true);
+    }
+
+    function forceRemovePlayer(playerIdx) {
+        state.players.splice(playerIdx, 1);
+        playerIfaces.splice(playerIdx, 1);
+        proxies.splice(playerIdx, 1);
+        state.numPlayers--;
+        // Rewire the player proxies with the new player index
+        for (var i = playerIdx; i < state.numPlayers; i++) {
+            createGameProxy(i, proxies[i]);
+        }
+    }
+
+    function promoteObserverToPlayer() {
+        if (countReadyPlayers() < MAX_PLAYERS) {
+            for (var i = 0; i < state.numPlayers; i++) {
+                var playerState = state.players[i];
+                if (playerState.isReady === 'observe') {
+                    playerState.isReady = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    function playerReady(playerIndex) {
+        var playerState = state.players[playerIndex];
+
+        if (!playerState.isReady) {
+            if (countReadyPlayers() < MAX_PLAYERS) {
+                playerState.isReady = true;
+            }
+            else if (countReadyPlayers(true) < MAX_PLAYERS) {
+                makeAiObserver();
+                playerState.isReady = true;
+            }
+            else {
+                playerState.isReady = 'observe';
+            }
+            addHistory('player-ready', nextAdhocHistGroup(), playerState.name + ' is ready to play again');
+        }
+    }
+
+    function addAiPlayer() {
+        if (countReadyPlayers() >= MAX_PLAYERS) {
+            throw new GameException('Cannot add AI player: game is full');
+        }
+        createAiPlayer(game, options);
     }
 
     function removeAiPlayer() {
-        for (var i = players.length - 1; i > 0; i--) {
-            if (players[i] && players[i].ai) {
+        // Try to remove an observing AI first.
+        for (var i = state.players.length - 1; i > 0; i--) {
+            var playerState = state.players[i];
+            if (playerState && playerState.ai && playerState.isReady === 'observe') {
+                playerLeft(i);
+                return;
+            }
+        }
+        // If there are none, remove an AI who would play.
+        for (var i = state.players.length - 1; i > 0; i--) {
+            playerState = state.players[i];
+            if (playerState && playerState.ai) {
                 playerLeft(i);
                 return;
             }
@@ -241,8 +307,9 @@ module.exports = function createGame(options) {
     }
 
     function onlyAiLeft() {
-        for (var i = 0; i < players.length; i++) {
-            if (players[i] && !players[i].ai) {
+        // Specifically check playerIfaces, because it is null if a player has left.
+        for (var i = 0; i < playerIfaces.length; i++) {
+            if (playerIfaces[i] && !playerIfaces[i].ai) {
                 return false;
             }
         }
@@ -251,16 +318,16 @@ module.exports = function createGame(options) {
 
     function destroyGame() {
         debug('destroying game');
-        players = [];
+        playerIfaces = [];
         proxies = [];
         setState({
             name: 'destroyed'
-        })
-        game.emit('end');
+        });
+        game.emit('teardown');
     }
 
     function afterPlayerDeath(playerIdx) {
-        gameStats.playerRank.unshift(players[playerIdx].playerId);
+        gameStats.playerRank.unshift(playerIfaces[playerIdx].playerId);
         addHistory('player-died', nextAdhocHistGroup(), '{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
@@ -279,11 +346,13 @@ module.exports = function createGame(options) {
         }
         if (winnerIdx != null) {
             setState({
-                name: stateNames.GAME_WON,
-                playerIdx: winnerIdx
+                name: stateNames.WAITING_FOR_PLAYERS,
+                winnerIdx: winnerIdx,
+                playerIdx: null
             });
             gameTracker.gameOver(state);
-            var playerId = players[winnerIdx].playerId;
+            resetReadyStates();
+            var playerId = playerIfaces[winnerIdx].playerId;
             gameStats.playerRank.unshift(playerId);
             gameStats.events = gameTracker.pack().toString('base64');
             dataAccess.recordGameData(gameStats);
@@ -294,17 +363,41 @@ module.exports = function createGame(options) {
         }
     }
 
-    function getInfluence(player) {
+    function resetReadyStates() {
+        var readyCount = 0;
+        for (var i = 0; i < state.players.length; i++) {
+            var playerState = state.players[i];
+            if (playerState.ai) {
+                if (readyCount < MAX_PLAYERS) {
+                    playerState.isReady = true;
+                    readyCount++;
+                }
+                else {
+                    playerState.isReady = 'observe';
+                }
+            }
+            else {
+                playerState.isReady = false;
+            }
+        }
+    }
+
+    function getInfluence(playerState) {
         var influence = [];
-        for (var i = 0; i < player.influence.length; i++) {
-            if (!player.influence[i].revealed) {
-                influence.push(player.influence[i].role);
+        for (var i = 0; i < playerState.influence.length; i++) {
+            if (!playerState.influence[i].revealed) {
+                influence.push(playerState.influence[i].role);
             }
         }
         return influence;
     }
 
-    function emitState() {
+    function emitState(emitStateChangeEvent) {
+        if (state.state.name === stateNames.WAITING_FOR_PLAYERS
+            || state.state.name === stateNames.START_OF_TURN
+            || emitStateChangeEvent) {
+            game.emit('statechange');
+        }
         state.stateId++;
         debug(state);
         for (var i = 0; i < state.players.length; i++) {
@@ -315,8 +408,8 @@ module.exports = function createGame(options) {
 
     function emitStateAsync(playerIdx, state) {
         setTimeout(function () {
-            if (players[playerIdx] != null) {
-                players[playerIdx].onStateChange(state);
+            if (playerIfaces[playerIdx] != null) {
+                playerIfaces[playerIdx].onStateChange(state);
             }
         }, 0);
     }
@@ -338,8 +431,8 @@ module.exports = function createGame(options) {
         }
         // If a player is exchanging or interrogating, show the roles to that player alone.
         if (state.state.playerIdx != playerIdx) {
-            masked.state.exchangeOptions = [];
-            masked.state.confession = null;
+            delete masked.state.exchangeOptions;
+            delete masked.state.confession;
         }
         masked.playerIdx = playerIdx;
         return masked;
@@ -349,50 +442,98 @@ module.exports = function createGame(options) {
         if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
             throw new GameException('Incorrect state');
         }
-        if (state.numPlayers >= MIN_PLAYERS) {
-            gameStats.gameType = gameType || 'original';
-            state.roles = ['duke', 'captain', 'assassin', 'contessa'];
-            if (gameStats.gameType === 'inquisitors') {
-                state.roles.push('inquisitor');
+        if (countReadyPlayers() < MIN_PLAYERS) {
+            throw new GameException('Not enough players are ready to play');
+        }
+        gameStats = dataAccess.constructGameStats();
+        gameStats.gameType = gameType || 'original';
+        state.roles = ['duke', 'captain', 'assassin', 'contessa'];
+        if (gameStats.gameType === 'inquisitors') {
+            state.roles.push('inquisitor');
+        }
+        else {
+            state.roles.push('ambassador');
+        }
+        deck = buildDeck();
+        gameTracker = new GameTracker();
+
+        var nonObservers = [];
+
+        for (var i = 0; i < state.numPlayers; i++) {
+            var playerState = state.players[i];
+
+            playerState.influence = [];
+            playerState.influenceCount = 0;
+
+            if (!playerIfaces[i]) {
+                // This player left during the last game, and can now be fully removed safely.
+                forceRemovePlayer(i);
+                i--;
+                continue;
             }
-            else {
-                state.roles.push('ambassador');
-            }
-            deck = buildDeck();
-            gameTracker = new GameTracker();
-
-            var nonObservers = [];
-
-            for (var i = 0; i < state.numPlayers; i++) {
-                var player = state.players[i];
-
-                if (!player.isObserver) {
-                    for (var j = 0; j < 2; j++) {
-                        player.influence[j].role = deck.pop();
-                    }
-
-                    gameStats.players++;
-                    if (!player.ai) {
-                        gameStats.humanPlayers++;
-                    }
-
-                    nonObservers.push(i);
+            if (playerState.isReady !== true) { // it could also be false or 'observe'
+                if (playerState.ai) {
+                    // Remove AI observers on game start (but not before, for people still reviewing the last game).
+                    forceRemovePlayer(i);
+                    i--;
+                    continue;
                 }
-            }
+                playerState.isObserver = true;
+                playerState.cash = 0;
+            } else {
+                playerState.isObserver = false;
+                for (var j = 0; j < INFLUENCES; j++) {
+                    playerState.influence[j] = {
+                        role: deck.pop(),
+                        revealed: false
+                    };
+                }
+                playerState.influenceCount = INFLUENCES;
+                playerState.cash = INITIAL_CASH;
 
-            var firstPlayer;
-            if (typeof options.firstPlayer === 'number') {
-                firstPlayer = options.firstPlayer;
+                gameStats.players++;
+                if (!playerState.ai) {
+                    gameStats.humanPlayers++;
+                }
+
+                nonObservers.push(i);
             }
-            else {
-                firstPlayer = nonObservers[rand(nonObservers.length)];
+        }
+
+        var firstPlayer;
+        if (typeof options.firstPlayer === 'number') {
+            firstPlayer = options.firstPlayer;
+        }
+        else {
+            firstPlayer = nonObservers[rand(nonObservers.length)];
+        }
+        turnHistGroup++;
+        setState({
+            name: stateNames.START_OF_TURN,
+            playerIdx: firstPlayer,
+            winnerIdx: null
+        });
+        gameTracker.startOfTurn(state);
+    }
+
+    function countReadyPlayers(skipAi) {
+        var readyCount = 0;
+        for (var i = 0; i < state.numPlayers; i++) {
+            var playerState = state.players[i];
+            if (playerState.isReady === true && (!skipAi || !playerState.ai)) { // it could also equal 'observe'
+                readyCount++;
             }
-            turnHistGroup++;
-            setState({
-                name: stateNames.START_OF_TURN,
-                playerIdx: firstPlayer
-            });
-            gameTracker.startOfTurn(state);
+        }
+        return readyCount;
+    }
+
+    function makeAiObserver() {
+        for (var i = state.numPlayers - 1; i >= 0; i--) {
+            var playerState = state.players[i];
+            if (playerState.ai && playerState.isReady !== 'observe') {
+                playerState.isReady = 'observe';
+                return;
+            }
         }
     }
 
@@ -404,25 +545,44 @@ module.exports = function createGame(options) {
         debug('command from player: ' + playerIdx);
         debug(command);
         var i, action, message;
-        var player = state.players[playerIdx];
-        if (player == null) {
+        var playerState = state.players[playerIdx];
+        if (playerState == null) {
             throw new GameException('Unknown player');
         }
-        if (command.stateId != state.stateId) {
+        if (command.command == 'leave') {
+            // You can always leave, even if your state id is old.
+            playerLeft(playerIdx);
+        }
+        else if (command.stateId != state.stateId) {
             throw new GameException('Stale state (' + command.stateId + '!=' + state.stateId + ')');
         }
-        if (command.command == 'start') {
+        else if (command.command == 'start') {
+            if (playerState.isReady !== true) {
+                throw new GameException('You cannot start the game');
+            }
             start(command.gameType);
+
+        } else if (command.command == 'ready') {
+            if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
+                throw new GameException('Incorrect state');
+            }
+            playerReady(playerIdx);
 
         } else if (command.command == 'add-ai') {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
                 throw new GameException('Incorrect state');
             }
-            createAiPlayer(game, options);
+            if (playerState.isReady !== true) {
+                throw new GameException('You cannot add AI players');
+            }
+            addAiPlayer();
 
         } else if (command.command == 'remove-ai') {
             if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
                 throw new GameException('Incorrect state');
+            }
+            if (playerState.isReady !== true) {
+                throw new GameException('You cannot remove AI players');
             }
             removeAiPlayer();
 
@@ -440,10 +600,10 @@ module.exports = function createGame(options) {
             if (action.roles && !getGameRole(action.roles)) {
                 throw new GameException('Action not allowed in this game');
             }
-            if (player.cash >= 10 && command.action != 'coup') {
+            if (playerState.cash >= 10 && command.action != 'coup') {
                 throw new GameException('You must coup with >= 10 cash');
             }
-            if (player.cash < action.cost) {
+            if (playerState.cash < action.cost) {
                 throw new GameException('Not enough cash');
             }
             if (action.targeted) {
@@ -458,7 +618,7 @@ module.exports = function createGame(options) {
                 }
             }
             gameTracker.action(command.action, command.target);
-            player.cash -= action.cost;
+            playerState.cash -= action.cost;
             if (action.roles == null && action.blockedBy == null) {
                 if (playAction(playerIdx, command, false)) {
                     nextTurn();
@@ -487,7 +647,7 @@ module.exports = function createGame(options) {
             }
 
         } else if (command.command == 'challenge') {
-            if (player.influenceCount == 0) {
+            if (playerState.influenceCount == 0) {
                 throw new GameException('Dead players cannot challenge');
             }
             if (state.state.name == stateNames.ACTION_RESPONSE) {
@@ -520,11 +680,11 @@ module.exports = function createGame(options) {
             if (state.state.playerToReveal != playerIdx) {
                 throw new GameException('Not your turn to reveal an influence');
             }
-            for (i = 0; i < player.influence.length; i++) {
-                var influence = player.influence[i];
+            for (i = 0; i < playerState.influence.length; i++) {
+                var influence = playerState.influence[i];
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
-                    player.influenceCount--;
+                    playerState.influenceCount--;
                     addHistory(state.state.reason, curTurnHistGroup(), '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
                     if (state.state.reason == 'incorrect-challenge') {
                         if (afterIncorrectChallenge()) {
@@ -545,7 +705,7 @@ module.exports = function createGame(options) {
             throw new GameException('Could not reveal role');
 
         } else if (command.command == 'block') {
-            if (player.influenceCount == 0) {
+            if (playerState.influenceCount == 0) {
                 throw new GameException('Dead players cannot block');
             }
             if (state.state.name != stateNames.ACTION_RESPONSE && state.state.name != stateNames.FINAL_ACTION_RESPONSE) {
@@ -586,7 +746,7 @@ module.exports = function createGame(options) {
             resetAllows(playerIdx);
 
         } else if (command.command == 'allow') {
-            if (player.influenceCount == 0) {
+            if (playerState.influenceCount == 0) {
                 throw new GameException('Dead players cannot allow actions');
             }
             var stateChanged = allow(playerIdx);
@@ -605,7 +765,7 @@ module.exports = function createGame(options) {
             if (!command.roles) {
                 throw new GameException('Must specify roles to exchange');
             }
-            if (command.roles.length != player.influenceCount) {
+            if (command.roles.length != playerState.influenceCount) {
                 throw new GameException('Wrong number of roles');
             }
             var unchosen = arrayDifference(state.state.exchangeOptions, command.roles);
@@ -613,9 +773,9 @@ module.exports = function createGame(options) {
                 throw new GameException('Invalid choice of roles');
             }
             // Assign the roles the player selected.
-            for (i = 0; i < player.influence.length; i++) {
-                if (!player.influence[i].revealed) {
-                    player.influence[i].role = command.roles.pop()
+            for (i = 0; i < playerState.influence.length; i++) {
+                if (!playerState.influence[i].revealed) {
+                    playerState.influence[i].role = command.roles.pop()
                 }
             }
             // Return the other roles to the deck.
@@ -764,7 +924,7 @@ module.exports = function createGame(options) {
 
     function challenge(playerIdx, challengedPlayerIdx, challegedRole) {
         var revealedRole, endOfTurn;
-        var player = state.players[playerIdx];
+        var playerState = state.players[playerIdx];
         var challengedPlayer = state.players[challengedPlayerIdx];
         if (!challengedPlayer) {
             throw new GameException('Cannot identify challenged player');
@@ -790,9 +950,9 @@ module.exports = function createGame(options) {
                 playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRole);
 
             // If the challenger is losing their last influence,
-            if (player.influenceCount <= 1) {
+            if (playerState.influenceCount <= 1) {
                 // Then the challenger is dead. Reveal an influence.
-                revealedRole = revealFirstInfluence(player);
+                revealedRole = revealFirstInfluence(playerState);
                 addHistory('incorrect-challenge', curTurnHistGroup(), '%s; {%d} revealed %s', message, playerIdx, revealedRole);
 
                 endOfTurn = afterIncorrectChallenge();
@@ -854,12 +1014,12 @@ module.exports = function createGame(options) {
         }
     }
 
-    function revealFirstInfluence(player) {
-        var influence = player.influence;
+    function revealFirstInfluence(playerState) {
+        var influence = playerState.influence;
         for (var j = 0; j < influence.length; j++) {
             if (!influence[j].revealed) {
                 influence[j].revealed = true;
-                player.influenceCount--;
+                playerState.influenceCount--;
                 return influence[j].role;
             }
         }
@@ -869,9 +1029,9 @@ module.exports = function createGame(options) {
     function playAction(playerIdx, actionState) {
         debug('playing action');
         var target, message, revealedRole;
-        var player = state.players[playerIdx];
+        var playerState = state.players[playerIdx];
         var action = actions[actionState.action];
-        player.cash += action.gain || 0;
+        playerState.cash += action.gain || 0;
         if (actionState.action == 'assassinate') {
             message = format('{%d} assassinated {%d}', playerIdx, actionState.target);
             target = state.players[actionState.target];
@@ -917,13 +1077,13 @@ module.exports = function createGame(options) {
             addHistory('steal', curTurnHistGroup(), '{%d} stole from {%d}', playerIdx, actionState.target);
             if (target.cash >= 2) {
                 target.cash -= 2;
-                player.cash += 2;
+                playerState.cash += 2;
             } else {
-                player.cash += target.cash;
+                playerState.cash += target.cash;
                 target.cash = 0;
             }
         } else if (actionState.action == 'exchange') {
-            var exchangeOptions = [deck.pop()].concat(getInfluence(player));
+            var exchangeOptions = [deck.pop()].concat(getInfluence(playerState));
             if (state.roles.indexOf('ambassador') !== -1) {
                 // Ambassadors draw two cards; inquisitors draw one.
                 exchangeOptions.unshift(deck.pop());
@@ -967,7 +1127,7 @@ module.exports = function createGame(options) {
 
     function nextTurn() {
         debug('next turn');
-        if (state.state.name != stateNames.GAME_WON) {
+        if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
             turnHistGroup++;
             setState({
                 name: stateNames.START_OF_TURN,
@@ -977,9 +1137,9 @@ module.exports = function createGame(options) {
         }
     }
 
-    function indexOfInfluence(player, role) {
-        for (var i = 0; i < player.influence.length; i++) {
-            if (player.influence[i].role == role && !player.influence[i].revealed) {
+    function indexOfInfluence(playerState, role) {
+        for (var i = 0; i < playerState.influence.length; i++) {
+            if (playerState.influence[i].role == role && !playerState.influence[i].revealed) {
                 return i;
             }
         }
@@ -1041,8 +1201,8 @@ module.exports = function createGame(options) {
 
     function addHistoryAsync(dest, type, histGroup, message) {
         setTimeout(function () {
-            if (players[dest] != null) {
-                players[dest].onHistoryEvent(message, type, histGroup);
+            if (playerIfaces[dest] != null) {
+                playerIfaces[dest].onHistoryEvent(message, type, histGroup);
             }
         }, 0);
     }
@@ -1053,16 +1213,62 @@ module.exports = function createGame(options) {
         return state.state.name == stateNames.WAITING_FOR_PLAYERS && state.players.length < MAX_PLAYERS;
     }
 
+    function password() {
+        return state.password;
+    }
+
+    function currentState() {
+        var currentState;
+        switch (state.state.name) {
+            case stateNames.WAITING_FOR_PLAYERS:
+                currentState = 'waiting for players';
+                break;
+            default:
+                currentState = 'in progress';
+        }
+
+        var playerCount = 0;
+        for (var i = 0; i < state.players.length; i++) {
+            var playerState = state.players[i];
+            if (playerIfaces[i] && !playerState.isObserver) {
+                playerCount++;
+            }
+        }
+
+        return currentState + ' (' + playerCount + '/' + MAX_PLAYERS + ')';
+    }
+
+    function gameType() {
+        return gameStats && gameStats.gameType || 'original';
+    }
+
+    function playersInGame() {
+        var playerList = [];
+        // Specifically check playerIfaces, because it is null if a player has left.
+        for (var i = 0; i < playerIfaces.length; i++) {
+            if (playerIfaces[i]) {
+                var playerState = state.players[i];
+                var clientPlayer = {
+                    playerName: playerState.name,
+                    ai: playerState.ai,
+                    observer: playerState.isObserver
+                };
+                playerList.push(clientPlayer);
+            }
+        }
+        return playerList;
+    }
+
     function sendChatMessage(playerIdx, message) {
         message = escape(message).substring(0, 1000);
-        for (var i = 0; i < players.length; i++) {
+        for (var i = 0; i < playerIfaces.length; i++) {
             sendChatMessageAsync(i, playerIdx, message);
         }
     }
 
     function sendChatMessageAsync(dest, playerIdx, message) {
-        if (players[dest] != null) {
-            players[dest].onChatMessage(playerIdx, message);
+        if (playerIfaces[dest] != null) {
+            playerIfaces[dest].onChatMessage(playerIdx, message);
         }
     }
 
@@ -1078,14 +1284,12 @@ module.exports = function createGame(options) {
         var playerIdx = args.shift();
         var influence = state.players[playerIdx].influence;
         state.players[playerIdx].influenceCount = args.length;
-        for (var i = 0; i < influence.length; i++) {
+        for (var i = 0; i < INFLUENCES; i++) {
             var role = args.shift();
-            if (role) {
-                influence[i].role = role;
-                influence[i].revealed = false;
-            } else {
-                influence[i].revealed = true;
-            }
+            influence[i] = {
+                role: role || 'ambassador',
+                revealed: !role
+            };
         }
     }
 

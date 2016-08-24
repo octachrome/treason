@@ -12,8 +12,6 @@
  */
 'use strict';
 
-var fs = require('fs');
-var rand = require('random-seed')();
 var dataAccess = require('./dataaccess');
 
 var argv = require('optimist')
@@ -54,37 +52,39 @@ var io = require('socket.io')(server);
 var createGame = require('./game');
 var createNetPlayer = require('./net-player');
 
-var publicGames = [];
-var privateGames = {};
-var sockets = {};
-// Players who have not joined a game in the last 30 minutes are not counted as actuve users.
-var TIMEOUT = 30 * 60 * 1000;
+var gameId = 1;
+var games = {};
+var players = {};
 
 io.on('connection', function (socket) {
-    var timestamp = new Date().getTime();
-    sockets[socket.id] = timestamp;
-    var activeUsers = 0;
-    for (var id in sockets) {
-        if (timestamp - sockets[id] > TIMEOUT) {
-            delete sockets[id];
-        } else {
-            activeUsers++;
-        }
-    }
-
     //Emit the global rankings upon connect
     dataAccess.getPlayerRankings().then(function (result) {
         socket.emit('rankings', result);
     });
 
     socket.on('registerplayer', function (data) {
+        if (isInvalidPlayerName(data.playerName)) {
+            //Do not even attempt to register invalid player names
+            return;
+        }
+
         var userAgent = socket.request.headers['user-agent'];
         dataAccess.register(data.playerId, data.playerName, userAgent).then(function (playerId) {
-            socket.emit('handshake', {
-                activeUsers: activeUsers,
-                playerId: playerId
-            });
             socket.playerId = playerId;
+
+            players[playerId] = {
+                playerName: data.playerName
+            };
+
+            socket.emit('handshake', {
+                playerId: playerId,
+                games: filterGames(),
+                players: filterPlayers()
+            });
+
+            broadcastPlayers();
+
+            socket.broadcast.emit('globalchatmessage', data.playerName + ' has joined the lobby.');
 
             //Now that we know who you are, we can highlight you in the rankings
             dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
@@ -94,78 +94,26 @@ io.on('connection', function (socket) {
     });
 
     socket.on('join', function (data) {
-        var timestamp = new Date().getTime();
-        sockets[socket.id] = timestamp;
-
         var playerName = data.playerName;
         var gameName = data.gameName;
+        var password = data.password;
 
         if (isInvalidPlayerName(playerName)) {
             return;
         }
+
         if (gameName) {
-            joinPrivateGame(playerName, gameName);
+            joinGame(socket, gameName, playerName, password);
         } else {
-            joinOrCreatePublicGame(playerName);
+            quickJoin(socket, playerName);
         }
     });
 
-    function joinPrivateGame(playerName, gameName) {
-        var game = privateGames[gameName];
-        if (!game) {
-            game = createPrivateGame(gameName);
-        }
-        createNetPlayer(game, socket, playerName);
-    }
-
-    function joinOrCreatePublicGame(playerName) {
-        var game = null;
-        while (!game) {
-            if (publicGames.length) {
-                game = publicGames.pop();
-                if (!game.canJoin()) {
-                    game = null;
-                }
-            } else {
-                game = createGame({
-                    debug: argv.debug,
-                    logger: winston,
-                    moveDelay: 3000, // For AI players
-                    moveDelaySpread: 700
-                });
-            }
-        }
-        createNetPlayer(game, socket, playerName);
-        if (game.canJoin()) {
-            // The game is not yet full; still open for more players.
-            publicGames.push(game);
-        }
-    }
-
-    function createPrivateGame(gameName) {
-        var game = createGame({
-            debug: argv.debug,
-            logger: winston,
-            moveDelay: 1000,
-            gameName: gameName,
-            created: new Date()
-        });
-        privateGames[gameName] = game;
-        game.once('end', function () {
-            delete privateGames[gameName];
-        });
-        return game;
-    }
-
     socket.on('create', function(data) {
-        var gameName = randomGameName(data.gameName);
         if (isInvalidPlayerName(data.playerName)) {
             return;
         }
-        var game = createPrivateGame(gameName);
-        socket.emit('created', {
-            gameName: gameName
-        });
+        createNewGame(socket, data.password);
     });
 
     socket.on('showrankings', function () {
@@ -180,30 +128,160 @@ io.on('connection', function (socket) {
         });
     });
 
+    socket.on('sendglobalchatmessage', function (data) {
+        if (data.length > 300) {
+            data = data.slice(0, 300) + '...';
+        }
+
+        var now = new Date();
+        var timeStamp = '[' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2) + '] ';
+        var playerName = players[socket.playerId].playerName;
+
+        var globalMessage =  timeStamp + playerName + ': ' + data;
+        var localMessage = timeStamp + ' You: ' + data;
+
+        socket.emit('globalchatmessage', localMessage);
+        socket.broadcast.emit('globalchatmessage', globalMessage);
+    });
+
     socket.on('disconnect', function () {
-        delete sockets[socket.id];
+        if (socket.playerId) {
+            //If a client never registered but only connected, it would not have a player property
+            var player = players[socket.playerId];
+            if (player) {
+                socket.broadcast.emit('globalchatmessage', player.playerName + ' has left the lobby.');
+                delete players[socket.playerId];
+            }
+        }
+
+        broadcastGames();
+        broadcastPlayers();
         socket.removeAllListeners();
         socket = null;
     });
 });
 
-var adjectives = fs.readFileSync(__dirname + '/adjectives.txt', 'utf8').split(/\r?\n/);
+function joinGame(socket, gameName, playerName, password) {
+    var game = games[gameName];
+
+    if (game) {
+        if (!game.password() || game.password() === password) {
+            playerJoinsGame(game, socket, playerName, gameName);
+        } else {
+            socket.emit('incorrectpassword');
+        }
+    } else {
+        socket.emit('gamenotfound');
+    }
+}
+
+function quickJoin(socket, playerName) {
+    //Discover a game to join. This should prefer the older games in the list
+    for (var gameName in games) {
+        if (games.hasOwnProperty(gameName)) {
+            var game = games[gameName];
+            if (game && game.canJoin() && !game.password()) {
+                playerJoinsGame(game, socket, playerName, gameName);
+                return;
+            }
+        }
+    }
+
+    //Failed to find a game, make a new one instead
+    createNewGame(socket);
+}
+
+function playerJoinsGame(game, socket, playerName, gameName) {
+    createNetPlayer(game, socket, playerName);
+    socket.emit('joined', {
+        gameName: gameName,
+        password: game.password()
+    });
+
+    broadcastGames();
+}
+
+function createNewGame(socket, password) {
+    var gameName = '' + gameId++;
+
+    var game = createGame({
+        debug: argv.debug,
+        logger: winston,
+        moveDelay: 1000,
+        gameName: gameName,
+        created: new Date(),
+        password: password || ''
+    });
+
+    games[gameName] = game;
+
+    game.once('teardown', function () {
+        delete games[gameName];
+        broadcastGames();
+    });
+
+    game.on('statechange', function () {
+        broadcastGames();
+    });
+
+    socket.emit('created', {
+        gameName: gameName,
+        password: password
+    });
+}
 
 function isInvalidPlayerName(playerName) {
     return !playerName || playerName.length > 30 || !playerName.match(/^[a-zA-Z0-9_ !@#$*]+$/ || !playerName.trim());
 }
 
-function randomGameName(playerName) {
-    var i = 1;
-    while (true) {
-        var adjective = adjectives[rand(adjectives.length)];
-        var gameName =  playerName + "'s " + adjective + " game";
-        if (i > 100) {
-            gameName += " (" + i + ")";
+function broadcastGames() {
+    var gamesList = filterGames();
+    io.sockets.emit('updategames', {
+        games: gamesList
+    });
+}
+
+function broadcastPlayers() {
+    var playerList = filterPlayers();
+    io.sockets.emit('updateplayers', {
+        players: playerList
+    });
+}
+
+function filterPlayers() {
+    var playerList = [];
+
+    for (var playerId in players) {
+        if (players.hasOwnProperty(playerId)) {
+            var player = players[playerId];
+            playerList.push({
+                playerName: player.playerName
+            });
         }
-        if (!privateGames[gameName]) {
-            return gameName;
-        }
-        i++;
     }
+
+    return playerList;
+}
+
+function filterGames() {
+    var gamesList = [];
+
+    for (var gameName in games) {
+        if (games.hasOwnProperty(gameName)) {
+            var game = games[gameName];
+            if (game) {
+                var clientGame = {
+                    gameName: gameName,
+                    status: game.currentState(),
+                    type: game.gameType(),
+                    passwordRequired: game.password() ? true : false,
+                    players: game.playersInGame()
+                };
+
+                gamesList.push(clientGame);
+            }
+        }
+    }
+
+    return gamesList;
 }

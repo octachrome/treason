@@ -1,0 +1,123 @@
+<div class="row">
+    <div class="col-sm-3">
+        <br/>
+        <div class="btn-group join-buttons">
+            <button type="button" class="btn btn-primary" data-bind="click: join">Quick Play</button>
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li><a href="" data-bind="click: create.bind(null, null, null, true)">Create Game</a></li>
+                <li><a href="" data-toggle="modal" data-target="#newGameModal">Create Private Game</a></li>
+            </ul>
+        </div>
+        <br/>
+        <br/>
+    </div>
+
+    <div class="col-sm-7">
+        <div class="table-responsive games-list-container">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Game</th>
+                        <th>Status</th>
+                        <th>Mode</th>
+                        <th>Password</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- ko if: games().length == 0-->
+                    <tr>
+                        <td colspan="4">No games in progress.</td>
+                    </tr>
+                    <!-- /ko -->
+                    <!-- ko foreach: games() -->
+                    <tr data-toggle="modal" data-target="#joinGameModal" data-bind="attr: {'data-game-name': $data.gameName}">
+                        <td data-bind="text: $data.gameName" class="game-name-highlight"><!--<a href="" data-dismiss="modal" data-bind="attr: { href: $data.gameName }, text: $data.gameName"></a>--></td>
+                        <td data-bind="text: $data.status"></td>
+                        <td data-bind="text: $data.type"></td>
+                        <td data-bind="text: $data.passwordRequired ? 'yes' : 'no'"></td>
+                    </tr>
+                    <!-- /ko -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-10">
+        <br/>
+        <div class="row well">
+            <div class="col-sm-9">
+                <div id="global-chat-container" class="global-chat">
+                    <!-- ko foreach: globalChatMessages() -->
+                    <p data-bind="text: $data"></p>
+                    <!-- /ko -->
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="table-responsive global-chat-users">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th>Players Online: <span data-bind="text: players().length"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- ko foreach: players() -->
+                            <tr>
+                                <td data-bind="text: $data.playerName"></td>
+                            </tr>
+                            <!-- /ko -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <form data-bind="submit: sendGlobalMessage">
+                    <input placeholder="Global chat message" type="text" class="form-control" data-bind='value: globalMessage, valueUpdate: "afterkeydown"' />
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<br/>
+<div class="row">
+    <div class="col-sm-6">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Wins</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- ko foreach: rankings() -->
+                    <tr data-bind="css: $data.isPlayer ? 'success' : ''">
+                        <td data-bind="text: $data.rank"></td>
+                        <td data-bind="text: $data.playerName"></td>
+                        <td data-bind="text: $data.wins - $data.winsAI"></td>
+                    </tr>
+                    <!-- /ko -->
+                </tbody>
+            </table>
+        </div>
+        <p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>
+    </div>
+    <div class="col-sm-4">
+        <p><a href="https://twitter.com/intent/tweet?screen_name=chrsbrn" class="twitter-mention-button" data-related="chrsbrn">Tweet to @chrsbrn</a>
+            <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+            <span class="feedback">to send feedback</span><p>
+        <div>
+            <a class="twitter-timeline" href="https://twitter.com/hashtag/treasoncoup" data-widget-id="701469749927133184">#treasoncoup Tweets</a>
+            <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+        </div>
+    </div>
+</div>

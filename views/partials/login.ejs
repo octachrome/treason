@@ -1,0 +1,52 @@
+<div class="row">
+    <!-- Welcome screen -->
+    <div class="col-sm-4">
+        <!-- ko if: !needName() -->
+        <form data-bind="submit: enter">
+            <p><input class="name-input" type="text" placeholder="Name" data-bind="textInput: playerName" maxlength="30"/></p>
+            <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Enter the arena</button></p>
+        </form>
+        <!-- /ko -->
+        <!-- ko if: needName() -->
+        <p>Please enter a name to be able to join <span data-bind="text: currentGame()"></span></p>
+        <form data-bind="submit: join.bind(null, null, null, currentGame())">
+            <p><input class="name-input" type="text" placeholder="Name" data-bind="textInput: playerName" maxlength="30"/></p>
+            <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Join game</button></p>
+        </form>
+        <!-- /ko -->
+        <p><a href="rules.html" target="blank">How to play</a></p>
+        <p><a href="https://twitter.com/intent/tweet?screen_name=chrsbrn" class="twitter-mention-button" data-related="chrsbrn">Tweet to @chrsbrn</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+<span class="feedback">to send feedback</span><p>
+        <div>
+            <a class="twitter-timeline" href="https://twitter.com/hashtag/treasoncoup" data-widget-id="701469749927133184">#treasoncoup Tweets</a>
+            <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+        </div>
+    </div>
+    <div class="col-sm-8">
+        <h4><span data-bind="text: showingGlobalRank() ? 'Global ' : 'Personal '"></span>Rankings</h4>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Wins</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <!-- ko foreach: rankings() -->
+                    <tr data-bind="css: $data.isPlayer ? 'success' : ''">
+                        <td data-bind="text: $data.rank"></td>
+                        <td data-bind="text: $data.playerName"></td>
+                        <td data-bind="text: $data.wins - $data.winsAI"></td>
+                    </tr>
+                <!-- /ko -->
+                </tbody>
+            </table>
+        </div>
+        <!-- ko if: !needName() -->
+        <!--<p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>-->
+        <!-- /ko -->
+    </div>
+</div>
