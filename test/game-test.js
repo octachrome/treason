@@ -348,14 +348,16 @@ describe('Game', function () {
     describe('Coup', function () {
         describe('Given a player is revealing an influence due to a coup', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'ambassador', 'assassin');
-                game._test_setInfluence(1, 'duke', 'captain');
-                game._test_setTurnState({
-                    name: stateNames.REVEAL_INFLUENCE,
-                    playerIdx: 0,
-                    action: 'coup',
-                    playerToReveal: 1,
-                    reason: 'coup'
+                return testPlayers.startGame().then(function () {
+                    game._test_setInfluence(0, 'ambassador', 'assassin');
+                    game._test_setInfluence(1, 'duke', 'captain');
+                    game._test_setTurnState({
+                        name: stateNames.REVEAL_INFLUENCE,
+                        playerIdx: 0,
+                        action: 'coup',
+                        playerToReveal: 1,
+                        reason: 'coup'
+                    });
                 });
             });
 
@@ -386,7 +388,9 @@ describe('Game', function () {
     describe('Disconnects', function () {
         beforeEach(function () {
             player2 = testPlayers.createTestPlayer(game);
-            return testPlayers.waitForNewPlayers(player2);
+            return testPlayers.waitForNewPlayers(player2).then(function () {
+                return testPlayers.startGame();
+            });
         });
 
         describe('Given player1 is revealing an influence due to a coup', function () {
