@@ -18,6 +18,8 @@ var pr = require('promise-ring');
 var ms = require('ms');
 var debug = require('debug')('dataaccess');
 
+var rankingsDisabled = true;
+
 var connection = new cradle.Connection();
 var treasonDb;
 
@@ -44,26 +46,28 @@ function init(dbname) {
             return treasonDb.create();
         }
     }).then(function () {
-        debug('Database is up. Checking if views should be recreated');
-        return treasonDb.get(gameVersionsDocumentId)
-            .then(function (result) {
-                if (result.currentViewVersion != currentViewVersion) {
-                    updateViews = true;
-                } else {
-                    debug('View version is up to date');
-                }
-            })
-            .catch(function () {
-                return treasonDb.save(gameVersionsDocumentId, {
-                    currentViewVersion: currentViewVersion
-                }).then(function () {
-                    debug('Current view version document not found in database, created it');
-                    updateViews = true;
-                }).catch(function (error) {
-                    console.error('Failed to create initial current view version document');
-                    console.error(error);
+        if (!rankingsDisabled) {
+            debug('Database is up. Checking if views should be recreated');
+            return treasonDb.get(gameVersionsDocumentId)
+                .then(function (result) {
+                    if (result.currentViewVersion != currentViewVersion) {
+                        updateViews = true;
+                    } else {
+                        debug('View version is up to date');
+                    }
+                })
+                .catch(function () {
+                    return treasonDb.save(gameVersionsDocumentId, {
+                        currentViewVersion: currentViewVersion
+                    }).then(function () {
+                        debug('Current view version document not found in database, created it');
+                        updateViews = true;
+                    }).catch(function (error) {
+                        console.error('Failed to create initial current view version document');
+                        console.error(error);
+                    });
                 });
-            });
+        }
     }).then(function () {
         if (recreateViews || updateViews) {
             debug('Recreating views because ' + (updateViews ? 'view version was updated' : 'of --recreate-views'));
@@ -145,7 +149,9 @@ function init(dbname) {
         }
     }).then(function() {
         debug('Finished initialising views');
-        return calculateAllStats();
+        if (!rankingsDisabled) {
+            return calculateAllStats();
+        }
     }).then(function() {
         debug('Database is ready');
     }).catch(function(error) {
@@ -239,7 +245,7 @@ function recordGameData(gameData, skipStatRecalculation) {
         gameData.gameFinished = new Date().getTime();
         return treasonDb.save(gameData).then(function (result) {
             debug('Saved game data for game: ' + result._id);
-            if (!skipStatRecalculation) {
+            if (!skipStatRecalculation && !rankingsDisabled) {
                 calculateAllStats();
             }
         }).catch(function (error) {
@@ -287,6 +293,9 @@ function getAllPlayers() {
 };
 
 function getPlayerRankings(playerId, showPersonalRank) {
+    if (rankingsDisabled) {
+        return Promise.resolve([]);
+    }
     return ready.then(function () {
         var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
             return stats[id1].rank - stats[id2].rank;
