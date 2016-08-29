@@ -15,6 +15,7 @@
     "express": "^4.12.3",
     "extend": "^2.0.1",
     "lodash": "^4.11.1",
+    "ms": "^0.7.1",
     "optimist": "^0.6.1",
     "promise-ring": "^0.1.0",
     "random-seed": "^0.2.0",

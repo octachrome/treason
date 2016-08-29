@@ -15,6 +15,7 @@
 var crypto = require('crypto');
 var cradle = require('cradle');
 var pr = require('promise-ring');
+var ms = require('ms');
 
 var connection = new cradle.Connection();
 var treasonDb;
@@ -57,8 +58,8 @@ function init(dbname) {
                     debug('Current view version document not found in database, created it');
                     updateViews = true;
                 }).catch(function (error) {
-                    debug('Failed to create initial current view version document');
-                    debug(error);
+                    console.error('Failed to create initial current view version document');
+                    console.error(error);
                 });
             });
     }).then(function () {
@@ -126,8 +127,8 @@ function init(dbname) {
                 }).then(function () {
                     debug('Updated current view version to ' + currentViewVersion);
                 }).catch(function (error) {
-                    debug('Failed to update current view version.');
-                    debug(error);
+                    console.error('Failed to update current view version.');
+                    console.error(error);
                     throw error;
                 });
             }).then(function() {
@@ -146,13 +147,14 @@ function init(dbname) {
     }).then(function() {
         debug('Database is ready');
     }).catch(function(error) {
-        debug('Failed to initialise database(s)');
-        debug(error);
+        console.error('Failed to initialise database(s)');
+        console.error(error);
         process.exit(1);
     });
+    return ready;
 }
 
-var register = function (id, name, userAgent) {
+function register(id, name, userAgent) {
     return ready.then(function() {
         debug('Player ' + name + ', trying to register with id ' + id);
 
@@ -174,8 +176,8 @@ var register = function (id, name, userAgent) {
                     }).then(function (result) {
                         debug('Updated playerId ' + id);
                     }).catch(function (error) {
-                        debug('Failed to update player.');
-                        debug(error);
+                        console.error('Failed to update player.');
+                        console.error(error);
                     });
                 }
             })
@@ -195,13 +197,13 @@ var register = function (id, name, userAgent) {
                 }).then(function (result) {
                     debug('Allocated new id ' + id + ' to player: ' + name);
                 }).catch(function (error) {
-                    debug('Failed to save player');
-                    debug(error);
+                    console.error('Failed to save player');
+                    console.error(error);
                     return treasonDb.get(id).then(function() {
                         debug('Collision detected, retrying with new id');
                         return register(null, name);
                     }).catch(function(error) {
-                        debug(error);
+                        console.error(error);
                         throw error;
                     });
                 });
@@ -217,7 +219,7 @@ var register = function (id, name, userAgent) {
  * PlayerRank is ordered by the first outgoing player being last in the array, with the winner first and no disconnects.
  * @type {{players: number, humanPlayers: number, playerRank: Array, playerDisconnect: Array, gameStarted: number, gameFinished: number, gameType: string}}
  */
-var constructGameStats = function() {
+function constructGameStats() {
     return {
         players: 0,
         humanPlayers: 0,
@@ -230,7 +232,7 @@ var constructGameStats = function() {
     };
 };
 
-var recordGameData = function (gameData, skipStatRecalculation) {
+function recordGameData(gameData, skipStatRecalculation) {
     return ready.then(function () {
         gameData.gameFinished = new Date().getTime();
         return treasonDb.save(gameData).then(function (result) {
@@ -239,13 +241,13 @@ var recordGameData = function (gameData, skipStatRecalculation) {
                 calculateAllStats();
             }
         }).catch(function (error) {
-            debug('failed to save game data');
-            debug(error);
+            console.error('failed to save game data');
+            console.error(error);
         });
     });
 };
 
-var recordPlayerDisconnect = function (playerId) {
+function recordPlayerDisconnect(playerId) {
     return ready.then(function () {
         return treasonDb.get(playerId)
             .then(function (player) {
@@ -256,15 +258,15 @@ var recordPlayerDisconnect = function (playerId) {
                     }).then(function (player) {
                         debug('Updated disconnect count of player: ' + playerId);
                     }).catch(function (error) {
-                        debug('Failed to update player.');
-                        debug(error);
+                        console.error('Failed to update player.');
+                        console.error(error);
                     });
                 }
             });
     });
 };
 
-var getAllPlayers = function () {
+function getAllPlayers() {
     return ready.then(function () {
         return treasonDb.view('games/all_players').then(function (result) {
             var players = [];
@@ -276,13 +278,13 @@ var getAllPlayers = function () {
             });
             return players;
         }).catch(function (error) {
-            debug('failed to look up all players');
-            debug(error);
+            console.error('failed to look up all players');
+            console.error(error);
         });
     });
 };
 
-var getPlayerRankings = function (playerId, showPersonalRank) {
+function getPlayerRankings(playerId, showPersonalRank) {
     return ready.then(function () {
         var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
             return stats[id1].rank - stats[id2].rank;
@@ -396,19 +398,19 @@ function calculateAllStats() {
         stats = newStats;
         debug('Finished calculating all stats')
     }).catch(function (error) {
-        debug('Failed to calculate all stats');
-        debug(error);
+        console.error('Failed to calculate all stats');
+        console.error(error);
     });
 }
 
 module.exports = {
-    register: register,
+    register: timeApi(register),
     constructGameStats: constructGameStats,
-    recordGameData: recordGameData,
-    recordPlayerDisconnect: recordPlayerDisconnect,
-    getPlayerRankings: getPlayerRankings,
+    recordGameData: timeApi(recordGameData),
+    recordPlayerDisconnect: timeApi(recordPlayerDisconnect),
+    getPlayerRankings: timeApi(getPlayerRankings),
     setDebug: setDebug,
-    init: init
+    init: timeApi(init)
 };
 
 function setDebug(debug) {
@@ -419,6 +421,23 @@ function debug(message) {
     if (debugMode) {
         console.log(message);
     }
+}
+
+function timeApi(fn) {
+    return function () {
+        var start = new Date().getTime();
+        function done(err) {
+            var end = new Date().getTime();
+            console.log(fn.name + ' ' + ms(end - start) + ' ' + (err && err.stack || ''));
+        }
+        return fn.apply(this, arguments).then(function (result) {
+            done();
+            return result;
+        }, function (err) {
+            done(err);
+            throw err;
+        });
+    };
 }
 
 //Just for testing
