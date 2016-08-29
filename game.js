@@ -58,8 +58,6 @@ module.exports = function createGame(options) {
 
     var rand = randomGen.create(options.randomSeed);
 
-    dataAccess.setDebug(options.debug);
-
     var gameStats;
     var gameTracker;
     var playerIfaces = [];

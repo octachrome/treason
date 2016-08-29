@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "cradle": "^0.7.1",
+    "debug": "^2.2.0",
     "deepcopy": "^0.5.0",
     "ejs": "^2.3.3",
     "express": "^4.12.3",

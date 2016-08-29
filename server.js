@@ -15,7 +15,7 @@
 var dataAccess = require('./dataaccess');
 
 var argv = require('optimist')
-    .usage('$0 [--debug] [--port <port>] [--log <logfile>] [--db <database>]')
+    .usage('$0 [--debug] [--recreate-views] [--port <port>] [--log <logfile>] [--db <database>]')
     .default('port', 8080)
     .default('log', 'treason.log')
     .default('db', 'treason_db')
@@ -46,7 +46,7 @@ app.get('/', function (req, res) {
 });
 
 var server = app.listen(argv.port);
-dataAccess.setDebug(argv.debug);
+dataAccess.setRecreateViews(argv['recreate-views']);
 
 var io = require('socket.io')(server);
 var createGame = require('./game');

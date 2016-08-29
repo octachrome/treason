@@ -16,6 +16,7 @@ var crypto = require('crypto');
 var cradle = require('cradle');
 var pr = require('promise-ring');
 var ms = require('ms');
+var debug = require('debug')('dataaccess');
 
 var connection = new cradle.Connection();
 var treasonDb;
@@ -28,6 +29,7 @@ var playerRanksToReturn = 10;
 //View recreation
 var gameVersionsDocumentId = 'game_versions';
 var updateViews = false;
+var recreateViews = false;
 //NOTE: If you update any view, also increment this version
 var currentViewVersion = 1;
 
@@ -63,8 +65,8 @@ function init(dbname) {
                 });
             });
     }).then(function () {
-        if (debugMode || updateViews) {
-            debug('Recreating views because ' + (updateViews ? 'view version was updated' : 'of debug mode'));
+        if (recreateViews || updateViews) {
+            debug('Recreating views because ' + (updateViews ? 'view version was updated' : 'of --recreate-views'));
             return treasonDb.save('_design/games', {
                 by_winner: {
                     map: function (doc) {
@@ -409,18 +411,12 @@ module.exports = {
     recordGameData: timeApi(recordGameData),
     recordPlayerDisconnect: timeApi(recordPlayerDisconnect),
     getPlayerRankings: timeApi(getPlayerRankings),
-    setDebug: setDebug,
+    setRecreateViews: setRecreateViews,
     init: timeApi(init)
 };
 
-function setDebug(debug) {
-    debugMode = debug;
-}
-
-function debug(message) {
-    if (debugMode) {
-        console.log(message);
-    }
+function setRecreateViews(value) {
+    recreateViews = value;
 }
 
 function timeApi(fn) {
@@ -428,8 +424,9 @@ function timeApi(fn) {
         var start = new Date().getTime();
         function done(err) {
             var end = new Date().getTime();
-            console.log(fn.name + ' ' + ms(end - start) + ' ' + (err && err.stack || ''));
+            debug(fn.name + ' took ' + ms(end - start) + ' ' + (err && err.stack || ''));
         }
+        debug(fn.name + '...');
         return fn.apply(this, arguments).then(function (result) {
             done();
             return result;
