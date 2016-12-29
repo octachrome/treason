@@ -216,11 +216,11 @@ socket.on('connect', function() {
     });
 });
 socket.on('disconnect', function () {
-    vm.bannerMessage('Disconnected');
-    vm.state.state.name(null); // Opens the welcome screen.
-    vm.needName(false);
-    vm.loggedIn(false);
-    location = location.href.split('#')[0]
+    // vm.bannerMessage('Disconnected');
+    // vm.state.state.name(null); // Opens the welcome screen.
+    // vm.needName(false);
+    // vm.loggedIn(false);
+    // location = location.href.split('#')[0]
 });
 socket.on('state', function (data) {
     if (!data) {

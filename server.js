@@ -48,7 +48,7 @@ app.get('/', function (req, res) {
 var server = app.listen(argv.port);
 dataAccess.setRecreateViews(argv['recreate-views']);
 
-var io = require('socket.io')(server);
+var io = require('socket.io')(server, {'pingInterval': 2000, 'pingTimeout': 5000});
 var createGame = require('./game');
 var createNetPlayer = require('./net-player');
 
@@ -56,7 +56,16 @@ var gameId = 1;
 var games = {};
 var players = {};
 
+var nextSockId = 1;
+
 io.on('connection', function (socket) {
+    var sockId = nextSockId++;
+    console.log('connection from', sockId);
+
+    socket.on('command', function () {
+        console.log('command on', sockId);
+    });
+
     //Emit the global rankings upon connect
     dataAccess.getPlayerRankings().then(function (result) {
         socket.emit('rankings', result);
@@ -145,6 +154,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('disconnect', function () {
+        console.log('disconnect on', sockId);
         if (socket.playerId) {
             //If a client never registered but only connected, it would not have a player property
             var player = players[socket.playerId];
