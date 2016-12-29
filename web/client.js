@@ -195,12 +195,13 @@ socket.on('connect', function() {
             playerId: vm.playerId()
         });
     }
-    socket.on('handshake', function(data) {
+    socket.on('handshake', function(data, fn) {
         vm.playerId(data.playerId);
         localStorageSet('playerId', data.playerId);
         vm.loggedIn(true);
         vm.games(data.games);
         vm.players(data.players);
+        fn('done logging in');
     });
     socket.on('updategames', function(data) {
         vm.games(data.games);

@@ -55,12 +55,15 @@ var createNetPlayer = require('./net-player');
 var gameId = 1;
 var games = {};
 var players = {};
+var rankings = [];
+
+dataAccess.getPlayerRankings().then(function (result) {
+    rankings = result;
+});
 
 io.on('connection', function (socket) {
     //Emit the global rankings upon connect
-    dataAccess.getPlayerRankings().then(function (result) {
-        socket.emit('rankings', result);
-    });
+    socket.emit('rankings', rankings);
 
     socket.on('registerplayer', function (data) {
         if (isInvalidPlayerName(data.playerName)) {
@@ -72,23 +75,22 @@ io.on('connection', function (socket) {
         dataAccess.register(data.playerId, data.playerName, userAgent).then(function (playerId) {
             socket.playerId = playerId;
 
-            players[playerId] = {
-                playerName: data.playerName
-            };
+            var playerName = data.playerName;
+            var currentOnlinePlayers = filterPlayers().concat([{playerName: playerName}]);
 
             socket.emit('handshake', {
                 playerId: playerId,
                 games: filterGames(),
-                players: filterPlayers()
-            });
+                players: currentOnlinePlayers
+            }, function (data) {
+                //Once the client acknowledged it received the handshake, it will invoke the function passed and let us
+                //know it was logged in. We will ignore that message and add the player to the list of logged in players.
+                players[playerId] = {
+                    playerName: playerName
+                };
 
-            broadcastPlayers();
-
-            socket.broadcast.emit('globalchatmessage', data.playerName + ' has joined the lobby.');
-
-            //Now that we know who you are, we can highlight you in the rankings
-            dataAccess.getPlayerRankings(socket.playerId).then(function (result) {
-                socket.emit('rankings', result);
+                broadcastPlayers();
+                socket.broadcast.emit('globalchatmessage', playerName + ' has joined the lobby.');
             });
         });
     });
@@ -218,6 +220,12 @@ function createNewGame(socket, password) {
     game.once('teardown', function () {
         delete games[gameName];
         broadcastGames();
+    });
+
+    game.once('end', function () {
+        dataAccess.getPlayerRankings().then(function (result) {
+            rankings = result;
+        });
     });
 
     game.on('statechange', function () {
