@@ -59,6 +59,8 @@ var rankings = [];
 
 dataAccess.getPlayerRankings().then(function (result) {
     rankings = result;
+    //This will submit the rankings to everyone
+    io.sockets.emit('rankings', result);
 });
 
 io.on('connection', function (socket) {

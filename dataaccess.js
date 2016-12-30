@@ -25,7 +25,19 @@ var treasonDb;
 
 var debugMode = false;
 
-var stats;
+var stats = null;
+
+function statsInitialized() {
+    return new Promise(function (resolve) {
+        (function waitForInitialStatsToBeGenerated(){
+            if (stats != null) {
+                return resolve();
+            }
+            setTimeout(waitForInitialStatsToBeGenerated, 30);
+        })();
+    });
+}
+
 var playerRanksToReturn = 10;
 
 //View recreation
@@ -150,7 +162,7 @@ function init(dbname) {
     }).then(function() {
         debug('Finished initialising views');
         if (!rankingsDisabled) {
-            return calculateAllStats();
+            calculateAllStats();
         }
     }).then(function() {
         debug('Database is ready');
@@ -296,7 +308,9 @@ function getPlayerRankings(playerId, showPersonalRank) {
     if (rankingsDisabled) {
         return Promise.resolve([]);
     }
-    return ready.then(function () {
+    return ready.then(function() {
+        return statsInitialized();
+    }).then(function () {
         var sortedPlayerIds = Object.keys(stats).sort(function (id1, id2) {
             return stats[id1].rank - stats[id2].rank;
         });
@@ -348,7 +362,7 @@ function getPlayerRankings(playerId, showPersonalRank) {
 
         return playerStats;
     });
-};
+}
 
 function calculateAllStats() {
     debug('Calculating stats for every player');
