@@ -109,7 +109,9 @@
                 </tbody>
             </table>
         </div>
+        <!-- ko ifnot: rankings().length == 0-->
         <p><a href="" data-bind="click: showRankings, text: rankButtonText"></a></p>
+        <!-- /ko -->
     </div>
     <div class="col-sm-4">
         <p><a href="https://twitter.com/intent/tweet?screen_name=chrsbrn" class="twitter-mention-button" data-related="chrsbrn">Tweet to @chrsbrn</a>
