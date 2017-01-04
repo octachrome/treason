@@ -11,7 +11,7 @@
         </p>
         <p data-bind="visible: wantToStart()">
             Not all players are ready. Start without them?<br/>
-            <button class="btn btn-default" data-bind="event: {vclick: confirmStart}">Start</button>
+            <button class="btn btn-default" data-bind="event: {vclick: confirmStart.bind(null, null)}">Start</button>
             <button class="btn btn-default" data-bind="event: {vclick: cancelStart}">Back</button>
         </p>
     </div>
