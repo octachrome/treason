@@ -66,7 +66,8 @@ vm = {
     globalMessage: ko.observable(''), // The message the user is typing into the global chat box.
     wantToStart: ko.observable(null), // The player clicked start, but not everyone is ready, so we're showing a confirm msg (holds the type of game the player wanted to start).
     playingGame: ko.observable(null), // The id of the game that we are currently playing, or null if there is no active game.
-    playingPassword: ko.observable(null) // The password of the game that we are currently playing, or null if there is no active game.
+    playingPassword: ko.observable(null), // The password of the game that we are currently playing, or null if there is no active game.
+    disableSubmitButton: ko.observable(false) // If the player has already hit the submit button to create a new player, this will prevent them from repeatedly creating more.
 };
 vm.state = ko.mapping.fromJS({
     stateId: null,
@@ -332,6 +333,10 @@ function enter(form, event) {
     if (isInvalidPlayerName()) {
         return;
     }
+    if (vm.disableSubmitButton()) {
+        return;
+    }
+    vm.disableSubmitButton(true);
 
     socket.emit('registerplayer', {
         playerName: vm.playerName(),

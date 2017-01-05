@@ -4,7 +4,7 @@
         <!-- ko if: !needName() -->
         <form data-bind="submit: enter">
             <p><input class="name-input" type="text" placeholder="Name" data-bind="textInput: playerName" maxlength="30"/></p>
-            <p><button class="btn btn-default" type="submit" data-bind="enable: playerName">Enter the arena</button></p>
+            <p><button class="btn btn-default" type="submit" data-bind="enable: playerName() && !disableSubmitButton(), text: disableSubmitButton() ? 'Loading...' : 'Enter the arena'">Enter the arena</button></p>
         </form>
         <!-- /ko -->
         <!-- ko if: needName() -->
