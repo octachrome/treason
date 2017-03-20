@@ -24,6 +24,7 @@ var connection = new cradle.Connection();
 var treasonDb;
 var gameStatsDocumentId = 'game_stats';
 var stats = null;
+var allPlayers = null;
 
 function statsInitialized() {
     return new Promise(function (resolve) {
@@ -166,10 +167,8 @@ function init(dbname) {
                 })
                 .catch(function () {
                     debug('Game stats document not found');
-                    return fetchAllGameStats().then(function (results) {
-                        debug('Game results fetched, calculating stats');
-                        calculateAllStats(results);
-                        debug('Creating game stats document');
+                    return calculateAllStats().then(function () {
+                        debug('Stats generated, creating game stats document');
                         return treasonDb.save(gameStatsDocumentId, {
                             gameStats: stats
                         }).catch(function (error) {
@@ -244,10 +243,11 @@ function register(id, name, userAgent) {
                 });
             })
             .then(function() {
+                allPlayers[id] = name;
                 return id;
             });
     });
-};
+}
 
 /**
  * Captures statistics about each game.
@@ -265,7 +265,7 @@ function constructGameStats() {
         gameFinished: 0,
         gameType: 'original'
     };
-};
+}
 
 function recordGameData(gameData) {
     return ready.then(function () {
@@ -280,7 +280,7 @@ function recordGameData(gameData) {
             console.error(error);
         });
     });
-};
+}
 
 function recordPlayerDisconnect(playerId) {
     return ready.then(function () {
@@ -299,7 +299,7 @@ function recordPlayerDisconnect(playerId) {
                 }
             });
     });
-};
+}
 
 function getAllPlayers() {
     return ready.then(function () {
@@ -317,7 +317,7 @@ function getAllPlayers() {
             console.error(error);
         });
     });
-};
+}
 
 function getPlayerRankings(playerId, showPersonalRank) {
     if (rankingsDisabled) {
@@ -414,13 +414,7 @@ function updateResults(gameData) {
 
         //Make sure we have the player's name if it was a new player
         if (!stats[player].playerName) {
-            return treasonDb.get(player)
-                .then(function (document) {
-                    stats[player].playerName = document.name;
-                }).catch(function (error) {
-                    console.error('Failed to retrieve player: ' + player);
-                    console.error(error);
-                });
+            stats[player].playerName = allPlayers[player];
         }
     }
 
@@ -433,18 +427,6 @@ function updateResults(gameData) {
         gameStats: stats
     }).catch(function (error) {
         console.error('Failed to overwrite game stats document');
-        console.error(error);
-    });
-}
-
-function fetchAllGameStats() {
-    debug('Fetching all game stats');
-    return Promise.all([
-        treasonDb.view('games/by_winner', {reduce: true, group: true}),
-        treasonDb.view('games/by_player', {reduce: true, group: true}),
-        treasonDb.view('games/all_players')
-    ]).catch(function (error) {
-        console.error('Failed to fetch all stats');
         console.error(error);
     });
 }
@@ -475,9 +457,14 @@ function recalculateRanks(rankStats) {
     }
 }
 
-function calculateAllStats(results) {
+function calculateAllStats() {
     debug('Calculating stats for every player');
-    return new Promise(function (resolve) {
+
+    return Promise.all([
+        treasonDb.view('games/by_winner', {reduce: true, group: true}),
+        treasonDb.view('games/by_player', {reduce: true, group: true}),
+        treasonDb.view('games/all_players')
+    ]).then(function (results) {
         var newStats = {};
 
         var games = results[1];
@@ -508,13 +495,13 @@ function calculateAllStats(results) {
         var players = results[2];
         for (var j = 0; j < players.length; j++) {
             var player = players[j];
+            allPlayers[player.id] = player.value;
             if (newStats[player.id]) {
                 newStats[player.id].playerName = player.value;
             }
         }
         stats = newStats;
         debug('Finished calculating all stats');
-        resolve();
     });
 }
 
@@ -548,53 +535,4 @@ function timeApi(fn) {
             throw err;
         });
     };
-}
-
-//Just for testing
-function createTestData(players, games) {
-    var playerIds = [];
-    ready.then(function () {
-        var registerPromises = [];
-        for (var i = 0; i < players; i++) {
-            registerPromises.push(register(i, randomName()));
-        }
-
-        Promise.all(registerPromises).then(function (result) {
-            result.forEach(function(player) {
-                playerIds.push(player);
-            });
-        }).then(function () {
-            for (var g = 0; g < games; g++) {
-                var playerRank = [];
-                for (var p = 0, len = 2 + randomInteger(0, 2); p < len; p++) {
-                    playerRank.push(playerIds[randomInteger(0, playerIds.length - 1)]);
-                }
-
-                var game = constructGameStats();
-
-                game.playerRank = playerRank;
-                game.players = playerRank.length;
-                game.humanPlayers = game.players;
-
-                recordGameData(game);
-            }
-        });
-    }).then(function () {
-        debug('Finished creating test data');
-    });
-}
-
-//createTestData(1000, 10000);
-
-function randomName() {
-    var name = 'P-';
-    var chars = "abcdefghijklmnopqrstuvwxyz";
-    for (var i = 0; i < 8; i++) {
-        name += chars.charAt(randomInteger(0, chars.length - 1));
-    }
-    return name;
-}
-
-function randomInteger(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
