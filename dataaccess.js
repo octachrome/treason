@@ -24,7 +24,7 @@ var connection = new cradle.Connection();
 var treasonDb;
 var gameStatsDocumentId = 'game_stats';
 var stats = null;
-var allPlayers = null;
+var allPlayers = {};
 
 function statsInitialized() {
     return new Promise(function (resolve) {
