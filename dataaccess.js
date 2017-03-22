@@ -18,7 +18,7 @@ var pr = require('promise-ring');
 var ms = require('ms');
 var debug = require('debug')('dataaccess');
 
-var rankingsDisabled = true;
+var rankingsDisabled = false;
 
 var connection = new cradle.Connection();
 var treasonDb;
