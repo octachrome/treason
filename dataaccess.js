@@ -22,10 +22,9 @@ var rankingsDisabled = true;
 
 var connection = new cradle.Connection();
 var treasonDb;
-
-var debugMode = false;
-
+var gameStatsDocumentId = 'game_stats';
 var stats = null;
+var allPlayers = {};
 
 function statsInitialized() {
     return new Promise(function (resolve) {
@@ -152,17 +151,32 @@ function init(dbname) {
             }).then(function() {
                 //Exercise a view. This will rebuild all the views and can take some time
                 debug('Initialising views');
-                var start = new Date().getTime();
                 return treasonDb.view('games/all_players').then(function() {
-                    var end = new Date().getTime();
-                    debug('Spent ' + (end - start) / 1000 + ' seconds initialising views');
+                    debug('Views initialized');
                 });
             });
         }
     }).then(function() {
         debug('Finished initialising views');
         if (!rankingsDisabled) {
-            calculateAllStats();
+            debug('Attempting to load game stats document');
+            return treasonDb.get(gameStatsDocumentId)
+                .then(function (document) {
+                    debug('Found game stats document');
+                    stats = document.gameStats;
+                })
+                .catch(function () {
+                    debug('Game stats document not found');
+                    return calculateAllStats().then(function () {
+                        debug('Stats generated, creating game stats document');
+                        return treasonDb.save(gameStatsDocumentId, {
+                            gameStats: stats
+                        }).catch(function (error) {
+                            console.error('Failed to create game stats document');
+                            console.error(error);
+                        });
+                    });
+                });
         }
     }).then(function() {
         debug('Database is ready');
@@ -229,10 +243,11 @@ function register(id, name, userAgent) {
                 });
             })
             .then(function() {
+                allPlayers[id] = name;
                 return id;
             });
     });
-};
+}
 
 /**
  * Captures statistics about each game.
@@ -250,22 +265,22 @@ function constructGameStats() {
         gameFinished: 0,
         gameType: 'original'
     };
-};
+}
 
-function recordGameData(gameData, skipStatRecalculation) {
+function recordGameData(gameData) {
     return ready.then(function () {
         gameData.gameFinished = new Date().getTime();
         return treasonDb.save(gameData).then(function (result) {
             debug('Saved game data for game: ' + result._id);
-            if (!skipStatRecalculation && !rankingsDisabled) {
-                calculateAllStats();
+            if (!rankingsDisabled) {
+                updateResults(gameData);
             }
         }).catch(function (error) {
             console.error('failed to save game data');
             console.error(error);
         });
     });
-};
+}
 
 function recordPlayerDisconnect(playerId) {
     return ready.then(function () {
@@ -284,7 +299,7 @@ function recordPlayerDisconnect(playerId) {
                 }
             });
     });
-};
+}
 
 function getAllPlayers() {
     return ready.then(function () {
@@ -302,7 +317,7 @@ function getAllPlayers() {
             console.error(error);
         });
     });
-};
+}
 
 function getPlayerRankings(playerId, showPersonalRank) {
     if (rankingsDisabled) {
@@ -364,6 +379,84 @@ function getPlayerRankings(playerId, showPersonalRank) {
     });
 }
 
+//This could be a bit dicey, so beware
+function updateResults(gameData) {
+    debug('Updating results for finished game');
+
+    for (let player of gameData.playerRank) {
+        if (player === 'ai') {
+            continue;
+        }
+
+        if (!stats[player]) {
+            //first time player
+            stats[player] = {
+                games: 0,
+                rank: 0,
+                playerName: '',
+                wins: 0,
+                winsAI: 0,
+                percent: 0
+            }
+        }
+
+        if (gameData.playerRank[0] === player) {
+            //This was the winner
+            stats[player].wins++;
+            if (gameData.humanPlayers < 2) {
+                //This was an ai game so it counts towards ai wins
+                stats[player].winsAI++;
+            }
+        }
+
+        stats[player].games++;
+        stats[player].percent = Math.floor(100 * stats[player].wins / stats[player].games);
+
+        //Make sure we have the player's name if it was a new player
+        if (!stats[player].playerName) {
+            stats[player].playerName = allPlayers[player];
+        }
+    }
+
+    //now reorder ranks
+    recalculateRanks(stats);
+
+    //Persist the whole stats - seems silly to do this rather than recalculating on startup
+    //This can be async
+    treasonDb.save(gameStatsDocumentId, {
+        gameStats: stats
+    }).catch(function (error) {
+        console.error('Failed to overwrite game stats document');
+        console.error(error);
+    });
+}
+
+function recalculateRanks(rankStats) {
+    var sortedPlayerIds = Object.keys(rankStats).sort(function (id1, id2) {
+        var first = rankStats[id1];
+        var second = rankStats[id2];
+        var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
+        if (result == 0) {
+            result = second.wins - first.wins;
+            if (result == 0) {
+                result = second.percent - first.percent;
+                if (result == 0) {
+                    return first.playerName.localeCompare(second.playerName);
+                }
+            }
+            return result;
+        } else {
+            return result;
+        }
+    });
+
+    var rank = 1;
+
+    for (var i = 0; i < sortedPlayerIds.length; i++) {
+        rankStats[sortedPlayerIds[i]].rank = rank++;
+    }
+}
+
 function calculateAllStats() {
     debug('Calculating stats for every player');
 
@@ -375,7 +468,9 @@ function calculateAllStats() {
         var newStats = {};
 
         var games = results[1];
-        games.forEach(function (playerId, gameCount) {
+        for (let game of games) {
+            var playerId = game.key;
+            var gameCount = game.value;
             newStats[playerId] = {
                 games: gameCount,
                 rank: 0,
@@ -384,47 +479,29 @@ function calculateAllStats() {
                 winsAI: 0,
                 percent: 0
             };
-        });
+        }
 
         var wins = results[0];
-        wins.forEach(function (playerId, winStats) {
+        for (let win of wins) {
+            var playerId = win.key;
+            var winStats = win.value;
             newStats[playerId].wins = winStats.wins;
             newStats[playerId].winsAI = winStats.winsAI;
             newStats[playerId].percent = Math.floor(100 * winStats.wins / newStats[playerId].games);
-        });
-
-        var sortedPlayerIds = Object.keys(newStats).sort(function (id1, id2) {
-            var first = newStats[id1];
-            var second = newStats[id2];
-            var result = (second.wins - second.winsAI) - (first.wins - first.winsAI);
-            if (result == 0) {
-                result = second.wins - first.wins;
-                if (result == 0) {
-                    return second.percent - first.percent;
-                }
-                return result;
-            } else {
-                return result;
-            }
-        });
-
-        var rank = 1;
-        for (var i = 0; i < sortedPlayerIds.length; i++) {
-            newStats[sortedPlayerIds[i]].rank = rank++;
         }
+
+        recalculateRanks(newStats);
 
         var players = results[2];
         for (var j = 0; j < players.length; j++) {
             var player = players[j];
+            allPlayers[player.id] = player.value;
             if (newStats[player.id]) {
                 newStats[player.id].playerName = player.value;
             }
         }
         stats = newStats;
-        debug('Finished calculating all stats')
-    }).catch(function (error) {
-        console.error('Failed to calculate all stats');
-        console.error(error);
+        debug('Finished calculating all stats');
     });
 }
 
@@ -458,53 +535,4 @@ function timeApi(fn) {
             throw err;
         });
     };
-}
-
-//Just for testing
-function createTestData(players, games) {
-    var playerIds = [];
-    ready.then(function () {
-        var registerPromises = [];
-        for (var i = 0; i < players; i++) {
-            registerPromises.push(register(i, randomName()));
-        }
-
-        Promise.all(registerPromises).then(function (result) {
-            result.forEach(function(player) {
-                playerIds.push(player);
-            });
-        }).then(function () {
-            for (var g = 0; g < games; g++) {
-                var playerRank = [];
-                for (var p = 0, len = 2 + randomInteger(0, 2); p < len; p++) {
-                    playerRank.push(playerIds[randomInteger(0, playerIds.length - 1)]);
-                }
-
-                var game = constructGameStats();
-
-                game.playerRank = playerRank;
-                game.players = playerRank.length;
-                game.humanPlayers = game.players;
-
-                recordGameData(game, true);
-            }
-        });
-    }).then(function () {
-        debug('Finished creating test data');
-    });
-}
-
-//createTestData(1000, 10000);
-
-function randomName() {
-    var name = 'P-';
-    var chars = "abcdefghijklmnopqrstuvwxyz";
-    for (var i = 0; i < 8; i++) {
-        name += chars.charAt(randomInteger(0, chars.length - 1));
-    }
-    return name;
-}
-
-function randomInteger(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
