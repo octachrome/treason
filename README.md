@@ -14,6 +14,11 @@ Then, checkout the source code, install Node.js, and run:
 
 Then open `http://localhost:8080` in one or more browser windows. For an explanation of how to play, see `web/rules.html`.
 
+NB: If you have trouble installing CouchDB, some people have had success using PouchDB instead. To install it:
+
+    npm install -g pouchdb-server
+    pouchdb-server --port 5984
+
 I use BrowserStack for testing - thanks for the free acount guys!
 
 AI
