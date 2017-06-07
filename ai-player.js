@@ -186,7 +186,7 @@ function createAiPlayer(game, options) {
             return;
         }
 
-        // Don't bluff in the final action response - it will just get challlenged.
+        // Don't bluff in the final action response - it will just get challenged.
         if (state.state.name == stateNames.ACTION_RESPONSE) {
             if (shouldChallenge()) {
                 debug('challenging');
@@ -258,7 +258,7 @@ function createAiPlayer(game, options) {
         if (state.state.action == 'tax') {
             return true;
         }
-        // Worth chalenging someone assassinating us or stealing from us,
+        // Worth challenging someone assassinating us or stealing from us,
         // Or someone trying to block us from assassinating or stealing.
         if ((state.state.action == 'steal' || state.state.action == 'assassinate') &&
             (state.state.playerIdx == state.playerIdx || state.state.target == state.playerIdx)) {
@@ -495,7 +495,7 @@ function createAiPlayer(game, options) {
 
     function captainTarget() {
         return playersByStrength().filter(function (idx) {
-            return !canBlock(idx, 'steal');
+            return !canBlock(idx, 'steal') && state.players[idx].cash > 0;
         })[0];
     }
 
