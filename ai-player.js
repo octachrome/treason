@@ -29,8 +29,6 @@ var rankedRoles = ['duke', 'assassin', 'captain', 'inquisitor', 'contessa', 'amb
 // http://random-name-generator.info/
 var aiPlayerNames = fs.readFileSync(__dirname + '/names.txt', 'utf8').split(/\r?\n/);
 
-var node_modules = require('child_process').execSync('npm ls');
-
 function createAiPlayer(game, options) {
     options = extend({
         moveDelay: 0,           // How long the AI will "think" for before playing its move (ms)
@@ -519,6 +517,8 @@ function createAiPlayer(game, options) {
                 indices.push(i);
             }
         }
+        var randomNumber = rand(1000000000000000);
+
         return indices.sort(function (a, b) {
             var infa = state.players[a].influenceCount;
             var infb = state.players[b].influenceCount;
@@ -527,12 +527,9 @@ function createAiPlayer(game, options) {
                 return infb - infa;
             } else if (state.players[b].cash != state.players[a].cash) {
                 return state.players[b].cash - state.players[a].cash;
-            } else { // if both players have the same amount of influences and cash then choose one "by random"
+            } else { // if both players have the same amount of influences and cash then choose one by random
                 // player names are used so that MD5 hashes are different for each player
-                // node modules are used so players couldn't calculate MD5s themselves since the modules are on server side
-                // date is used so MD5 for each username is different every day; otherwise some usernames might never be chosen by AI
-                return md5(new Date().toJSON().slice(0,10) + state.players[a].name + node_modules)
-                    < md5(new Date().toJSON().slice(0,10) + state.players[b].name + node_modules) ? -1 : 1;
+                return md5(randomNumber + state.players[a].name) < md5(randomNumber + state.players[b].name) ? -1 : 1;
             }
         });
         return indices;
