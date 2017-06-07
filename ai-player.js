@@ -16,6 +16,7 @@ var extend = require('extend');
 var randomGen = require('random-seed');
 var fs = require('fs');
 var lodash = require('lodash');
+var md5 = require('md5');
 
 var shared = require('./web/shared');
 var stateNames = shared.states;
@@ -516,13 +517,19 @@ function createAiPlayer(game, options) {
                 indices.push(i);
             }
         }
+        var randomNumber = rand(1000000000000000);
+
         return indices.sort(function (a, b) {
             var infa = state.players[a].influenceCount;
             var infb = state.players[b].influenceCount;
+
             if (infa != infb) {
                 return infb - infa;
-            } else {
+            } else if (state.players[b].cash != state.players[a].cash) {
                 return state.players[b].cash - state.players[a].cash;
+            } else { // if both players have the same amount of influences and cash then choose one by random
+                // player names are used so that MD5 hashes are different for each player
+                return md5(randomNumber + state.players[a].name) < md5(randomNumber + state.players[b].name) ? -1 : 1;
             }
         });
         return indices;
