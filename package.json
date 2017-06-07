@@ -22,7 +22,8 @@
     "random-seed": "^0.2.0",
     "socket.io": "^1.7.2",
     "validator": "^3.40.0",
-    "winston": "winstonjs/winston#61b4e4093a"
+    "winston": "winstonjs/winston#61b4e4093a",
+    "md5": "^2.2.1"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
