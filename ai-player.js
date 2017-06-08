@@ -235,10 +235,46 @@ function createAiPlayer(game, options) {
         if (state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
             return false;
         }
+
+        // Challenge if somebody claims to have role that was revealed 3 times or we have the rest of them
+        var usedRoles = countRevealedRoles(state.state.action);
+        for (var i = 0; i < aiPlayer.influence.length; i++) {
+            if (!aiPlayer.influence[i].revealed && aiPlayer.influence[i].role === state.state.action) {
+                usedRoles++;
+            }
+        }
+        if (usedRoles === 3) {
+            return true;
+        }
+
+        // Challenge if you're being assassinated, it's your last influence and all contessas have been used
+        if (state.state.action === 'assassinate' && state.players[state.playerIdx].influenceCount === 1) {
+            var contessas = countRevealedRoles('contessa');
+            if (contessas === 3) {
+                return true;
+            }
+            // Challenge when there are no contessas that were not claimed
+            for (var i = 0; i < state.numPlayers; i++) {
+                if (i != state.playerIdx && state.players[i].influenceCount > 0 && claims[i]['contessa']) {
+                    contessas++;
+                }
+            }
+            if (contessas >= 3) {
+                return true;
+            }
+            // Challenge if we already bluffed contessa and were caught
+            if (calledBluffs.indexOf('contessa') >= 0) {
+                return true;
+            }
+            // Otherwise we will bluff contessa
+            return false;
+        }
+
         // Only challenge actions that could lead to a victory if not challenged.
         if (!actionIsWorthChallenging()) {
             return false;
         }
+
         if (isEndGame()) {
             var result = simulate();
             // Challenge if the opponent would otherwise win soon.
@@ -250,6 +286,7 @@ function createAiPlayer(game, options) {
                 return false;
             }
         }
+
         // Challenge at random.
         return rand.random() < options.chanceToChallenge;
     }
@@ -266,6 +303,18 @@ function createAiPlayer(game, options) {
             return true;
         }
         return false;
+    }
+
+    function countRevealedRoles(role) {
+        var count = 0;
+        for (var i = 0; i < state.numPlayers; i++) {
+            for(var j = 0; j < state.players[i].influences; j++) {
+                if(state.players[i].influences[j].revealed && state.players[i].influences[j].role === role) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     function isEndGame() {
@@ -322,6 +371,7 @@ function createAiPlayer(game, options) {
     }
 
     function trackClaim(playerIdx, actionOrRole) {
+        // if action is characterless (income, foreign aid or coup) don't update claims
         if (actions[actionOrRole] && !actions[actionOrRole].roles) {
             return;
         }
@@ -392,6 +442,10 @@ function createAiPlayer(game, options) {
             // Don't bluff a role that we previously bluffed and got caught out on.
             return false;
         }
+        if (actionNameOrRole === 'contessa' && state.state.action === 'assassinate' && state.players[state.playerIdx].influenceCount === 1) {
+            // Bluff contessa if only 1 influence left as otherwise we lose
+            return true;
+        }
         if (!bluffChoice && !claims[state.playerIdx][role]) {
             // We shall not bluff (unless we already claimed this role earlier).
             return false;
@@ -454,6 +508,7 @@ function createAiPlayer(game, options) {
     function updateCalledBluffs() {
         // We are in reveal state.
         if (state.state.reason = 'successful-challenge') {
+            debug('we are updating called bluffs');
             if (state.state.target == state.playerIdx && state.state.blockingRole) {
                 // We bluffed a blocking role.
                 calledBluffs.push(state.state.blockingRole);
