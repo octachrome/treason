@@ -237,9 +237,11 @@ function createAiPlayer(game, options) {
         }
 
         // Challenge if somebody claims to have role that was revealed 3 times or we have the rest of them
-        var usedRoles = countRevealedRoles(state.state.action);
+        // Assuming only ACTION_RESPONSE and BLOCK_RESPONSE
+        var claimedRole = state.state.name == stateNames.ACTION_RESPONSE ? getRoleForAction(state.state.action) : state.state.blockingRole;
+        var usedRoles = countRevealedRoles(claimedRole);
         for (var i = 0; i < aiPlayer.influence.length; i++) {
-            if (!aiPlayer.influence[i].revealed && aiPlayer.influence[i].role === state.state.action) {
+            if (!aiPlayer.influence[i].revealed && aiPlayer.influence[i].role === claimedRole) {
                 usedRoles++;
             }
         }
@@ -247,13 +249,14 @@ function createAiPlayer(game, options) {
             return true;
         }
 
-        // Challenge if you're being assassinated, it's your last influence and all contessas have been used
-        if (state.state.action === 'assassinate' && state.players[state.playerIdx].influenceCount === 1) {
+        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'assassinate'
+            && state.players[state.playerIdx].influenceCount === 1) {
+            // Challenge if you're being assassinated, it's your last influence and all contessas have been revealed
             var contessas = countRevealedRoles('contessa');
             if (contessas === 3) {
                 return true;
             }
-            // Challenge when there are no contessas that were not claimed
+            // If all contessas have been revealed or claimed then we challenge the assassin
             for (var i = 0; i < state.numPlayers; i++) {
                 if (i != state.playerIdx && state.players[i].influenceCount > 0 && claims[i]['contessa']) {
                     contessas++;
@@ -308,8 +311,8 @@ function createAiPlayer(game, options) {
     function countRevealedRoles(role) {
         var count = 0;
         for (var i = 0; i < state.numPlayers; i++) {
-            for(var j = 0; j < state.players[i].influences; j++) {
-                if(state.players[i].influences[j].revealed && state.players[i].influences[j].role === role) {
+            for(var j = 0; j < state.players[i].influence.length; j++) {
+                if(state.players[i].influence[j].revealed && state.players[i].influence[j].role === role) {
                     count++;
                 }
             }
