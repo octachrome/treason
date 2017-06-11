@@ -758,7 +758,7 @@ function createAiPlayer(game, options) {
     }
 
     function debug(msg) {
-        options.debug && console.log(msg);
+        options.debug && console.log(JSON.stringify(msg, null, 4));
     }
 
     function handleError(e) {
