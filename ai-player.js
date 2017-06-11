@@ -105,7 +105,7 @@ function createAiPlayer(game, options) {
                 role: state.state.blockingRole,
                 playerIdx: state.state.target
             };
-        } else {
+        } else if (state.state.name != stateNames.REVEAL_INFLUENCE) {
             lastRoleClaim = null;
         }
 
@@ -127,12 +127,13 @@ function createAiPlayer(game, options) {
 
     function reset() {
         claims = [];
+        calledBluffs = [];
         for (var i = 0; i < state.numPlayers; i++) {
             claims[i] = {};
+            calledBluffs[i] = {};
         }
 
         lastRoleClaim = null;
-        calledBluffs = [];
         bluffChoice = rand.random() < options.chanceToBluff;
     }
 
@@ -156,12 +157,15 @@ function createAiPlayer(game, options) {
             if (claims[playerIdx]) {
                 delete claims[playerIdx][role];
             }
-        } else if (message.indexOf(' challenged') > 0) {
+        }
+        if (message.indexOf(' challenged') > 0 && lastRoleClaim && claims[lastRoleClaim.playerIdx]) {
             // If a player was successfully challenged, any earlier claim was a bluff.
             // If a player was incorrectly challenged, they swap the role, so an earlier claim is no longer valid.
-            if (lastRoleClaim && claims[lastRoleClaim.playerIdx]) {
-                delete claims[lastRoleClaim.playerIdx][lastRoleClaim.role];
-            }
+            delete claims[lastRoleClaim.playerIdx][lastRoleClaim.role];
+        }
+        if (message.indexOf(' successfully challenged') > 0 && lastRoleClaim && calledBluffs[lastRoleClaim.playerIdx]) {
+            // If a player was successfully challenged, remember it to prevent him from claiming that role again
+            calledBluffs[lastRoleClaim.playerIdx][lastRoleClaim.role] = true;
         }
     }
 
@@ -249,6 +253,11 @@ function createAiPlayer(game, options) {
             return true;
         }
 
+        // Challenge if somebody claimed this role and lost
+        if (calledBluffs[state.state.playerIdx] && calledBluffs[state.state.playerIdx][claimedRole]) {
+            return true;
+        }
+
         if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'assassinate'
             && state.players[state.playerIdx].influenceCount === 1) {
             // Challenge if you're being assassinated, it's your last influence and all contessas have been revealed
@@ -266,7 +275,7 @@ function createAiPlayer(game, options) {
                 return true;
             }
             // Challenge if we already bluffed contessa and were caught
-            if (calledBluffs.indexOf('contessa') >= 0) {
+            if (calledBluffs[state.playerIdx] && calledBluffs[state.playerIdx]['contessa']) {
                 return true;
             }
             // Otherwise we will bluff contessa
@@ -441,7 +450,7 @@ function createAiPlayer(game, options) {
         } else {
             role = actionNameOrRole;
         }
-        if (calledBluffs.indexOf(role) >= 0) {
+        if (calledBluffs[state.playerIdx] && calledBluffs[state.playerIdx][role]) {
             // Don't bluff a role that we previously bluffed and got caught out on.
             return false;
         }
@@ -512,12 +521,12 @@ function createAiPlayer(game, options) {
         // We are in reveal state.
         if (state.state.reason = 'successful-challenge') {
             debug('we are updating called bluffs');
-            if (state.state.target == state.playerIdx && state.state.blockingRole) {
+            if (state.state.target == state.playerIdx && state.state.blockingRole && calledBluffs[state.playerIdx]) {
                 // We bluffed a blocking role.
-                calledBluffs.push(state.state.blockingRole);
-            } else if (state.state.playerIdx == state.playerIdx && state.state.action) {
+                calledBluffs[state.playerIdx][state.state.blockingRole] = true;
+            } else if (state.state.playerIdx == state.playerIdx && state.state.action && calledBluffs[state.playerIdx]) {
                 // We bluffed an action.
-                calledBluffs.push(getRoleForAction(state.state.action));
+                calledBluffs[state.playerIdx][getRoleForAction(state.state.action)] = true;
             }
         }
     }
@@ -621,6 +630,7 @@ function createAiPlayer(game, options) {
         });
         // After exchanging our roles we can claim anything.
         claims[state.playerIdx] = {};
+        calledBluffs[state.playerIdx] = {};
     }
 
     // Simulates us and the remaining player playing their best moves to see who would win.
