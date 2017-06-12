@@ -1158,7 +1158,7 @@ module.exports = function createGame(options) {
 
     function debug(obj) {
         if (options.debug) {
-            console.log(obj);
+            console.log(JSON.stringify(obj, null, 4));
         }
     }
 
