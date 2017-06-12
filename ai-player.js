@@ -23,6 +23,9 @@ var stateNames = shared.states;
 var actions = shared.actions;
 
 var rankedRoles = ['duke', 'assassin', 'captain', 'inquisitor', 'contessa', 'ambassador'];
+// The weights show how likely a role is to be revealed by AI
+// E.g. ambassador is 3 times more likely to be revealed than duke
+var roleWeights = {'duke': 3, 'assassin': 4, 'captain': 5, 'inquisitor': 6, 'contessa': 6, 'ambassador': 9};
 
 // https://www.randomlists.com/random-first-names
 // http://listofrandomnames.com/
@@ -123,7 +126,7 @@ function createAiPlayer(game, options) {
         } else if (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer) {
             respondToBlock();
         } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == state.playerIdx) {
-            revealLowestRanked();
+            revealByProbability();
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();
         }
@@ -525,28 +528,28 @@ function createAiPlayer(game, options) {
         return roles;
     }
 
-    function revealLowestRanked() {
+    function revealByProbability() {
         var influence = ourInfluence();
-        var i = rankedRoles.length;
-        while (--i) {
-            var role = rankedRoles[i];
-            if (influence.indexOf(role) >= 0) {
-                command({
-                    command: 'reveal',
-                    role: role
-                });
-                // Don't claim this role any more.
-                if (claims[state.playerIdx]) {
-                    delete claims[state.playerIdx][role];
+        var chosenInfluence = 0;
+
+        if (influence.length > 1) {
+            var influenceProbability = [];
+            for(var i = 0; i < influence.length; i++) {
+                for(var j = 0; j < roleWeights[influence[i]]; j++) {
+                    influenceProbability.push(i);
                 }
-                return;
             }
+            chosenInfluence = influenceProbability[rand.intBetween(0, influenceProbability.length-1)];
+            influenceProbability = null;
         }
-        debug('failed to choose a role to reveal');
         command({
             command: 'reveal',
-            role: influence[0]
+            role: influence[chosenInfluence]
         });
+        // Don't claim this role any more.
+        if (claims[state.playerIdx]) {
+            delete claims[state.playerIdx][influence[chosenInfluence]];
+        }
     }
 
     function assassinTarget() {
