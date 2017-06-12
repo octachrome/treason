@@ -345,6 +345,13 @@ function createAiPlayer(game, options) {
         return opponents.length == 1;
     }
 
+    function randomizeChoice() {
+        if (isEndGame() && state.players[state.playerIdx].influenceCount === 1) {
+            return false;
+        }
+        return rand.intBetween(0, 9) < 1;
+    }
+
     function getBlockingRole() {
         var influence = ourInfluence();
         if (state.state.action == 'foreign-aid' || state.state.target == state.playerIdx) {
@@ -407,15 +414,13 @@ function createAiPlayer(game, options) {
         var influence = ourInfluence();
         debug('influence: ' + influence);
 
-        if (aiPlayer.cash >= 10) {
+        if (aiPlayer.cash >= 7) {
             playAction('coup', strongestPlayer());
-        } else if (influence.indexOf('assassin') >= 0 && aiPlayer.cash >= 3 && assassinTarget() != null) {
+        } else if (influence.indexOf('assassin') >= 0 && aiPlayer.cash >= 3 && assassinTarget() != null && !randomizeChoice()) {
             playAction('assassinate', assassinTarget());
-        } else if (aiPlayer.cash >= 7) {
-            playAction('coup', strongestPlayer());
-        } else if (influence.indexOf('captain') >= 0 && captainTarget() != null) {
+        } else if (influence.indexOf('captain') >= 0 && captainTarget() != null && !randomizeChoice()) {
             playAction('steal', captainTarget());
-        } else if (influence.indexOf('duke') >= 0) {
+        } else if (influence.indexOf('duke') >= 0 && !randomizeChoice()) {
             playAction('tax')
         } else {
             // No good moves - check whether to bluff.
@@ -429,7 +434,7 @@ function createAiPlayer(game, options) {
             if (shouldBluff('tax')) {
                 possibleBluffs.push('tax');
             }
-            if (possibleBluffs.length) {
+            if (possibleBluffs.length && !randomizeChoice()) {
                 // Randomly select one.
                 var actionName = possibleBluffs[rand(possibleBluffs.length)];
                 if (actionName == 'tax') {
@@ -443,7 +448,7 @@ function createAiPlayer(game, options) {
                 bluffChoice = rand.random() < options.chanceToBluff;
             } else {
                 // No bluffing.
-                if (influence.indexOf('assassin') < 0 ) {
+                if (influence.indexOf('assassin') < 0 && !randomizeChoice()) {
                     // If we don't have a captain, duke, or assassin, then exchange.
                     playAction('exchange');
                 } else {
@@ -534,13 +539,12 @@ function createAiPlayer(game, options) {
 
         if (influence.length > 1) {
             var influenceProbability = [];
-            for(var i = 0; i < influence.length; i++) {
-                for(var j = 0; j < roleWeights[influence[i]]; j++) {
+            for (var i = 0; i < influence.length; i++) {
+                for (var j = 0; j < roleWeights[influence[i]]; j++) {
                     influenceProbability.push(i);
                 }
             }
             chosenInfluence = influenceProbability[rand.intBetween(0, influenceProbability.length-1)];
-            influenceProbability = null;
         }
         command({
             command: 'reveal',
