@@ -96,16 +96,21 @@ function createAiPlayer(game, options) {
         targetPlayer = state.players[state.state.target];
 
         if (state.state.name == stateNames.ACTION_RESPONSE) {
+            // If we respond to an action, we need to know who claimed what role
             lastRoleClaim = {
                 role: getRoleForAction(state.state.action),
                 playerIdx: state.state.playerIdx
             };
         } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
+            // If we respond to a block, we need to know who claimed the blocking role
             lastRoleClaim = {
                 role: state.state.blockingRole,
                 playerIdx: state.state.target
             };
         } else if (state.state.name != stateNames.REVEAL_INFLUENCE) {
+            // Reset last claimed role for other states unless we're revealing our influence
+            // In that case we need to remember last claimed role to update calledBluffs
+            // This update is performed on history event which happens after state changes
             lastRoleClaim = null;
         }
 
@@ -118,7 +123,6 @@ function createAiPlayer(game, options) {
         } else if (state.state.name == stateNames.BLOCK_RESPONSE && aiPlayer != targetPlayer) {
             respondToBlock();
         } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == state.playerIdx) {
-            updateCalledBluffs();
             revealLowestRanked();
         } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
             exchange();
@@ -235,13 +239,12 @@ function createAiPlayer(game, options) {
     }
 
     function shouldChallenge() {
-        // Cannot challenge after a failed challenge.
-        if (state.state.name == stateNames.FINAL_ACTION_RESPONSE) {
+        // We're challenging only actions and blocks
+        if (state.state.name != stateNames.ACTION_RESPONSE && state.state.name != stateNames.BLOCK_RESPONSE) {
             return false;
         }
 
         // Challenge if somebody claims to have role that was revealed 3 times or we have the rest of them
-        // Assuming only ACTION_RESPONSE and BLOCK_RESPONSE
         var claimedRole = state.state.name == stateNames.ACTION_RESPONSE ? getRoleForAction(state.state.action) : state.state.blockingRole;
         var usedRoles = countRevealedRoles(claimedRole);
         for (var i = 0; i < aiPlayer.influence.length; i++) {
@@ -254,7 +257,12 @@ function createAiPlayer(game, options) {
         }
 
         // Challenge if somebody claimed this role and lost
-        if (calledBluffs[state.state.playerIdx] && calledBluffs[state.state.playerIdx][claimedRole]) {
+        if (state.state.name == stateNames.ACTION_RESPONSE && calledBluffs[state.state.playerIdx] && calledBluffs[state.state.playerIdx][claimedRole]) {
+            // If someone claims an action again after being successfully challenged
+            return true;
+        }
+        if (state.state.name == stateNames.BLOCK_RESPONSE && calledBluffs[state.state.target] && calledBluffs[state.state.target][claimedRole]) {
+            // If someone claims a blocking action again after being successfully challenged
             return true;
         }
 
@@ -515,20 +523,6 @@ function createAiPlayer(game, options) {
             }
         }
         return roles;
-    }
-
-    function updateCalledBluffs() {
-        // We are in reveal state.
-        if (state.state.reason = 'successful-challenge') {
-            debug('we are updating called bluffs');
-            if (state.state.target == state.playerIdx && state.state.blockingRole && calledBluffs[state.playerIdx]) {
-                // We bluffed a blocking role.
-                calledBluffs[state.playerIdx][state.state.blockingRole] = true;
-            } else if (state.state.playerIdx == state.playerIdx && state.state.action && calledBluffs[state.playerIdx]) {
-                // We bluffed an action.
-                calledBluffs[state.playerIdx][getRoleForAction(state.state.action)] = true;
-            }
-        }
     }
 
     function revealLowestRanked() {
