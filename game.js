@@ -978,6 +978,14 @@ module.exports = function createGame(options) {
             gameTracker.challenge(playerIdx, challengedPlayerIdx, true);
             var message = format('{%d} successfully challenged {%d}', playerIdx, challengedPlayerIdx);
 
+            // Refund the challenged player, if the action cost them money.
+            if (state.state.name == stateNames.ACTION_RESPONSE) {
+                var cost = actions[state.state.action].cost;
+                if (cost) {
+                    challengedPlayer.cash += cost;
+                }
+            }
+
             // If someone assassinates you, you bluff contessa, and they challenge you, then you lose two influence: one for the assassination, one for the successful challenge.
             var wouldLoseTwoInfluences = state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate' &&
                 state.state.target == challengedPlayerIdx;
