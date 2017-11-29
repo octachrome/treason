@@ -505,6 +505,9 @@ module.exports = function createGame(options) {
         else {
             firstPlayer = nonObservers[rand(nonObservers.length)];
         }
+        if (nonObservers.length === 2) {
+            state.players[firstPlayer].cash--;
+        }
         turnHistGroup++;
         setState({
             name: stateNames.START_OF_TURN,
