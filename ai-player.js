@@ -470,6 +470,10 @@ function createAiPlayer(game, options) {
             // Don't bluff a role that we previously bluffed and got caught out on.
             return false;
         }
+        if (countRevealedRoles(role) == 3) {
+            // Don't bluff a role that has already been revealed three times.
+            return false;
+        }
         if (actionNameOrRole === 'contessa' && state.state.action === 'assassinate' && state.players[state.playerIdx].influenceCount === 1) {
             // Bluff contessa if only 1 influence left as otherwise we lose
             return true;
