@@ -2,7 +2,7 @@
 Description=Treason Coup
 
 [Service]
-ExecStart=/home/treason/.nvm/versions/node/v6.11.5/bin/node /home/treason/deploy/server.js --port 80
+ExecStart=/home/treason/.nvm/versions/node/v6.11.5/bin/node /home/treason/deploy/server.js --port 8080
 User=treason
 Restart=always
 

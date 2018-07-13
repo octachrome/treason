@@ -1,5 +1,6 @@
 # Allow nodejs to bind to port 80 when running as non-root user
 sudo setcap cap_net_bind_service=+ep /usr/bin/nodejs
+sudo setcap cap_net_bind_service=+ep /usr/sbin/nginx
 # Open port 80 in the firewall (also needs to be opened in the AWS security group)
 sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
 # Also open port 5900 in the firewall for Nginx proxying CouchDB
