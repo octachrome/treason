@@ -331,8 +331,8 @@ function createAiPlayer(game, options) {
     function countRevealedRoles(role) {
         var count = 0;
         for (var i = 0; i < state.numPlayers; i++) {
-            for(var j = 0; j < state.players[i].influence.length; j++) {
-                if(state.players[i].influence[j].revealed && state.players[i].influence[j].role === role) {
+            for (var j = 0; j < state.players[i].influence.length; j++) {
+                if (state.players[i].influence[j].revealed && state.players[i].influence[j].role === role) {
                     count++;
                 }
             }
@@ -345,7 +345,11 @@ function createAiPlayer(game, options) {
         return opponents.length == 1;
     }
 
+    // This function adds randomness to AI decision making process
+    // Even if some decision seem a good idea, sometimes AI will make a different call
+    // Otherwise AIs are predictable and human opponents can predict their moves
     function randomizeChoice() {
+        // At the end AIs won't make random choices as it might make them lose
         if (isEndGame() && state.players[state.playerIdx].influenceCount === 1) {
             return false;
         }
@@ -453,7 +457,11 @@ function createAiPlayer(game, options) {
                     playAction('exchange');
                 } else {
                     // We have an assassin, but can't afford to assassinate.
-                    playAction('income');
+                    if (countRevealedRoles('duke') == 3) {
+                        playAction('foreign-aid');
+                    } else {
+                        playAction('income');
+                    }
                 }
             }
         }
