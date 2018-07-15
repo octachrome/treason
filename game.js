@@ -17,7 +17,6 @@ var randomGen = require('random-seed');
 var lodash = require('lodash');
 var createAiPlayer = require('./ai-player');
 var shared = require('./web/shared');
-var dataAccess = require('./dataaccess');
 var actions = shared.actions;
 var stateNames = shared.states;
 var GameTracker = require('./game-tracker');
@@ -40,6 +39,7 @@ var epithets = fs.readFileSync(__dirname + '/epithets.txt', 'utf8').split(/\r?\n
 module.exports = function createGame(options) {
     options = options || {};
     var gameId = nextGameId++;
+    var dataAccess = options.dataAccess;
 
     var state = {
         stateId: 1,

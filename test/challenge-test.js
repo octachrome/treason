@@ -4,6 +4,7 @@ var createGame = require('../game');
 var TestPlayers = require('../test-util/test-player');
 var shared = require('../web/shared');
 var stateNames = shared.states;
+var nullDataAccess = require('./null-data-access');
 
 describe('Challenges', function () {
     var game;
@@ -13,7 +14,9 @@ describe('Challenges', function () {
     var player2;
 
     beforeEach(function () {
-        game = createGame();
+        game = createGame({
+            dataAccess: nullDataAccess
+        });
         testPlayers = new TestPlayers(game)
         player0 = testPlayers.createTestPlayer();
         player1 = testPlayers.createTestPlayer();

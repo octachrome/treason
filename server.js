@@ -12,7 +12,7 @@
  */
 'use strict';
 
-var dataAccess = require('./dataaccess');
+var dataAccess = require('./dataaccess-couch');
 
 var argv = require('optimist')
     .usage('$0 [--debug] [--recreate-views] [--port <port>] [--log <logfile>] [--db <database>]')
@@ -214,7 +214,8 @@ function createNewGame(socket, password) {
         moveDelay: 1000,
         gameName: gameName,
         created: new Date(),
-        password: password || ''
+        password: password || '',
+        dataAccess: dataAccess
     });
 
     games[gameName] = game;

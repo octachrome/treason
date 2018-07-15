@@ -5,6 +5,7 @@ var TestPlayers = require('../test-util/test-player');
 var createAiPlayer = require('../ai-player');
 var shared = require('../web/shared');
 var stateNames = shared.states;
+var nullDataAccess = require('./null-data-access');
 
 var AI_IDX = 0;
 var OPPONENT_IDX = 1;
@@ -17,7 +18,8 @@ describe('AI', function () {
     beforeEach(function () {
         game = createGame({
             randomSeed: 1,
-            firstPlayer: OPPONENT_IDX
+            firstPlayer: OPPONENT_IDX,
+            dataAccess: nullDataAccess
         });
         aiPlayer = createAiPlayer(game, {
             searchHorizon: 7,
