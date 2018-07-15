@@ -52,6 +52,7 @@ var ready = Promise.reject(new Error('not initialized'));
 function init(dbname, options) {
     options = options || {};
     recreateViews = options.recreateViews || false;
+    playerRanksToReturn = options.ranksToReturn || 10;
     treasonDb = pr.wrapAll(connection.database(dbname));
     ready = treasonDb.exists().then(function (exists) {
         if (!exists) {

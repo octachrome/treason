@@ -22,7 +22,8 @@ var argv = require('optimist')
     .argv;
 
 dataAccess.init(argv.db, {
-    recreateViews: argv['recreate-views']
+    recreateViews: argv['recreate-views'],
+    ranksToReturn: 10
 });
 
 var winston = require('winston');
