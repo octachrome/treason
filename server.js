@@ -21,7 +21,9 @@ var argv = require('optimist')
     .default('db', 'treason_db')
     .argv;
 
-dataAccess.init(argv.db);
+dataAccess.init(argv.db, {
+    recreateViews: argv['recreate-views']
+});
 
 var winston = require('winston');
 winston.add(winston.transports.File, {
@@ -46,7 +48,6 @@ app.get('/', function (req, res) {
 });
 
 var server = app.listen(argv.port);
-dataAccess.setRecreateViews(argv['recreate-views']);
 
 var io = require('socket.io')(server);
 var createGame = require('./game');

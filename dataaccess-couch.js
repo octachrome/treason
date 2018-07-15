@@ -49,7 +49,9 @@ var currentViewVersion = 1;
 // This ensures that unit tests do not try to record stats.
 var ready = Promise.reject(new Error('not initialized'));
 
-function init(dbname) {
+function init(dbname, options) {
+    options = options || {};
+    recreateViews = options.recreateViews || false;
     treasonDb = pr.wrapAll(connection.database(dbname));
     ready = treasonDb.exists().then(function (exists) {
         if (!exists) {
@@ -506,18 +508,19 @@ function calculateAllStats() {
 }
 
 module.exports = {
+    // Called when a new player logs in for the first time
     register: timeApi(register),
+    // Called at the start of a game
     constructGameStats: constructGameStats,
+    // Called when a game ends normally (with a winner)
     recordGameData: timeApi(recordGameData),
+    // Called when a player leaves in the middle of a game
     recordPlayerDisconnect: timeApi(recordPlayerDisconnect),
+    // Returns the rankings, either the top N, or the N around a player's position
     getPlayerRankings: timeApi(getPlayerRankings),
-    setRecreateViews: setRecreateViews,
+    // Called when the server initially starts
     init: timeApi(init)
 };
-
-function setRecreateViews(value) {
-    recreateViews = value;
-}
 
 function timeApi(fn) {
     return function () {
