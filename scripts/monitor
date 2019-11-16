@@ -1,0 +1,26 @@
+#!/bin/bash
+
+LOGFILE=/var/log/monitor
+THRESHOLD=2
+
+UPTIME=`uptime`
+# Extract 5 min load average, then strip off the fractional part
+LOADAVG=`echo $UPTIME | awk '{print $10+0}' | awk -F \. '{print $1}'`
+
+if [ $LOADAVG -ge $THRESHOLD ]; then
+    echo "***********************************************************" >>$LOGFILE
+    date >>$LOGFILE
+    echo "Load average exceeded $THRESHOLD" >>$LOGFILE
+    echo $UPTIME >>$LOGFILE
+    echo >>$LOGFILE
+
+    echo "Top memory consumers:" >>$LOGFILE
+    ps -e -Ao comm,pid,pcpu,pmem,rss,vsize --sort=-pmem | head -n 10 >>$LOGFILE
+    echo >>$LOGFILE
+
+    echo "Top CPU consumers:" >>$LOGFILE
+    ps -e -Ao comm,pid,pcpu,pmem,rss,vsize --sort=-pcpu | head -n 10 >>$LOGFILE
+    echo >>$LOGFILE
+
+    shutdown -r now
+fi
