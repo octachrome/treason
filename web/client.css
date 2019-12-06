@@ -160,6 +160,15 @@ div.chat {
 .current-player {
     border-left: 5px solid black;
 }
+.catholic-player {
+    border-right: 5px solid darkred;
+}
+.protestant-player {
+    border-right: 5px solid navy;
+}
+.dead-team {
+    border-right: 5px solid #aaa !important;
+}
 .dead-player {
     color: #aaa;
 }

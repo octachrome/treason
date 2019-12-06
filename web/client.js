@@ -72,12 +72,15 @@ vm = {
 vm.state = ko.mapping.fromJS({
     stateId: null,
     gameId: null,
+    gameType: null,
     players: [],
     playerIdx: null,
     numPlayers: null,
     maxPlayers: null,
     gameName: null,
     roles: [],
+    treasuryReserve: null,
+    freeForAll: null,
     state: {
         name: null,
         playerIdx: null,
@@ -481,8 +484,20 @@ function playerName(playerIdx) {
     return '';
 }
 function actionPresentInGame(actionName) {
-    var action = actions[actionName];
-    return !action.roles || getGameRole(action.roles);
+    if (vm.state.gameType() != 'reformation') {
+        switch (actionName) {
+            case 'apostatize':
+            case 'conversion':
+            case 'embezzlement':
+                return false;
+        }
+    }
+    if (vm.state.gameType() == 'original' && actionName == 'interrogate') {
+        return false;
+    }
+    return true;
+    //var action = actions[actionName];
+    //return !action.roles || getGameRole(action.roles);
 }
 function canPlayAction(actionName) {
     var action = actions[actionName];
@@ -490,7 +505,9 @@ function canPlayAction(actionName) {
     if (!player) {
         return false;
     }
-    if (player.cash() >= 10 && actionName != 'coup') {
+    if (player.cash() >= 10 && actionName != 'coup' && actionName != 'apostatize' && actionName != 'conversion') {
+        return false;
+    } else if (actionName == 'embezzlement' && vm.state.treasuryReserve() == 0) {
         return false;
     } else {
         return player.cash() >= action.cost;
@@ -590,6 +607,10 @@ function canTarget(playerIdx) {
     }
     var player = vm.state.players()[playerIdx];
     if (!player) {
+        return false;
+    }
+    // If we are in team combat and these two players are on the same team, do not target
+    if (vm.targetedAction() !== 'conversion' && !vm.state.freeForAll() && vm.state.players()[vm.state.playerIdx()].team() === player.team()) {
         return false;
     }
     // Cannot target dead player.
@@ -772,7 +793,10 @@ function actionNames() {
         'exchange',
         'income',
         'foreign-aid',
-        'coup'
+        'coup',
+        'apostatize',
+        'conversion',
+        'embezzlement'
     ];
 }
 function getGameRole(roles) {

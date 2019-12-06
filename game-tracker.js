@@ -163,6 +163,15 @@ GameTracker.prototype.encodeAction = function (action, target) {
     else if (action === 'income') {
         return (8+5) << 4;
     }
+    else if (action == 'apostatize') {
+        return 6 << 4;
+    }
+    else if (action == 'conversion') {
+        return 7 << 4 | (target & 0xf);
+    }
+    else if (action == 'embezzlement') {
+        return (8+6) << 4;
+    }
 };
 
 GameTracker.prototype.unpack = function (buffer, gameInfo) {
@@ -266,6 +275,15 @@ GameTracker.prototype.decodeActionEvent = function (actionCode) {
             break;
         case 8+5:
             action = 'income';
+            break;
+        case 6:
+            action = 'apostatize';
+            break;
+        case 7:
+            action = 'conversion';
+            break;
+        case 8+6:
+            action = 'embezzlement';
             break;
     }
     var event = {

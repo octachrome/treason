@@ -1,5 +1,5 @@
 <ul class="list-group" data-bind="foreach: state.players">
-    <li class="list-group-item" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
+    <li class="list-group-item" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx(), 'catholic-player': $root.state.players()[$index()].team() == 1, 'protestant-player': $root.state.players()[$index()].team() == -1, 'dead-team' : influenceCount() == 0 }">
         <div class="row" data-bind="visible: $root.waitingToPlay">
             <div class="col-xs-6">
                 <span data-bind="text: name, css: { 'dead-player' : isReady() == 'observe' }"></span>

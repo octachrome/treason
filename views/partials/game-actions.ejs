@@ -8,6 +8,7 @@
             <br/>
             <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'original')}, enable: canStartGame">Start normal game</button>
             <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'inquisitors')}, enable: canStartGame">Start inquisitor game</button>
+            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'reformation')}, enable: canStartGame">Start reformation game</button>
         </p>
         <p data-bind="visible: wantToStart()">
             Not all players are ready. Start without them?<br/>
@@ -34,9 +35,18 @@
             <!-- ko foreach: actionNames() -->
                 <!-- ko if: actionPresentInGame($data) -->
                     <button class="btn btn-action" data-bind="enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)">
-                        <i data-bind="css: $data"></i>
-                        <span data-bind="text: $data"></span>
+                        <!-- ko if: $data != 'embezzlement' -->
+                            <i data-bind="css: $data"></i>
+                            <span data-bind="text: $data"></span>
+                        <!-- /ko -->
+                        <!-- ko if: $data == 'embezzlement' -->
+                            <span class="badge" style="margin-top: 9px; margin-bottom: 8px;" data-bind="text: '$' + $root.state.treasuryReserve()"></span>
+                            <span data-bind="text: $data"></span>
+                        <!-- /ko -->
                     </button>
+                <!-- /ko -->
+                <!-- ko if: $data == 'coup' -->
+                    <br>
                 <!-- /ko -->
             <!-- /ko -->
         <!-- /ko -->

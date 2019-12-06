@@ -40,6 +40,17 @@
             cost: 0,
             roles: 'inquisitor',
             targeted: true
+        },
+        'apostatize': {
+            cost: 1
+        },
+        'conversion': {
+            cost: 2,
+            targeted: true
+        },
+        'embezzlement': {
+            cost: 0
+            //,roles: '!duke'
         }
     };
 
