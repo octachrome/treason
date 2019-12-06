@@ -446,8 +446,7 @@ module.exports = function createGame(options) {
                 var influence = masked.players[i].influence;
                 for (var j = 0; j < influence.length; j++) {
                     if (!influence[j].revealed) {
-                        influence[j].role = influence[j].role;
-                        //influence[j].role = 'unknown';
+                        influence[j].role = 'unknown';
                     }
                 }
             }
