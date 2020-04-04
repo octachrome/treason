@@ -12,7 +12,7 @@
  */
 'use strict';
 
-var dataAccess = require('./dataaccess');
+var dataAccess = require('./dataaccess-fake');
 
 var argv = require('optimist')
     .usage('$0 [--debug] [--recreate-views] [--port <port>] [--log <logfile>] [--db <database>]')
