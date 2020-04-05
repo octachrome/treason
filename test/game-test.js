@@ -28,7 +28,7 @@ describe('Game', function () {
         var player2;
 
         beforeEach(function () {
-            player2 = testPlayers.createTestPlayer(game);
+            player2 = testPlayers.createTestPlayer();
         });
 
         it('Then the game should be in state WAITING_FOR_PLAYERS', function () {
@@ -40,7 +40,7 @@ describe('Game', function () {
 
     describe('Reveals', function () {
         beforeEach(function () {
-            player2 = testPlayers.createTestPlayer(game);
+            player2 = testPlayers.createTestPlayer();
             return testPlayers.waitForNewPlayers(player2).then(function () {
                 return testPlayers.startGame();
             });
@@ -389,7 +389,7 @@ describe('Game', function () {
 
     describe('Disconnects', function () {
         beforeEach(function () {
-            player2 = testPlayers.createTestPlayer(game);
+            player2 = testPlayers.createTestPlayer();
             return testPlayers.waitForNewPlayers(player2).then(function () {
                 return testPlayers.startGame();
             });
@@ -446,10 +446,13 @@ describe('Game', function () {
                 });
 
                 it('Then the turn should pass to player2', function () {
-                    return player0.getNextState().then(function (state) {
-                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
-                        expect(state.state.playerIdx).to.be(2);
-                    });
+                    return player0.getNextState(stateNames.ACTION_RESPONSE)
+                        .then(function () {
+                            player0.getNextState(stateNames.START_OF_TURN).then(function (state) {
+                                expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                                expect(state.state.playerIdx).to.be(2);
+                            });
+                        });
                 });
             });
         });
