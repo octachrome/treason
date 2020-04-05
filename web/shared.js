@@ -24,22 +24,26 @@
             cost: 3,
             roles: 'assassin',
             targeted: true,
-            blockedBy: ['contessa']
+            blockedBy: ['contessa'],
+            message: (idx, t, a) => ['{%d} attempted to assassinate {%d}', idx, t]
         },
         'steal': {
             cost: 0,
             roles: 'captain',
             targeted: true,
-            blockedBy: ['captain', 'ambassador', 'inquisitor']
+            blockedBy: ['captain', 'ambassador', 'inquisitor'],
+            message: (idx, t, a) => ['{%d} attempted to steal from {%d}', idx, t]
         },
         'exchange': {
             cost: 0,
-            roles: ['ambassador', 'inquisitor']
+            roles: ['ambassador', 'inquisitor'],
+            message: (idx, t, a) => ['{%d} attempted to exchange', idx]
         },
         'interrogate': {
             cost: 0,
             roles: 'inquisitor',
-            targeted: true
+            targeted: true,
+            message: (idx, t, a) => ['{%d} attempted to interrogate {%d}', idx, t]
         }
     };
 
