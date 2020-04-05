@@ -10,24 +10,24 @@
   "license": "ISC",
   "dependencies": {
     "cradle": "^0.7.1",
-    "debug": "^2.2.0",
-    "deepcopy": "^0.5.0",
-    "ejs": "^2.3.3",
-    "express": "^4.12.3",
-    "extend": "^2.0.1",
-    "lodash": "^4.11.1",
-    "ms": "^0.7.1",
+    "debug": "^4.1.1",
+    "deepcopy": "^2.0.0",
+    "ejs": "^3.0.2",
+    "express": "^4.17.1",
+    "extend": "^3.0.2",
+    "lodash": "^4.17.15",
+    "md5": "^2.2.1",
+    "ms": "^2.1.2",
     "optimist": "^0.6.1",
     "promise-ring": "^0.1.0",
-    "random-seed": "^0.2.0",
-    "socket.io": "^1.7.2",
-    "validator": "^3.40.0",
-    "winston": "winstonjs/winston#61b4e4093a",
-    "md5": "^2.2.1"
+    "random-seed": "^0.3.0",
+    "socket.io": "^2.3.0",
+    "validator": "^13.0.0",
+    "winston": "winstonjs/winston#61b4e4093a"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
-    "mocha": "^2.3.4",
-    "webdriverio": "^4.0.5"
+    "mocha": "^7.1.1",
+    "webdriverio": "^6.0.13"
   }
 }

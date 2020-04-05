@@ -497,10 +497,14 @@ describe('History', function () {
                     it('Then the history should record the attempt, the challenge, the block, the challenge and the final steal', function () {
                         player0.getHistory().then(function (history) {
                             expect(history).to.eql([
+                                'player0 joined the game',
+                                'player1 joined the game',
+                                'player2 joined the game',
                                 '{0} attempted to steal from {1}',
-                                '{1} incorrectly challenged {0}; {0} exchanged captain for another role; {1} revealed contessa',
+                                '{1} incorrectly challenged {0}; {0} exchanged captain for a new role; {1} revealed contessa',
                                 '{1} attempted to block with ambassador',
                                 '{0} successfully challenged {1}; {1} revealed contessa',
+                                '{1} suffered a humiliating defeat',
                                 '{0} stole from {1}'
                             ]);
                         })
