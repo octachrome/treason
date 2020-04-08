@@ -325,7 +325,10 @@ module.exports = function createGame(options) {
     }
 
     function afterPlayerDeath(playerIdx) {
-        gameStats.playerRank.unshift(playerIfaces[playerIdx].playerId);
+        var playerIface = playerIfaces[playerIdx];
+        if (playerIface) {
+            gameStats.playerRank.unshift(playerIface.playerId);
+        }
         addHistory('player-died', nextAdhocHistGroup(), '{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
@@ -350,8 +353,10 @@ module.exports = function createGame(options) {
             });
             gameTracker.gameOver(state);
             resetReadyStates();
-            var playerId = playerIfaces[winnerIdx].playerId;
-            gameStats.playerRank.unshift(playerId);
+            var winnerIface = playerIfaces[winnerIdx];
+            if (winnerIface) {
+                gameStats.playerRank.unshift(winnerIface.playerId);
+            }
             gameStats.events = gameTracker.pack().toString('base64');
             dataAccess.recordGameData(gameStats);
             game.emit('end');

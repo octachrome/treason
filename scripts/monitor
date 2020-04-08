@@ -1,7 +1,7 @@
 #!/bin/bash
 
 LOGFILE=/var/log/monitor
-THRESHOLD=2
+THRESHOLD=3
 
 UPTIME=`uptime`
 # Extract 5 min load average, then strip off the fractional part
@@ -22,5 +22,5 @@ if [ $LOADAVG -ge $THRESHOLD ]; then
     ps -e -Ao comm,pid,pcpu,pmem,rss,vsize --sort=-pcpu | head -n 10 >>$LOGFILE
     echo >>$LOGFILE
 
-    shutdown -r now
+#    shutdown -r now
 fi
