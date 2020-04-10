@@ -642,14 +642,15 @@ module.exports = function createGame(options) {
                 } else {
                     message = format('{%d} attempted to draw %s', playerIdx, command.action);
                 }
+                resetAllows(playerIdx);
                 setState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: playerIdx,
                     action: command.action,
                     target: command.target,
-                    message: message
+                    message: message,
+                    waitingOnAllowsFrom: waitingOnAllowsFrom()
                 });
-                resetAllows(playerIdx);
             }
 
         } else if (command.command == 'challenge') {
@@ -755,9 +756,14 @@ module.exports = function createGame(options) {
             if (playerState.influenceCount == 0) {
                 throw new GameException('Dead players cannot allow actions');
             }
-            var stateChanged = allow(playerIdx);
-            if (!stateChanged) {
-                // Do not emit state.
+            var shouldProgressTurn = allow(playerIdx);
+            if (!shouldProgressTurn) {
+                // update waiting for list but keep state the same
+                setState({
+                    ...state.state,
+                    waitingOnAllowsFrom: waitingOnAllowsFrom()
+                })
+                emitState(true);
                 return;
             }
 
@@ -823,6 +829,7 @@ module.exports = function createGame(options) {
         emitState();
     }
 
+    // returns bool of whether to emit state change
     function allow(playerIdx) {
         if (state.state.name == stateNames.BLOCK_RESPONSE) {
             if (state.state.target == playerIdx) {
@@ -854,8 +861,6 @@ module.exports = function createGame(options) {
                 nextTurn();
             }
             return true;
-        } else {
-            throw new GameException('Incorrect state');
         }
     }
 
@@ -926,6 +931,16 @@ module.exports = function createGame(options) {
             }
         }
         return true;
+    }
+
+    function waitingOnAllowsFrom() {
+        const waiting = [];
+        for (var i = 0; i < state.numPlayers; i++) {
+            if (state.players[i].influenceCount !== 0 && !allows[i]) {
+                waiting.push(i);
+            }
+        }
+        return waiting;
     }
 
     function challenge(playerIdx, challengedPlayerIdx, challegedRole) {
@@ -1040,6 +1055,7 @@ module.exports = function createGame(options) {
         return null;
     }
 
+    // returns bool of whether nextTurn should be called
     function playAction(playerIdx, actionState) {
         debug('playing action');
         var target, message, revealedRole;
