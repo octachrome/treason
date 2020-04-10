@@ -595,14 +595,56 @@ function canTarget(playerIdx) {
     // Cannot target dead player.
     return player.influenceCount() > 0;
 }
+function playerHasRole(player, role) {
+    return player.influence()
+        .filter(i=>!i.revealed())
+        .map(i=>i.role())
+        .indexOf(role) !== -1
+}
+
+var doublekillAction;
+function confirmDoubleKillAction() {
+    $('#doubleRevealWarning').modal('hide');
+    if (doublekillAction) {
+        doublekillAction();
+    }
+}
+function disableDoubleKillWarning() {
+    localStorageSet('doubleKillWarningDisabled', 'true');
+    confirmDoubleKillAction();
+}
+function possibleReconsiderAction(f) {
+    if (
+        localStorageGet('doubleKillWarningDisabled') !== 'true' &&
+        vm.state.playerIdx() === vm.state.state.target() &&
+        vm.state.state.action() === 'assassinate' &&
+        vm.state.players()[vm.state.playerIdx()].influenceCount() == 2
+    ) {
+        doublekillAction = f;
+        $('#doubleRevealWarning').modal('show');
+        return;
+    }
+    f();
+}
+
 function block(blockingRole) {
-    command('block', {
-        blockingRole: blockingRole
-    });
+    if (playerHasRole(
+            vm.state.players()[vm.state.playerIdx()],
+            blockingRole
+        )) {
+        command('block', {blockingRole: blockingRole})
+        return;
+    }
+    possibleReconsiderAction(
+        ()=>command('block', {blockingRole: blockingRole})
+    );
 }
 function challenge() {
-    command('challenge');
+    possibleReconsiderAction(
+        ()=>command('challenge')
+    );
 }
+
 function allow() {
     command('allow');
     vm.weAllowed(true);
