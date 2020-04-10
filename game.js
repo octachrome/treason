@@ -234,7 +234,8 @@ module.exports = function createGame(options) {
         if (onlyAiLeft()) {
             destroyGame();
         }
-        emitState(true);
+        emitState();
+        game.emit('statechange');
     }
 
     function forceRemovePlayer(playerIdx) {
@@ -395,10 +396,9 @@ module.exports = function createGame(options) {
         return influence;
     }
 
-    function emitState(emitStateChangeEvent) {
+    function emitState() {
         if (state.state.name === stateNames.WAITING_FOR_PLAYERS
-            || state.state.name === stateNames.START_OF_TURN
-            || emitStateChangeEvent) {
+            || state.state.name === stateNames.START_OF_TURN) {
             game.emit('statechange');
         }
         state.stateId++;
@@ -547,69 +547,60 @@ module.exports = function createGame(options) {
         return lodash.intersection(state.roles, lodash.flatten([roles]))[0];
     }
 
-    function command(playerIdx, command) {
-        debug('command from player: ' + playerIdx);
-        debug(command);
-        var i, action, message;
-        var playerState = state.players[playerIdx];
-        if (playerState == null) {
-            throw new GameException('Unknown player');
+    const playerIsReady = (command, playerIdx) => {
+        if (state.players[playerIdx].isReady !== true) {
+            throw new GameException('You cannot start the game');
         }
-        if (command.command == 'leave') {
-            // You can always leave, even if your state id is old.
-            playerLeft(playerIdx);
+    };
+    const playerIsUndead = (command, playerIdx) => {
+        if (state.players[playerIdx].influenceCount == 0) {
+            throw new GameException('Dead players cannot challenge');
         }
-        else if (command.stateId != state.stateId) {
-            throw new GameException('Stale state (' + command.stateId + '!=' + state.stateId + ')');
+    };
+    const playersTurn = (command, playerIdx) => {
+        if (state.state.playerIdx != playerIdx) {
+            throw new GameException('Not your turn');
         }
-        else if (command.command == 'start') {
-            if (playerState.isReady !== true) {
-                throw new GameException('You cannot start the game');
-            }
-            start(command.gameType);
-
-        } else if (command.command == 'ready') {
-            if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
-                throw new GameException('Incorrect state');
-            }
-            playerReady(playerIdx);
-
-        } else if (command.command == 'add-ai') {
-            if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
-                throw new GameException('Incorrect state');
-            }
-            if (playerState.isReady !== true) {
-                throw new GameException('You cannot add AI players');
-            }
-            addAiPlayer();
-
-        } else if (command.command == 'remove-ai') {
-            if (state.state.name != stateNames.WAITING_FOR_PLAYERS) {
-                throw new GameException('Incorrect state');
-            }
-            if (playerState.isReady !== true) {
-                throw new GameException('You cannot remove AI players');
-            }
-            removeAiPlayer();
-
-        } else if (command.command == 'play-action') {
-            if (state.state.name != stateNames.START_OF_TURN) {
-                throw new GameException('Incorrect state');
-            }
-            if (state.state.playerIdx != playerIdx) {
-                throw new GameException('Not your turn');
-            }
-            action = actions[command.action];
+    };
+    const invalidPlayer = (stateField) => (command, playerIdx) => {
+        if (playerIdx == state.state[stateField]) {
+            throw new GameException(`Player cannot ${command.command}`);
+        }
+    };
+    // the mapping of command -> behavior, or command,state -> behavior
+    const behaviors = {};
+    behaviors['start'] = [
+        playerIsReady,
+        (command, playerIdx) => start(command.gameType)
+    ];
+    behaviors['leave'] = [
+        (command, playerIdx) => playerLeft(playerIdx)
+    ];
+    behaviors[['ready', stateNames.WAITING_FOR_PLAYERS]] = [(command, playerIdx) => {
+        playerReady(playerIdx);
+    }];
+    behaviors[['add-ai', stateNames.WAITING_FOR_PLAYERS]] = [
+        playerIsReady,
+        addAiPlayer
+    ];
+    behaviors[['remove-ai', stateNames.WAITING_FOR_PLAYERS]] = [
+        playerIsReady,
+        removeAiPlayer
+    ];
+    behaviors[['play-action', stateNames.START_OF_TURN]] = [
+        playersTurn,
+        (command, playerIdx) => {
+            const action = actions[command.action];
             if (action == null) {
                 throw new GameException('Unknown action');
             }
             if (action.roles && !getGameRole(action.roles)) {
                 throw new GameException('Action not allowed in this game');
             }
-            if (playerState.cash >= 10 && command.action != 'coup') {
+            if (state.players[playerIdx].cash >= 10 && command.action != 'coup') {
                 throw new GameException('You must coup with >= 10 cash');
             }
-            if (playerState.cash < action.cost) {
+            if (state.players[playerIdx].cash < action.cost) {
                 throw new GameException('Not enough cash');
             }
             if (action.targeted) {
@@ -624,105 +615,96 @@ module.exports = function createGame(options) {
                 }
             }
             gameTracker.action(command.action, command.target);
-            playerState.cash -= action.cost;
+            state.players[playerIdx].cash -= action.cost;
             if (action.roles == null && action.blockedBy == null) {
                 if (playAction(playerIdx, command, false)) {
                     nextTurn();
                 }
+                return;
+            }
+            debug('checking for blocks/challenges');
+            let message;
+            if (command.action == 'steal') {
+                message = format('{%d} attempted to steal from {%d}', playerIdx, command.target);
+            } else if (command.action == 'assassinate') {
+                message = format('{%d} attempted to assassinate {%d}', playerIdx, command.target);
+            } else if (command.action == 'exchange') {
+                message = format('{%d} attempted to exchange', playerIdx);
+            } else if (command.action == 'interrogate') {
+                message = format('{%d} attempted to interrogate {%d}', playerIdx, command.target);
             } else {
-                debug('checking for blocks/challenges');
-                if (command.action == 'steal') {
-                    message = format('{%d} attempted to steal from {%d}', playerIdx, command.target);
-                } else if (command.action == 'assassinate') {
-                    message = format('{%d} attempted to assassinate {%d}', playerIdx, command.target);
-                } else if (command.action == 'exchange') {
-                    message = format('{%d} attempted to exchange', playerIdx);
-                } else if (command.action == 'interrogate') {
-                    message = format('{%d} attempted to interrogate {%d}', playerIdx, command.target);
-                } else {
-                    message = format('{%d} attempted to draw %s', playerIdx, command.action);
-                }
-                setState({
-                    name: stateNames.ACTION_RESPONSE,
-                    playerIdx: playerIdx,
-                    action: command.action,
-                    target: command.target,
-                    message: message
-                });
-                resetAllows(playerIdx);
+                message = format('{%d} attempted to draw %s', playerIdx, command.action);
             }
 
-        } else if (command.command == 'challenge') {
-            if (playerState.influenceCount == 0) {
-                throw new GameException('Dead players cannot challenge');
-            }
-            if (state.state.name == stateNames.ACTION_RESPONSE) {
-                if (playerIdx == state.state.playerIdx) {
-                    throw new GameException('Cannot challenge your own action');
-                }
-                action = actions[state.state.action];
-                if (!action) {
-                    throw new GameException('Unknown action');
-                }
-                if (!action.roles) {
-                    throw new GameException('Action cannot be challenged');
-                }
-                challenge(playerIdx, state.state.playerIdx, getGameRole(action.roles));
-
-            } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
-                if (playerIdx == state.state.target) {
-                    throw new GameException('Cannot challenge your own block');
-                }
-                challenge(playerIdx, state.state.target, state.state.blockingRole);
-
-            } else {
-                throw new GameException('Incorrect state');
-            }
-
-        } else if (command.command == 'reveal') {
-            if (state.state.name != stateNames.REVEAL_INFLUENCE) {
-                throw new GameException('Incorrect state');
-            }
-            if (state.state.playerToReveal != playerIdx) {
-                throw new GameException('Not your turn to reveal an influence');
-            }
-            for (i = 0; i < playerState.influence.length; i++) {
-                var influence = playerState.influence[i];
-                if (influence.role == command.role && !influence.revealed) {
-                    influence.revealed = true;
-                    playerState.influenceCount--;
-                    addHistory(state.state.reason, curTurnHistGroup(), '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
-                    if (state.state.reason == 'incorrect-challenge') {
-                        if (afterIncorrectChallenge()) {
-                            nextTurn();
-                        }
-                    } else if (state.state.reason == 'successful-challenge') {
-                        if (afterSuccessfulChallenge()) {
-                            nextTurn();
-                        }
-                    } else {
-                        // The reveal is due to a coup or assassination.
-                        nextTurn();
-                    }
-                    emitState();
-                    return;
-                }
-            }
-            throw new GameException('Could not reveal role');
-
-        } else if (command.command == 'block') {
-            if (playerState.influenceCount == 0) {
-                throw new GameException('Dead players cannot block');
-            }
-            if (state.state.name != stateNames.ACTION_RESPONSE && state.state.name != stateNames.FINAL_ACTION_RESPONSE) {
-                throw new GameException('Incorrect state');
-            }
-            action = actions[state.state.action];
+            setState({
+                name: stateNames.ACTION_RESPONSE,
+                playerIdx: playerIdx,
+                action: command.action,
+                target: command.target,
+                message: message
+            });
+            resetAllows(playerIdx);
+        }
+    ];
+    behaviors[['challenge', stateNames.ACTION_RESPONSE]] = [
+        playerIsUndead,
+        invalidPlayer('playerIdx'),
+        (command, playerIdx) => {
+            const action = actions[state.state.action];
             if (!action) {
                 throw new GameException('Unknown action');
             }
-            if (playerIdx == state.state.playerIdx) {
-                throw new GameException('Cannot block your own action');
+            if (!action.roles) {
+                throw new GameException('Action cannot be challenged');
+            }
+            challenge(playerIdx, state.state.playerIdx, getGameRole(action.roles));
+        }
+    ];
+    behaviors[['challenge', stateNames.BLOCK_RESPONSE]] = [
+        playerIsUndead,
+        invalidPlayer('target'),
+        (command, playerIdx) => {
+            challenge(playerIdx, state.state.target, state.state.blockingRole);
+        }
+    ];
+    behaviors[['reveal', stateNames.REVEAL_INFLUENCE]] = [
+        (command, playerIdx) => {
+            if (state.state.playerToReveal != playerIdx) {
+                throw new GameException('Not your turn to reveal an influence');
+            }
+            for (var i = 0; i < state.players[playerIdx].influence.length; i++) {
+                var influence = state.players[playerIdx].influence[i];
+                if (influence.role != command.role || influence.revealed) {
+                    continue
+                }
+                influence.revealed = true;
+                state.players[playerIdx].influenceCount--;
+                addHistory(state.state.reason, curTurnHistGroup(), '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
+                const reasonMap = {
+                    'incorrect-challenge': afterIncorrectChallenge,
+                    'successful-challenge': afterSuccessfulChallenge,
+                };
+                const f = reasonMap[state.state.reason];
+                if (f) {
+                    if(f()) {
+                        nextTurn();
+                    }
+                    return;
+                }
+                // The reveal is due to a coup or assassination.
+                nextTurn();
+                return;
+            }
+            throw new GameException('Could not reveal role');
+        }
+    ];
+    const block = [
+        playerIsUndead,
+        invalidPlayer('playerIdx'),
+        (command, playerIdx) => {
+            const action = actions[state.state.action];
+            if (!action) {
+                throw new GameException('Unknown action');
             }
             if (!action.blockedBy) {
                 throw new GameException('Action cannot be blocked');
@@ -740,7 +722,7 @@ module.exports = function createGame(options) {
             if (state.state.name == stateNames.ACTION_RESPONSE) {
                 addHistory(state.state.action, curTurnHistGroup(), state.state.message);
             }
-            gameTracker.block(target, command.blockingRole);
+            gameTracker.block(state.state.target, command.blockingRole);
             setState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: state.state.playerIdx,
@@ -750,52 +732,51 @@ module.exports = function createGame(options) {
                 message: format('{%d} attempted to block with ' + command.blockingRole, playerIdx)
             });
             resetAllows(playerIdx);
-
-        } else if (command.command == 'allow') {
-            if (playerState.influenceCount == 0) {
-                throw new GameException('Dead players cannot allow actions');
-            }
+        }
+    ];
+    behaviors[['block', stateNames.ACTION_RESPONSE]] = block;
+    behaviors[['block', stateNames.FINAL_ACTION_RESPONSE]] = block;
+    const allowBehavior = [
+        playerIsUndead,
+        (command, playerIdx) => {
             var stateChanged = allow(playerIdx);
             if (!stateChanged) {
                 // Do not emit state.
-                return;
+                return true;
             }
-
-        } else if (command.command == 'exchange') {
-            if (state.state.name != stateNames.EXCHANGE) {
-                throw new GameException('Incorrect state');
-            }
-            if (state.state.playerIdx != playerIdx) {
-                throw new GameException('Not your turn');
-            }
+        }
+    ];
+    behaviors[['allow', stateNames.BLOCK_RESPONSE]] = allowBehavior;
+    behaviors[['allow', stateNames.ACTION_RESPONSE]] = allowBehavior;
+    behaviors[['allow', stateNames.FINAL_ACTION_RESPONSE]] = allowBehavior;
+    behaviors[['exchange', stateNames.EXCHANGE]] = [
+        playersTurn,
+        (command, playerIdx) => {
             if (!command.roles) {
                 throw new GameException('Must specify roles to exchange');
             }
-            if (command.roles.length != playerState.influenceCount) {
+            if (command.roles.length != state.players[playerIdx].influenceCount) {
                 throw new GameException('Wrong number of roles');
             }
-            var unchosen = arrayDifference(state.state.exchangeOptions, command.roles);
+            const unchosen = arrayDifference(state.state.exchangeOptions, command.roles);
             if (!unchosen) {
                 throw new GameException('Invalid choice of roles');
             }
             // Assign the roles the player selected.
-            for (i = 0; i < playerState.influence.length; i++) {
-                if (!playerState.influence[i].revealed) {
-                    playerState.influence[i].role = command.roles.pop()
+            for (var i = 0; i < state.players[playerIdx].influence.length; i++) {
+                if (!state.players[playerIdx].influence[i].revealed) {
+                    state.players[playerIdx].influence[i].role = command.roles.pop()
                 }
             }
             // Return the other roles to the deck.
             deck = shuffle(deck.concat(unchosen));
             addHistory('exchange', curTurnHistGroup(), '{%d} exchanged roles', playerIdx);
             nextTurn();
-
-        } else if (command.command == 'interrogate') {
-            if (state.state.name != stateNames.INTERROGATE) {
-                throw new GameException('Incorrect state');
-            }
-            if (state.state.playerIdx != playerIdx) {
-                throw new GameException('Not your turn');
-            }
+        }
+    ];
+    behaviors[['interrogate', stateNames.INTERROGATE]] = [
+        playersTurn,
+        (command, playerIdx) => {
             // Send a history event only to the player who was interrogated.
             addHistoryAsync(
                 state.state.target,
@@ -803,23 +784,38 @@ module.exports = function createGame(options) {
                 curTurnHistGroup(),
                 format('{%d} saw your %s', playerIdx, state.state.confession));
             if (command.forceExchange) {
-                var target = state.players[state.state.target];
-                var idx = indexOfInfluence(target, state.state.confession);
+                const target = state.players[state.state.target];
+                const idx = indexOfInfluence(target, state.state.confession);
                 if (idx == null) {
                     throw new GameException('Target does not have the confessed role');
                 }
                 target.influence[idx].role = swapRole(state.state.confession);
                 addHistory('interrogate', curTurnHistGroup(), '{%d} forced {%d} to exchange roles', playerIdx, state.state.target);
+                nextTurn();
+                return;
             }
-            else {
-                addHistory('interrogate', curTurnHistGroup(), '{%d} allowed {%d} to keep the same roles', playerIdx, state.state.target);
-            }
+            addHistory('interrogate', curTurnHistGroup(), '{%d} allowed {%d} to keep the same roles', playerIdx, state.state.target);
             nextTurn();
+        }
+    ];
 
-        } else {
-            throw new GameException('Unknown command');
+    function command(playerIdx, command) {
+        debug('command from player: ' + playerIdx);
+        debug(command);
+        if (!state.players[playerIdx]) {
+            throw new GameException('Unknown player');
+        }
+        if (command.stateId != state.stateId) {
+            throw new GameException('Stale state (' + command.stateId + '!=' + state.stateId + ')');
         }
 
+        const bs = behaviors[command.command] || behaviors[[command.command, state.state.name]];
+        if (!bs) {
+            throw new GameException('Unknown command or invalid state');
+        }
+        const skipEmit = bs
+            .map(b => b(command, playerIdx))
+            .reduce((acc, c) => acc || c);
         emitState();
     }
 
