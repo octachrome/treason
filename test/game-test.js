@@ -446,10 +446,14 @@ describe('Game', function () {
                 });
 
                 it('Then the turn should pass to player2', function () {
-                    return player0.getNextState().then(function (state) {
-                        expect(state.state.name).to.be(stateNames.START_OF_TURN);
-                        expect(state.state.playerIdx).to.be(2);
-                    });
+                    return player0
+                        .getNextState(stateNames.ACTION_RESPONSE).then(
+                        player0.getNextState(stateNames.START_OF_TURN)
+                            .then(function (state) {
+                            expect(state.state.name).to.be(stateNames.START_OF_TURN);
+                            expect(state.state.playerIdx).to.be(2);
+                        })
+                    );
                 });
             });
         });
