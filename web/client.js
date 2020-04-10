@@ -595,9 +595,14 @@ function canTarget(playerIdx) {
     // Cannot target dead player.
     return player.influenceCount() > 0;
 }
+function playerHasRole(player, role) {
+    return player.influence()
+        .filter(i=>!i.revealed())
+        .map(i=>i.role())
+        .indexOf(role) !== -1
+}
 
 var doublekillAction;
-var doubleKillWarningDisabled;
 function confirmDoubleKillAction() {
     $('#doubleRevealWarning').modal('hide');
     if (doublekillAction) {
@@ -605,14 +610,14 @@ function confirmDoubleKillAction() {
     }
 }
 function disableDoubleKillWarning() {
-    doubleKillWarningDisabled = true;
+    localStorageSet('doubleKillWarningDisabled', 'true');
     confirmDoubleKillAction();
 }
 function possibleReconsiderAction(f) {
     if (
-        !doubleKillWarningDisabled &&
+        localStorageGet('doubleKillWarningDisabled') !== 'true' &&
         vm.state.playerIdx() === vm.state.state.target() &&
-        vm.state.state.action() === "assassinate" &&
+        vm.state.state.action() === 'assassinate' &&
         vm.state.players()[vm.state.playerIdx()].influenceCount() == 2
     ) {
         doublekillAction = f;
@@ -623,11 +628,10 @@ function possibleReconsiderAction(f) {
 }
 
 function block(blockingRole) {
-    if (
-        vm.state.players()[vm.state.playerIdx()].influence()
-        .filter(i=>!i.revealed())
-        .map(i=>i.role())
-        .indexOf(blockingRole) !== -1) {
+    if (playerHasRole(
+            vm.state.players()[vm.state.playerIdx()],
+            blockingRole
+        )) {
         command('block', {blockingRole: blockingRole})
         return;
     }
