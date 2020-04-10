@@ -88,7 +88,8 @@ vm.state = ko.mapping.fromJS({
         message: null,
         exchangeOptions: null,
         playerToReveal: null,
-        confession: null
+        confession: null,
+        waitingOnAllowsFrom: [],
     }
 });
 vm.playerName.subscribe(function (newName) {
@@ -237,7 +238,7 @@ socket.on('state', function (data) {
     else {
         ko.mapping.fromJS(data, vm.state);
         vm.targetedAction('');
-        vm.weAllowed(false);
+        vm.weAllowed(vm.state.state.waitingOnAllowsFrom.indexOf(vm.state.playerIdx()) === -1);
         vm.chosenExchangeOptions({});
         $('.activity').scrollTop(0);
         $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
@@ -479,6 +480,12 @@ function playerName(playerIdx) {
         return player.name();
     }
     return '';
+}
+function waitingOnAllowsFrom() {
+    return vm.state.state
+        .waitingOnAllowsFrom()
+        .map((p) => p === vm.state.playerIdx() ? "YOU" : playerName(p))
+        .join(', ');
 }
 function actionPresentInGame(actionName) {
     var action = actions[actionName];

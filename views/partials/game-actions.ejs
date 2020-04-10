@@ -86,14 +86,20 @@
     <div data-bind="visible: weAreInState('action-response')">
         <i data-bind="css: state.state.action"></i>
         <span data-bind="text: stateMessage()"></span><br/><br/>
-        Waiting for blocks/challenges
+        Waiting for blocks/challenges from:
+        <p class="waiting clipPlayername">
+            <span data-bind="text: waitingOnAllowsFrom()"></span>
+        </p>
     </div>
     <div data-bind="visible: theyAreInState('action-response')">
         <i data-bind="css: state.state.action"></i>
         <span data-bind="text: stateMessage()"></span><br/><br/>
         <!-- ko if: !weAreAlive() -->
             <br/>
-            Waiting for blocks/challenges
+            Waiting for blocks/challenges from:
+            <p class="waiting clipPlayername">
+                <span data-bind="text: waitingOnAllowsFrom()"></span>
+            </p>
         <!-- /ko -->
         <!-- ko if: weAreAlive() -->
             <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
@@ -113,6 +119,9 @@
                 <span>Challenge</span>
             </button>
         <!-- /ko -->
+        <p class="waiting clipPlayername">
+            Waiting on: <span data-bind="text: waitingOnAllowsFrom()"></span>
+        </p>
     </div>
     <div data-bind="visible: weAreInState('final-action-response')">
         <i data-bind="css: state.state.action"></i>

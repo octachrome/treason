@@ -243,3 +243,15 @@ h3 {
 .error {
     color: red;
 }
+
+p.waiting {
+    font-size: small;
+    padding-top: 16px;
+    width: 75%;
+}
+
+.clipPlayername {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
