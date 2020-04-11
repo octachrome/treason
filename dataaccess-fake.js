@@ -4,7 +4,7 @@ module.exports = {
     // Called when the server initially starts
     init: () => Promise.resolve(),
     // Called when a new player logs in for the first time or an existing player changes their name
-    register: id => id || Promise.resolve(crypto.randomBytes(16).toString('hex')),
+    register: id => Promise.resolve(id || crypto.randomBytes(16).toString('hex')),
     // Called at the start of a game
     constructGameStats: () => {
         return {
