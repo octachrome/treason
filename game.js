@@ -631,17 +631,9 @@ module.exports = function createGame(options) {
                 }
             } else {
                 debug('checking for blocks/challenges');
-                if (command.action == 'steal') {
-                    message = format('{%d} attempted to steal from {%d}', playerIdx, command.target);
-                } else if (command.action == 'assassinate') {
-                    message = format('{%d} attempted to assassinate {%d}', playerIdx, command.target);
-                } else if (command.action == 'exchange') {
-                    message = format('{%d} attempted to exchange', playerIdx);
-                } else if (command.action == 'interrogate') {
-                    message = format('{%d} attempted to interrogate {%d}', playerIdx, command.target);
-                } else {
-                    message = format('{%d} attempted to draw %s', playerIdx, command.action);
-                }
+                const msgFunc = action.message || ((idx, _, action) => `{${idx}} attempted to draw ${action}`);
+                const message = msgFunc(playerIdx, command.target, command.action);
+
                 setState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: playerIdx,
