@@ -631,9 +631,9 @@ module.exports = function createGame(options) {
                 }
             } else {
                 debug('checking for blocks/challenges');
-                const fArgs = action.message || ((idx, t, a) => ['{%d} attempted to draw %s', idx, a]);
-                const message = format(...fArgs(playerIdx, command.target, command.action));
-                resetAllows(playerIdx);
+                const msgFunc = action.message || ((idx, _, action) => `{${idx}} attempted to draw ${action}`);
+                const message = msgFunc(playerIdx, command.target, command.action);
+
                 setState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: playerIdx,
