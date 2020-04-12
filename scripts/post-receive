@@ -24,6 +24,6 @@ close VERSION;
 print "DEPLOY: live($to) copied to '$deploy_to_dir'\n";
 
 # 4. Deployment Tasks
-print `sudo stop treason`;
-print `cd $deploy_to_dir; npm install --production`;
-print `sudo start treason`;
+print `sudo systemctl stop treason`;
+print `cd $deploy_to_dir; /home/treason/run-npm install --production`;
+print `sudo systemctl start treason`;
