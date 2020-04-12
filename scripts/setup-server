@@ -2,13 +2,13 @@
 setcap cap_net_bind_service=+ep /usr/sbin/nginx
 
 # Open web ports in the firewall (also needs to be opened in the AWS security group)
-iptables -A INPUT -p tcp --dport 80 -j ACCEPT
-iptables -A INPUT -p tcp --dport 81 -j ACCEPT
-iptables -A INPUT -p tcp --dport 8999 -j ACCEPT
-iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+iptables -I INPUT -p tcp --dport 81 -j ACCEPT
+iptables -I INPUT -p tcp --dport 8999 -j ACCEPT
+iptables -I INPUT -p tcp --dport 443 -j ACCEPT
 
 # Also open port 5900 in the firewall for Nginx proxying CouchDB
-iptables -A INPUT -p tcp --dport 5900 -j ACCEPT
+iptables -I INPUT -p tcp --dport 5900 -j ACCEPT
 
 # Save firewall rules
 iptables-save >/etc/iptables.rules
