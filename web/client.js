@@ -730,6 +730,11 @@ function onLeaveGame(oldUrl) {
         history.pushState(null, '', oldUrl);
     }
 }
+$(window).on('beforeunload', function (e) {
+    if (vm.playing()) {
+        return (e.returnValue = 'Are you sure you want to leave this game?');
+    }
+});
 function formatMessage(message) {
     for (var i = 0; i < vm.state.players().length; i++) {
         var playerName;
