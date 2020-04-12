@@ -23,8 +23,9 @@ if ($branch eq 'refs/heads/live') {
 }
 
 # 3. Copy files to deploy directory
-print `pwd; echo GIT_WORK_TREE="$deploy_to_dir" git checkout -f $branch`;
-print `GIT_WORK_TREE="$deploy_to_dir" git checkout -f $branch`;
+print `mkdir -p $deploy_to_dir`; die if $?;
+print `pwd; echo GIT_WORK_TREE="$deploy_to_dir" git checkout -f $branch`; die if $?;
+print `GIT_WORK_TREE="$deploy_to_dir" git checkout -f $branch`; die if $?;
 my $version = `git describe --tags --long`;
 chomp $version;
 open VERSION, ">$deploy_to_dir/web/version.js";
