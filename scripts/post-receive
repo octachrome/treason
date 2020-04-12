@@ -8,14 +8,23 @@ my $args = <>;
 my ($from, $to, $branch) = split(/\s+/, $args);
 
 # 2. Only deploy if live branch was pushed
-if ($branch !~ /live$/) {
+my $deploy_to_dir;
+my $service_name;
+
+if ($branch eq 'refs/heads/live') {
+    $deploy_to_dir = abs_path('../deploy');
+    $service_name = 'treason';
+} elsif ($branch =~ /^refs\/heads\/live-(blue|green)$/) {
+    $deploy_to_dir = abs_path("../deploy-$1");
+    $service_name = "treason-$1";
+} else {
     print "Received branch $branch, not deploying.\n";
     exit;
 }
 
 # 3. Copy files to deploy directory
-my $deploy_to_dir = abs_path('../deploy');
-print `GIT_WORK_TREE="$deploy_to_dir" git checkout -f live`;
+print `pwd; echo GIT_WORK_TREE="$deploy_to_dir" git checkout -f $branch`;
+print `GIT_WORK_TREE="$deploy_to_dir" git checkout -f $branch`;
 my $version = `git describe --tags --long`;
 chomp $version;
 open VERSION, ">$deploy_to_dir/web/version.js";
@@ -24,6 +33,6 @@ close VERSION;
 print "DEPLOY: live($to) copied to '$deploy_to_dir'\n";
 
 # 4. Deployment Tasks
-print `sudo systemctl stop treason`;
-print `cd $deploy_to_dir; /home/treason/run-npm install --production`;
-print `sudo systemctl start treason`;
+print `sudo systemctl stop $service_name`;
+print `cd $deploy_to_dir; ./scripts/run-npm install --production`;
+print `sudo systemctl start $service_name`;
