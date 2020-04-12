@@ -8,23 +8,27 @@ my $args = <>;
 my ($from, $to, $branch) = split(/\s+/, $args);
 
 # 2. Only deploy if live branch was pushed
-my $deploy_to_dir;
-my $service_name;
+my ($deploy_to_dir, $service_name, $blue_green);
 
 if ($branch eq 'refs/heads/live') {
     $deploy_to_dir = abs_path('../deploy');
     $service_name = 'treason';
 } elsif ($branch =~ /^refs\/heads\/live-(blue|green)$/) {
     $deploy_to_dir = abs_path("../deploy-$1");
-    $service_name = "treason-$1";
+    $blue_green = $1;
+    $service_name = "treason-$blue_green";
 } else {
     print "Received branch $branch, not deploying.\n";
     exit;
 }
 
+if ($blue_green && !system(qq'grep -q "node-$blue_green; \\+# active" /etc/nginx/nginx.conf')) {
+    print "Not upgrading active deployment";
+    exit;
+}
+
 # 3. Copy files to deploy directory
 print `mkdir -p $deploy_to_dir`; die if $?;
-print `pwd; echo GIT_WORK_TREE="$deploy_to_dir" git checkout -f $branch`; die if $?;
 print `GIT_WORK_TREE="$deploy_to_dir" git checkout -f $branch`; die if $?;
 my $version = `git describe --tags --long`;
 chomp $version;
