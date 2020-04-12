@@ -45,7 +45,7 @@
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''), // The name of the current player.
     playerId: ko.observable(localStorageGet('playerId') || ''), // The id of the current user.
-    bannerMessage: ko.observable(''), // Shown in a banner at the top of the screen.
+    alerts: ko.observableArray(), // Shown in a banner at the top of the screen.
     targetedAction: ko.observable(''), // During a coup, steal or assassination, the player that the user is targeting.
     weAllowed: ko.observable(false), // If true, the user has allowed the current action.
     chosenExchangeOptions: ko.observable({}), // During an exchange, the roles that the user has selected so far.
@@ -101,9 +101,6 @@ vm.state.state.name.subscribe(function (stateName) {
     }
 });
 vm.playing = vm.playingGame;
-vm.bannerVisible = ko.computed(function () {
-    return !vm.playing() && vm.bannerMessage();
-});
 vm.notifsEnabled.subscribe(function (enabled) {
     localStorageSet('notifsEnabled', enabled);
 });
@@ -134,8 +131,12 @@ vm.waitingToPlay.subscribe(function (waiting) {
     }
 });
 
-if (window.location.href.indexOf('amazonaws') >= 0) {
-    vm.bannerMessage('Update your bookmarks to <a href="http://coup.thebrown.net">http://coup.thebrown.net</a>');
+if (!window.WebSocket) {
+    vm.alerts.push('You are using an older browser: things may not work correctly');
+}
+
+function dismissAlert(message) {
+    vm.alerts.remove(message);
 }
 
 function hashGameId() {
@@ -218,7 +219,6 @@ socket.on('connect', function() {
     });
 });
 socket.on('disconnect', function () {
-    vm.bannerMessage('Disconnected');
     vm.state.state.name(null); // Opens the welcome screen.
     vm.needName(false);
     vm.loggedIn(false);

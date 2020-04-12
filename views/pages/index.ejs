@@ -24,8 +24,7 @@
     <script src="client.js"></script>
     <script src="version.js"></script>
 </head>
-<body>
-    <div class="banner" data-bind="visible: bannerVisible, html: bannerMessage"></div>
+<body style="display: none" data-bind="visible: true">
     <div class="container" data-bind="visible: !playing()">
         <div class="row">
             <div class="col-sm-9">
@@ -36,6 +35,14 @@
                 <p class="profile-button" data-bind="visible: loggedIn()"><a href="" data-bind="click: showUserProfileDialog"><i class="user" title="Profile"></i></a></p>
             </div>
         </div>
+        <div class="row">
+            <!-- ko foreach: alerts -->
+            <div class="col-sm-10 alert alert-danger">
+                <button type="button" class="close" data-bind="click: dismissAlert">&times;</button>
+                <span data-bind="text: $data"></span>
+            </div>
+            <!-- /ko -->
+        </div>
         <!-- ko if: !loggedIn() -->
         <%- include('../partials/login.ejs') -%>
         <!-- /ko -->
@@ -45,6 +52,14 @@
     </div>
 
     <div class="container" style="display: none" data-bind="visible: playing()">
+        <div class="row">
+            <!-- ko foreach: alerts -->
+            <div class="col-sm-10 alert alert-danger">
+                <button type="button" class="close" data-bind="click: dismissAlert">&times;</button>
+                <span data-bind="text: $data"></span>
+            </div>
+            <!-- /ko -->
+        </div>
         <div class="row" data-bind="visible: playingPassword()">
             <div class="col-xs-12">
                 <p>
