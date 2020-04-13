@@ -1,0 +1,22 @@
+# Allow nginx to bind to ports 80 and 443 when running as non-root user
+setcap cap_net_bind_service=+ep /usr/sbin/nginx
+
+# Open web ports in the firewall (also needs to be opened in the AWS security group)
+iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+iptables -I INPUT -p tcp --dport 81 -j ACCEPT
+iptables -I INPUT -p tcp --dport 8999 -j ACCEPT
+iptables -I INPUT -p tcp --dport 443 -j ACCEPT
+
+# Also open port 5900 in the firewall for Nginx proxying CouchDB
+iptables -I INPUT -p tcp --dport 5900 -j ACCEPT
+
+# Save firewall rules
+iptables-save >/etc/iptables.rules
+
+# Allow treason user to modify nginx config
+chown treason:treason /etc/nginx/nginx.conf
+
+# Set up nvm (as treason user)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+nvm install 10.20.0
+nvm alias default 10.20.0

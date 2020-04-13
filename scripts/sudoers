@@ -1,0 +1,3 @@
+Cmnd_Alias TREASON = /bin/systemctl stop treason*, /bin/systemctl start treason*, /bin/systemctl reload nginx
+
+treason ALL=(ALL:ALL) NOPASSWD: TREASON

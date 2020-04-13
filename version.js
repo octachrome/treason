@@ -2,24 +2,28 @@
 
 var exec = require('child_process').exec;
 
-var versionPromise = null;
+const server = require('path').basename(__dirname);
+
+var contentPromise = null;
 
 module.exports = function (req, res) {
-    if (versionPromise == null) {
-        versionPromise = new Promise(function (resolve, reject) {
+    let content = `window.server = "${server}";`
+    if (contentPromise == null) {
+        contentPromise = new Promise(function (resolve, reject) {
             exec('git describe --tags --long', {cwd: __dirname}, function (err, stdout) {
                 if (err) {
-                    resolve('window.version = "";');
+                    content += 'window.version = "";';
                 } else {
                     var v = stdout.replace(/[\r\n]/g, '');
-                    resolve('window.version = "' + v + '";');
+                    content += `window.version = "${v}";`;
                 }
+                resolve(content);
             });
         });
     }
 
-    versionPromise.then(function (version) {
+    contentPromise.then(function (content) {
         res.set('Content-type', 'text/javascript');
-        res.send(version)
+        res.send(content)
     });
 };

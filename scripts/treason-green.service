@@ -1,0 +1,13 @@
+# Lives in /lib/systemd/system/treason-green.service
+
+[Unit]
+Description=Treason Coup (Green)
+
+[Service]
+ExecStart=/home/treason/deploy-green/scripts/run-node /home/treason/deploy-green/server.js --port 8081
+User=treason
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
