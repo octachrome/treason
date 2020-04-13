@@ -15,4 +15,4 @@ Test the upgraded deployment on http://coup.thebrown.net:8999, then make it acti
 
 Tell people on the old server to refresh:
 
-    curl http://coup.thebrown.net:8999 -d 'msg=A new version of the game is available. Refresh your browser to continue.'
+    curl http://coup.thebrown.net:8999/alert -d 'msg=A new version of the game is available. Refresh your browser to continue.'
