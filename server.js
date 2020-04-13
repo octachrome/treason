@@ -41,6 +41,9 @@ var app = express();
 app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/web'));
 
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({extended: false}));
+
 var version = require('./version');
 app.get('/version.js', version);
 
@@ -63,6 +66,17 @@ dataAccess.getPlayerRankings().then(function (result) {
     rankings = result;
     //This will submit the rankings to everyone
     io.sockets.emit('rankings', result);
+});
+
+app.post('/alert', function (req, res) {
+    if (req.body && typeof req.body.msg == 'string') {
+        io.sockets.emit('alert', {
+            msg: req.body.msg
+        });
+    } else {
+        res.sendStatus(400);
+    }
+    res.end();
 });
 
 io.on('connection', function (socket) {

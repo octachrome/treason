@@ -11,7 +11,7 @@ else
     exit 1
 fi
 
-sed "s/proxy_pass http:\\/\\/node-[a-z]\+; \+# active/proxy_pass http:\/\/node-$active; # active/;
-    s/proxy_pass http:\\/\\/node-[a-z]\+; \+# passive/proxy_pass http:\/\/node-$passive; # passive/" /etc/nginx/nginx.conf > /tmp/nginx.conf && cat /tmp/nginx.conf >/etc/nginx/nginx.conf
+sed "s/proxy_pass http:\\/\\/node-[a-z]\+\(\\/[^;]\+\)\?; \+# active/proxy_pass http:\/\/node-$active\\1; # active/g;
+    s/proxy_pass http:\\/\\/node-[a-z]\+\(\\/[^;]\+\)\?; \+# passive/proxy_pass http:\/\/node-$passive\\1; # passive/g"  /etc/nginx/nginx.conf > /tmp/nginx.conf && cat /tmp/nginx.conf >/etc/nginx/nginx.conf
 
 sudo systemctl reload nginx

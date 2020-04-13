@@ -217,6 +217,9 @@ socket.on('connect', function() {
         var globalMessageContainer = $('#global-chat-container');
         globalMessageContainer[0].scrollTop = globalMessageContainer[0].scrollHeight;
     });
+    socket.on('alert', function(data) {
+        vm.alerts.push(data.msg);
+    });
 });
 socket.on('disconnect', function () {
     vm.state.state.name(null); // Opens the welcome screen.
