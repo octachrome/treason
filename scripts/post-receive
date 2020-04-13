@@ -35,7 +35,7 @@ chomp $version;
 open VERSION, ">$deploy_to_dir/web/version.js";
 print VERSION "window.version='$version';\n";
 close VERSION;
-print "DEPLOY: live($to) copied to '$deploy_to_dir'\n";
+print "DEPLOY: $branch($to) copied to '$deploy_to_dir'\n";
 
 # 4. Deployment Tasks
 print `sudo systemctl stop $service_name`;
