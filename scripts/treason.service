@@ -1,8 +1,10 @@
+# Lives in /lib/systemd/system/treason.service
+
 [Unit]
 Description=Treason Coup
 
 [Service]
-ExecStart=/home/treason/.nvm/versions/node/v6.11.5/bin/node /home/treason/deploy/server.js --port 8080
+ExecStart=/home/treason/deploy/scripts/run-node /home/treason/deploy/server.js --port 8080
 User=treason
 Restart=always
 

@@ -332,7 +332,10 @@ module.exports = function createGame(options) {
     }
 
     function afterPlayerDeath(playerIdx) {
-        gameStats.playerRank.unshift(playerIfaces[playerIdx].playerId);
+        var playerIface = playerIfaces[playerIdx];
+        if (playerIface) {
+            gameStats.playerRank.unshift(playerIface.playerId);
+        }
         addHistory('player-died', nextAdhocHistGroup(), '{%d} suffered a humiliating defeat', playerIdx);
         checkForGameEnd();
     }
@@ -374,8 +377,10 @@ module.exports = function createGame(options) {
             });
             gameTracker.gameOver(state);
             resetReadyStates();
-            var playerId = playerIfaces[winnerIdx].playerId;
-            gameStats.playerRank.unshift(playerId);
+            var winnerIface = playerIfaces[winnerIdx];
+            if (winnerIface) {
+                gameStats.playerRank.unshift(winnerIface.playerId);
+            }
             gameStats.events = gameTracker.pack().toString('base64');
             dataAccess.recordGameData(gameStats);
             game.emit('end');
@@ -686,17 +691,9 @@ module.exports = function createGame(options) {
                 }
             } else {
                 debug('checking for blocks/challenges');
-                if (command.action == 'steal') {
-                    message = format('{%d} attempted to steal from {%d}', playerIdx, command.target);
-                } else if (command.action == 'assassinate') {
-                    message = format('{%d} attempted to assassinate {%d}', playerIdx, command.target);
-                } else if (command.action == 'exchange') {
-                    message = format('{%d} attempted to exchange', playerIdx);
-                } else if (command.action == 'interrogate') {
-                    message = format('{%d} attempted to interrogate {%d}', playerIdx, command.target);
-                } else {
-                    message = format('{%d} attempted to draw %s', playerIdx, command.action);
-                }
+                const msgFunc = action.message || ((idx, _, action) => `{${idx}} attempted to draw ${action}`);
+                const message = msgFunc(playerIdx, command.target, command.action);
+
                 setState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: playerIdx,

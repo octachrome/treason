@@ -3,23 +3,14 @@ Treason Coup
 
 A clone of the card game Coup written in Node.js. Play online at http://treason.thebrown.net.
 
-To run the server locally, you will need to install CouchDB. On Windows, download and run the installer. On Mac OS X, go to https://couchdb.apache.org/ and download the APP file, placing it in your Applications folder. On Linux, install using your package manager, e.g.:
-
-    sudo apt-get install couchdb
-
-Then, checkout the source code, install Node.js, and run:
+To run it, checkout the source code, install Node.js (version 6 or later), and run:
 
     npm install
     node server.js [--debug]
 
 Then open `http://localhost:8080` in one or more browser windows. For an explanation of how to play, see `web/rules.html`.
 
-NB: If you have trouble installing CouchDB, some people have had success using PouchDB instead. To install it:
-
-    npm install -g pouchdb-server
-    pouchdb-server --port 5984
-
-I use BrowserStack for testing - thanks for the free acount guys!
+I use BrowserStack for testing - thanks for the free account guys!
 
 AI
 --

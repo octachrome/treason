@@ -106,7 +106,7 @@ GameTracker.prototype.pack = function () {
                 break;
         }
     });
-    return new Buffer(bytes);
+    return Buffer.from(bytes);
 };
 
 GameTracker.prototype.encodeInfluence = function (influence) {

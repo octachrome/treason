@@ -45,7 +45,7 @@
 vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''), // The name of the current player.
     playerId: ko.observable(localStorageGet('playerId') || ''), // The id of the current user.
-    bannerMessage: ko.observable(''), // Shown in a banner at the top of the screen.
+    alerts: ko.observableArray(), // Shown in a banner at the top of the screen.
     targetedAction: ko.observable(''), // During a coup, steal or assassination, the player that the user is targeting.
     weAllowed: ko.observable(false), // If true, the user has allowed the current action.
     chosenExchangeOptions: ko.observable({}), // During an exchange, the roles that the user has selected so far.
@@ -104,9 +104,6 @@ vm.state.state.name.subscribe(function (stateName) {
     }
 });
 vm.playing = vm.playingGame;
-vm.bannerVisible = ko.computed(function () {
-    return !vm.playing() && vm.bannerMessage();
-});
 vm.notifsEnabled.subscribe(function (enabled) {
     localStorageSet('notifsEnabled', enabled);
 });
@@ -137,8 +134,12 @@ vm.waitingToPlay.subscribe(function (waiting) {
     }
 });
 
-if (window.location.href.indexOf('amazonaws') >= 0) {
-    vm.bannerMessage('Update your bookmarks to <a href="http://coup.thebrown.net">http://coup.thebrown.net</a>');
+if (!window.WebSocket) {
+    vm.alerts.push('You are using an older browser: things may not work correctly');
+}
+
+function dismissAlert(message) {
+    vm.alerts.remove(message);
 }
 
 function hashGameId() {
@@ -219,9 +220,11 @@ socket.on('connect', function() {
         var globalMessageContainer = $('#global-chat-container');
         globalMessageContainer[0].scrollTop = globalMessageContainer[0].scrollHeight;
     });
+    socket.on('alert', function(data) {
+        vm.alerts.push(data.msg);
+    });
 });
 socket.on('disconnect', function () {
-    vm.bannerMessage('Disconnected');
     vm.state.state.name(null); // Opens the welcome screen.
     vm.needName(false);
     vm.loggedIn(false);
@@ -616,14 +619,56 @@ function canTarget(playerIdx) {
     // Cannot target dead player.
     return player.influenceCount() > 0;
 }
+function playerHasRole(player, role) {
+    return player.influence()
+        .filter(i=>!i.revealed())
+        .map(i=>i.role())
+        .indexOf(role) !== -1
+}
+
+var doublekillAction;
+function confirmDoubleKillAction() {
+    $('#doubleRevealWarning').modal('hide');
+    if (doublekillAction) {
+        doublekillAction();
+    }
+}
+function disableDoubleKillWarning() {
+    localStorageSet('doubleKillWarningDisabled', 'true');
+    confirmDoubleKillAction();
+}
+function possibleReconsiderAction(f) {
+    if (
+        localStorageGet('doubleKillWarningDisabled') !== 'true' &&
+        vm.state.playerIdx() === vm.state.state.target() &&
+        vm.state.state.action() === 'assassinate' &&
+        vm.state.players()[vm.state.playerIdx()].influenceCount() == 2
+    ) {
+        doublekillAction = f;
+        $('#doubleRevealWarning').modal('show');
+        return;
+    }
+    f();
+}
+
 function block(blockingRole) {
-    command('block', {
-        blockingRole: blockingRole
-    });
+    if (playerHasRole(
+            vm.state.players()[vm.state.playerIdx()],
+            blockingRole
+        )) {
+        command('block', {blockingRole: blockingRole})
+        return;
+    }
+    possibleReconsiderAction(
+        ()=>command('block', {blockingRole: blockingRole})
+    );
 }
 function challenge() {
-    command('challenge');
+    possibleReconsiderAction(
+        ()=>command('challenge')
+    );
 }
+
 function allow() {
     command('allow');
     vm.weAllowed(true);
@@ -709,6 +754,11 @@ function onLeaveGame(oldUrl) {
         history.pushState(null, '', oldUrl);
     }
 }
+$(window).on('beforeunload', function (e) {
+    if (vm.playing()) {
+        return (e.returnValue = 'Are you sure you want to leave this game?');
+    }
+});
 function formatMessage(message) {
     for (var i = 0; i < vm.state.players().length; i++) {
         var playerName;

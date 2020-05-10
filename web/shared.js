@@ -24,22 +24,26 @@
             cost: 3,
             roles: 'assassin',
             targeted: true,
-            blockedBy: ['contessa']
+            blockedBy: ['contessa'],
+            message: (idx, target) => `{${idx}} attempted to assassinate {${target}}`
         },
         'steal': {
             cost: 0,
             roles: 'captain',
             targeted: true,
-            blockedBy: ['captain', 'ambassador', 'inquisitor']
+            blockedBy: ['captain', 'ambassador', 'inquisitor'],
+            message: (idx, target) => `{${idx}} attempted to steal from {${target}}`
         },
         'exchange': {
             cost: 0,
-            roles: ['ambassador', 'inquisitor']
+            roles: ['ambassador', 'inquisitor'],
+            message: (idx) => `{${idx}} attempted to exchange`
         },
         'interrogate': {
             cost: 0,
             roles: 'inquisitor',
-            targeted: true
+            targeted: true,
+            message: (idx, target) => `{${idx}} attempted to interrogate {${target}}`
         },
         'apostatize': {
             cost: 1
@@ -49,7 +53,8 @@
             targeted: true
         },
         'embezzlement': {
-            cost: 0
+            cost: 0,
+            message: (idx, target) => `{${idx}} attempted to embezzel`
             //,roles: '!duke'
         }
     };
