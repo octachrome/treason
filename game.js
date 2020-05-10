@@ -92,8 +92,7 @@ module.exports = function createGame(options) {
         if (countReadyPlayers() < state.maxPlayers) {
             isObserver = false;
         }
-        else if (countReadyPlayers(true) < state.maxPlayers) {
-            makeAiObserver();
+        else if (countReadyPlayers(true) < state.maxPlayers && makeAisObservers()) {
             isObserver = false;
         }
         else {
@@ -106,7 +105,6 @@ module.exports = function createGame(options) {
         state.players.push(playerState);
         playerIfaces.push(playerIface);
 
-        state.numRoles = 3 + (state.numPlayers > 6 ? Math.floor((state.numPlayers - 5) / 2) : 0);
         state.numPlayers++;
 
         addHistory('player-joined', nextAdhocHistGroup(), playerState.name + ' joined the game' + (isObserver ? ' as an observer' : ''));
@@ -274,8 +272,7 @@ module.exports = function createGame(options) {
             if (countReadyPlayers() < state.maxPlayers) {
                 playerState.isReady = true;
             }
-            else if (countReadyPlayers(true) < state.maxPlayers) {
-                makeAiObserver();
+            else if (countReadyPlayers(true) < state.maxPlayers && makeAisObservers()) {
                 playerState.isReady = true;
             }
             else {
@@ -484,19 +481,10 @@ module.exports = function createGame(options) {
         }
         state.treasuryReserve = 4;
 
-        // For each 2 players after 6, add 1 card
-        // e.x. 6 players is 3 of each, 
-        // 7-8 players is 4 of each,
-        // 9-10 players is 5 of each, etc.
-        state.numRoles = 3 + (state.numPlayers > 6 ? Math.floor((state.numPlayers - 5) / 2) : 0);
-        deck = buildDeck();
-        gameTracker = new GameTracker();
+        let nonObservers = [];
 
-        var nonObservers = [];
-
-        var nextTeam = 1;
-        for (var i = 0; i < state.numPlayers; i++) {
-            var playerState = state.players[i];
+        for (let i = 0; i < state.numPlayers; i++) {
+            const playerState = state.players[i];
 
             playerState.influence = [];
             playerState.influenceCount = 0;
@@ -518,26 +506,38 @@ module.exports = function createGame(options) {
                 playerState.cash = 0;
             } else {
                 playerState.isObserver = false;
-                for (var j = 0; j < INFLUENCES; j++) {
-                    playerState.influence[j] = {
-                        role: deck.pop(),
-                        revealed: false
-                    };
-                }
-                playerState.influenceCount = INFLUENCES;
-                playerState.cash = INITIAL_CASH;
-
-                gameStats.players++;
-                if (!playerState.ai) {
-                    gameStats.humanPlayers++;
-                }
-
-                if (gameStats.gameType == 'reformation') {
-                    playerState.team = nextTeam;
-                    nextTeam *= -1;
-                }
-
                 nonObservers.push(i);
+            }
+        }
+
+        // For each 2 players after 6, add 1 card
+        // e.x. 6 players is 3 of each,
+        // 7-8 players is 4 of each,
+        // 9-10 players is 5 of each, etc.
+        state.numRoles = 3 + (nonObservers.length > 6 ? Math.floor((nonObservers.length - 5) / 2) : 0);
+        deck = buildDeck();
+
+        let nextTeam = 1;
+
+        for (let i of nonObservers) {
+            const playerState = state.players[i];
+            for (let j = 0; j < INFLUENCES; j++) {
+                playerState.influence[j] = {
+                    role: deck.pop(),
+                    revealed: false
+                };
+            }
+            playerState.influenceCount = INFLUENCES;
+            playerState.cash = INITIAL_CASH;
+
+            gameStats.players++;
+            if (!playerState.ai) {
+                gameStats.humanPlayers++;
+            }
+
+            if (gameStats.gameType == 'reformation') {
+                playerState.team = nextTeam;
+                nextTeam *= -1;
             }
         }
 
@@ -545,7 +545,7 @@ module.exports = function createGame(options) {
             state.freeForAll = false;
         }
 
-        var firstPlayer;
+        let firstPlayer;
         if (typeof options.firstPlayer === 'number') {
             firstPlayer = options.firstPlayer;
         }
@@ -561,6 +561,7 @@ module.exports = function createGame(options) {
             playerIdx: firstPlayer,
             winnerIdx: null
         });
+        gameTracker = new GameTracker();
         gameTracker.startOfTurn(state);
     }
 
@@ -575,14 +576,20 @@ module.exports = function createGame(options) {
         return readyCount;
     }
 
-    function makeAiObserver() {
+    // Make space for a human player by demoting AI players to observers
+    function makeAisObservers() {
         for (var i = state.numPlayers - 1; i >= 0; i--) {
             var playerState = state.players[i];
             if (playerState.ai && playerState.isReady !== 'observe') {
                 playerState.isReady = 'observe';
-                return;
+                if (countReadyPlayers() < state.maxPlayers) {
+                    // There is space now.
+                    return true;
+                }
             }
         }
+        // No space
+        return false;
     }
 
     function getGameRole(roles) {
