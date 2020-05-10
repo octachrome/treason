@@ -33,6 +33,7 @@ print `GIT_WORK_TREE="$deploy_to_dir" git checkout -f $branch`; die if $?;
 my $version = `git describe --tags --long`;
 chomp $version;
 open VERSION, ">$deploy_to_dir/web/version.js";
+print VERSION "window.server='$service_name';\n";
 print VERSION "window.version='$version';\n";
 close VERSION;
 print "DEPLOY: $branch($to) copied to '$deploy_to_dir'\n";

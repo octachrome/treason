@@ -6,6 +6,7 @@ const server = require('path').basename(__dirname);
 
 var contentPromise = null;
 
+// This is not used in production. Instead, the post-receive hook creates a static version.js.
 module.exports = function (req, res) {
     let content = `window.server = "${server}";`
     if (contentPromise == null) {
