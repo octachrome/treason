@@ -432,6 +432,10 @@ function createAiPlayer(game, options) {
         }
     }
 
+    function isReformation() {
+        return state.gameType == 'reformation';
+    }
+
     function playOurTurn() {
         var influence = ourInfluence();
         debug('influence: ' + influence);
@@ -444,9 +448,9 @@ function createAiPlayer(game, options) {
             playAction('steal', captainTarget());
         } else if (influence.indexOf('duke') >= 0 && state.treasuryReserve < 4 && !randomizeChoice()) {
             playAction('tax');
-        } else if (influence.indexOf('duke') == -1 && influence.indexOf('captain') > -1 && state.treasuryReserve > 2 && !randomizeChoice()) {
+        } else if (isReformation() & influence.indexOf('duke') == -1 && influence.indexOf('captain') > -1 && state.treasuryReserve > 2 && !randomizeChoice()) {
             playAction('embezzlement');
-        } else if (influence.indexOf('duke') == -1 && influence.indexOf('captain') == -1 && state.treasuryReserve > 1 && !randomizeChoice()) {
+        } else if (isReformation() & influence.indexOf('duke') == -1 && influence.indexOf('captain') == -1 && state.treasuryReserve > 1 && !randomizeChoice()) {
             playAction('embezzlement');
         } else if (countRevealedRoles('duke') == state.numRoles && influence.indexOf('captain') == -1 && !randomizeChoice()) {
             playAction('foreign-aid');
@@ -462,7 +466,7 @@ function createAiPlayer(game, options) {
             if (shouldBluff('tax')) {
                 possibleBluffs.push('tax');
             }
-            if (shouldBluff('embezzlement')) {
+            if (isReformation() & shouldBluff('embezzlement')) {
                 possibleBluffs.push('embezzlement');
             }
             if (possibleBluffs.length && !randomizeChoice()) {
@@ -474,7 +478,7 @@ function createAiPlayer(game, options) {
                     playAction('steal', captainTarget());
                 } else if (actionName == 'assassinate') {
                     playAction('assassinate', assassinTarget());
-                } else if (actionName == 'embezzlement') {
+                } else if (isReformation() && actionName == 'embezzlement') {
                     playAction('embezzlement');
                 }
                 // Now that we've bluffed, recalculate whether or not to bluff next time.
