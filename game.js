@@ -85,6 +85,7 @@ module.exports = function createGame(options) {
     game._test_setInfluence = _test_setInfluence;
     game._test_setCash = _test_setCash;
     game._test_setDeck = _test_setDeck;
+    game._test_setTreasuryReserve = _test_setTreasuryReserve;
     game._test_resetAllows = resetAllows;
 
     function playerJoined(playerIface) {
@@ -1499,6 +1500,10 @@ module.exports = function createGame(options) {
     function _test_setDeck(d) {
         deck = d;
         _test_fixedDeck = true;
+    }
+
+    function _test_setTreasuryReserve(reserve) {
+        state.treasuryReserve = reserve;
     }
 
     return game;
