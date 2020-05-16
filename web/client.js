@@ -802,7 +802,11 @@ function roleDescription(role) {
         return 'Block assassination';
     }
     if (role === 'duke') {
-        return 'Tax +$3; block foreign aid';
+        var desc = 'Tax +$3; block foreign aid';
+        if (vm.state.gameType() == 'reformation') {
+            desc += '; cannot embezzle'
+        }
+        return desc;
     }
     return '';
 }
