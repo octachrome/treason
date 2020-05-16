@@ -176,8 +176,16 @@ function createAiPlayer(game, options) {
         }
     }
 
+    function isOnOurTeam(playerIdx) {
+        return !state.freeForAll && currentPlayer.team !== state.players[playerIdx].team;
+    }
+
     function respondToAction() {
         trackClaim(state.state.playerIdx, state.state.action);
+        if (isOnOurTeam(state.state.playerIdx)) {
+            // No need to respond to our teammates' actions.
+            return;
+        }
         if (state.state.action === 'steal' && aiPlayer.cash === 0) {
             // If someone wants to steal nothing from us, go ahead.
             debug('allowing');
@@ -228,6 +236,10 @@ function createAiPlayer(game, options) {
 
     function respondToBlock() {
         trackClaim(state.state.target, state.state.blockingRole);
+        if (isOnOurTeam(state.state.playerIdx)) {
+            // No need to respond to our teammates' actions.
+            return;
+        }
         if (shouldChallenge()) {
             debug('challenging');
             command({
@@ -418,18 +430,6 @@ function createAiPlayer(game, options) {
         var role = getRoleForAction(actionOrRole) || actionOrRole;
         claims[playerIdx][role] = true;
         debug('player ' + playerIdx + ' claimed ' + role);
-    }
-
-    function isSameTeam(player, target) {
-        if (player.team != 0 && target.team != 0) {
-            if (player.team == target.team) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
     }
 
     function isReformation() {
