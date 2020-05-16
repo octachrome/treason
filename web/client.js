@@ -583,6 +583,9 @@ function blockingRoles() {
     return _.intersection(action.blockedBy || [], vm.state.roles());
 }
 function weCanChallenge() {
+    if (!weAreAlive()) {
+        return false;
+    }
     var action = actions[vm.state.state.action()];
     if (!action) {
         return false;
