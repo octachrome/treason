@@ -1,5 +1,5 @@
 <ul class="list-group" data-bind="foreach: state.players">
-    <li class="list-group-item" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx(), 'catholic-player': $root.state.players()[$index()].team() == 1, 'protestant-player': $root.state.players()[$index()].team() == -1, 'dead-team' : influenceCount() == 0 }">
+    <li class="list-group-item" data-bind="css: { 'current-player' : $index() == $root.state.state.playerIdx() }">
         <div class="row" data-bind="visible: $root.waitingToPlay">
             <div class="col-xs-6">
                 <span data-bind="text: name, css: { 'dead-player' : isReady() == 'observe' }"></span>
@@ -14,6 +14,8 @@
                 <span data-bind="text: name, css: { 'dead-player' : influenceCount() == 0 }"></span>
                 <span class="badge" data-bind="text: '$' + cash(), visible: !isObserver()"></span>
                 <span class="glyphicon glyphicon-eye-open observer" data-bind="visible: isObserver()"></span>
+                <i class="team-red" data-bind="visible: influenceCount() > 0 && team() == 1"></i>
+                <i class="team-blue" data-bind="visible: influenceCount() > 0 && team() == -1"></i>
             </div>
             <div class="col-xs-6">
                 <!-- ko foreach: influence -->

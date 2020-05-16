@@ -63,6 +63,14 @@ i.allow:before {
 i.user:before {
     content: "\e971";
 }
+i.team-red:before {
+    content: "\e902";
+    color: darkred;
+}
+i.team-blue:before {
+    content: "\e904";
+    color: navy;
+}
 body {
     padding-top: 15px;
 }
@@ -159,15 +167,6 @@ div.chat {
 }
 .current-player {
     border-left: 5px solid black;
-}
-.catholic-player {
-    border-right: 5px solid darkred;
-}
-.protestant-player {
-    border-right: 5px solid navy;
-}
-.dead-team {
-    border-right: 5px solid #aaa !important;
 }
 .dead-player {
     color: #aaa;

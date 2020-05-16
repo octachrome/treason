@@ -275,7 +275,7 @@ socket.on('chat', function (data) {
     if (data.from == vm.state.playerIdx()) {
         from = 'You';
     } else {
-        var player = vm.state.players()[data.from];
+        var player = getPlayer(data.from);
         from = player ? player.name() : 'Unknown';
         notifyPlayer(from + ' says: ' + data.message);
     }
@@ -481,7 +481,7 @@ function winnerName() {
     return playerName(vm.state.state.winnerIdx());
 }
 function playerName(playerIdx) {
-    var player = vm.state.players()[playerIdx];
+    var player = getPlayer(playerIdx);
     if (player) {
         return player.name();
     }
@@ -621,7 +621,7 @@ function canTarget(playerIdx) {
         // Cannot target ourselves.
         return false;
     }
-    var player = vm.state.players()[playerIdx];
+    var player = getPlayer(playerIdx);
     if (!player) {
         return false;
     }
@@ -633,8 +633,9 @@ function canTarget(playerIdx) {
     return player.influenceCount() > 0;
 }
 function isOnOurTeam(playerIdx) {
-    var player = vm.state.players()[playerIdx];
-    return !vm.state.freeForAll() && vm.state.players()[vm.state.playerIdx()].team() === player.team()
+    var p = ourPlayer();
+    var player = getPlayer(playerIdx);
+    return p && player && !vm.state.freeForAll() && p.team() === player.team();
 }
 function playerHasRole(player, role) {
     return player.influence()
@@ -659,7 +660,7 @@ function possibleReconsiderAction(f) {
         localStorageGet('doubleKillWarningDisabled') !== 'true' &&
         vm.state.playerIdx() === vm.state.state.target() &&
         vm.state.state.action() === 'assassinate' &&
-        vm.state.players()[vm.state.playerIdx()].influenceCount() == 2
+        ourInfluenceCount() == 2
     ) {
         doublekillAction = f;
         $('#doubleRevealWarning').modal('show');
@@ -670,7 +671,7 @@ function possibleReconsiderAction(f) {
 
 function block(blockingRole) {
     if (playerHasRole(
-            vm.state.players()[vm.state.playerIdx()],
+            ourPlayer(),
             blockingRole
         )) {
         command('block', {blockingRole: blockingRole})
@@ -703,7 +704,10 @@ function theyMustReveal() {
     return vm.state.state.name() == states.REVEAL_INFLUENCE && vm.state.state.playerToReveal() != vm.state.playerIdx();
 }
 function ourPlayer() {
-    return vm.state.players()[vm.state.playerIdx()];
+    return getPlayer(vm.state.playerIdx());
+}
+function getPlayer(playerIdx) {
+    return vm.state.players()[playerIdx];
 }
 function ourInfluence() {
     var player = ourPlayer();
@@ -782,7 +786,7 @@ function formatMessage(message) {
         if (i == vm.state.playerIdx()) {
             playerName = 'you';
         } else {
-            var player = vm.state.players()[i];
+            var player = getPlayer(i);
             playerName = player ? player.name() : 'unknown';
         }
         message = message.replace(new RegExp('\\{' + i + '\\}', 'g'), playerName);
