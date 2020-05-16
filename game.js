@@ -727,6 +727,9 @@ module.exports = function createGame(options) {
                 if (playerIdx == state.state.playerIdx) {
                     throw new GameException('Cannot challenge your own action');
                 }
+                if (!canTarget(playerIdx, state.state.playerIdx)) {
+                    throw new GameException('Cannot challenge player on the same team');
+                }
                 action = actions[state.state.action];
                 if (!action) {
                     throw new GameException('Unknown challenge action');
@@ -739,6 +742,9 @@ module.exports = function createGame(options) {
             } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 if (playerIdx == state.state.target) {
                     throw new GameException('Cannot challenge your own block');
+                }
+                if (!canTarget(playerIdx, state.state.target)) {
+                    throw new GameException('Cannot challenge player on the same team');
                 }
                 challenge(playerIdx, state.state.target, state.state.blockingRole);
 

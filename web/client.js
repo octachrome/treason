@@ -592,11 +592,19 @@ function weCanChallenge() {
             // Cannot challenge our own action.
             return false;
         }
+        if (isOnOurTeam(vm.state.state.playerIdx())) {
+            // Cannot challenge our teammate's action.
+            return false;
+        }
         // Only role-based actions can be challenged.
         return !!action.roles;
     } else if (vm.state.state.name() == states.BLOCK_RESPONSE) {
         if (vm.state.state.target() === vm.state.playerIdx()) {
             // Cannot challenge our own block.
+            return false;
+        }
+        if (isOnOurTeam(vm.state.state.target())) {
+            // Cannot challenge our teammate's blocks.
             return false;
         }
         return true;
