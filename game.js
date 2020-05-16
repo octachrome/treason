@@ -54,6 +54,7 @@ module.exports = function createGame(options) {
         roles: [],
         treasuryReserve: 0,
         freeForAll: true,
+        allowChallengeTeamMates: true,
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
         },
@@ -726,7 +727,7 @@ module.exports = function createGame(options) {
                 if (playerIdx == state.state.playerIdx) {
                     throw new GameException('Cannot challenge your own action');
                 }
-                if (!canTarget(playerIdx, state.state.playerIdx)) {
+                if (!state.allowChallengeTeamMates && !canTarget(playerIdx, state.state.playerIdx)) {
                     throw new GameException('Cannot challenge player on the same team');
                 }
                 action = actions[state.state.action];
@@ -742,7 +743,7 @@ module.exports = function createGame(options) {
                 if (playerIdx == state.state.target) {
                     throw new GameException('Cannot challenge your own block');
                 }
-                if (!canTarget(playerIdx, state.state.target)) {
+                if (!state.allowChallengeTeamMates && !canTarget(playerIdx, state.state.target)) {
                     throw new GameException('Cannot challenge player on the same team');
                 }
                 challenge(playerIdx, state.state.target, state.state.blockingRole);
@@ -995,10 +996,13 @@ module.exports = function createGame(options) {
         allows = [];
         // The player who took the action does not need to allow it.
         allows[initiatingPlayerIdx] = true;
-        // Players on the same team do not need to allow each other's actions.
-        for (var i = 0; i < state.numPlayers; i++) {
-            if (!canTarget(initiatingPlayerIdx, i)) {
-                allows[i] = true;
+
+        if (state.state.action == 'foreign-aid') {
+            // Players on the same team cannot block each other from taking foreign aid.
+            for (var i = 0; i < state.numPlayers; i++) {
+                if (!canTarget(initiatingPlayerIdx, i)) {
+                    allows[i] = true;
+                }
             }
         }
     }

@@ -81,6 +81,7 @@ vm.state = ko.mapping.fromJS({
     roles: [],
     treasuryReserve: null,
     freeForAll: null,
+    allowChallengeTeamMates: null,
     state: {
         name: null,
         playerIdx: null,
@@ -595,7 +596,7 @@ function weCanChallenge() {
             // Cannot challenge our own action.
             return false;
         }
-        if (isOnOurTeam(vm.state.state.playerIdx())) {
+        if (!vm.state.allowChallengeTeamMates() && isOnOurTeam(vm.state.state.playerIdx())) {
             // Cannot challenge our teammate's action.
             return false;
         }
@@ -606,7 +607,7 @@ function weCanChallenge() {
             // Cannot challenge our own block.
             return false;
         }
-        if (isOnOurTeam(vm.state.state.target())) {
+        if (!vm.state.allowChallengeTeamMates() && isOnOurTeam(vm.state.state.target())) {
             // Cannot challenge our teammate's blocks.
             return false;
         }
