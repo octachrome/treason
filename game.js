@@ -694,7 +694,7 @@ module.exports = function createGame(options) {
                 if (state.players[command.target].influenceCount == 0) {
                     throw new GameException('Cannot target dead player');
                 }
-                if (command.action != 'conversion' && !state.freeForAll && state.players[playerIdx].team == state.players[command.target].team) {
+                if (command.action != 'convert' && !state.freeForAll && state.players[playerIdx].team == state.players[command.target].team) {
                     throw new GameException('Cannot target player on the same team');
                 }
             }
@@ -1230,19 +1230,19 @@ module.exports = function createGame(options) {
                 confession: confession
             });
             return false; // Not yet end of turn
-        } else if (actionState.action == 'apostatize') {
+        } else if (actionState.action == 'change-team') {
             playerState.team *= -1;
-            addHistory('apostatize', curTurnHistGroup(), '{%d} became an apostate', playerIdx);
+            addHistory('change-team', curTurnHistGroup(), '{%d} changed to the %s team', playerIdx, getTeamName(playerState.team));
             state.treasuryReserve += 1;
             checkFreeForAll();
-        } else if (actionState.action == 'conversion') {
+        } else if (actionState.action == 'convert') {
             target = state.players[actionState.target];
             target.team *= -1;
-            addHistory('conversion', curTurnHistGroup(), '{%d} converted {%d}', playerIdx, actionState.target);
+            addHistory('convert', curTurnHistGroup(), '{%d} converted {%d} to the %s team', playerIdx, actionState.target, getTeamName(target.team));
             state.treasuryReserve += 2;
             checkFreeForAll();
-        } else if (actionState.action == 'embezzlement') {
-            addHistory('conversion', curTurnHistGroup(), '{%d} embezzled from the treasury', playerIdx);
+        } else if (actionState.action == 'embezzle') {
+            addHistory('convert', curTurnHistGroup(), '{%d} embezzled from the treasury', playerIdx);
             playerState.cash += state.treasuryReserve;
             state.treasuryReserve = 0;
         } else {
@@ -1250,6 +1250,10 @@ module.exports = function createGame(options) {
             addHistory(actionState.action, curTurnHistGroup(), '{%d} drew %s', playerIdx, actionState.action);
         }
         return true; // End of turn
+    }
+
+    function getTeamName(team) {
+        return team == 1 ? 'red' : 'blue';
     }
 
     function setState(s) {

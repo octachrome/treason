@@ -293,7 +293,7 @@ function createAiPlayer(game, options) {
             return false;
         }
 
-        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'embezzlement') {
+        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'embezzle') {
             if (countRevealedRoles('duke') === state.numRoles) {
                 return false;
             }
@@ -449,9 +449,9 @@ function createAiPlayer(game, options) {
         } else if (influence.indexOf('duke') >= 0 && state.treasuryReserve < 4 && !randomizeChoice()) {
             playAction('tax');
         } else if (isReformation() & influence.indexOf('duke') == -1 && influence.indexOf('captain') > -1 && state.treasuryReserve > 2 && !randomizeChoice()) {
-            playAction('embezzlement');
+            playAction('embezzle');
         } else if (isReformation() & influence.indexOf('duke') == -1 && influence.indexOf('captain') == -1 && state.treasuryReserve > 1 && !randomizeChoice()) {
-            playAction('embezzlement');
+            playAction('embezzle');
         } else if (countRevealedRoles('duke') == state.numRoles && influence.indexOf('captain') == -1 && !randomizeChoice()) {
             playAction('foreign-aid');
         } else {
@@ -466,8 +466,8 @@ function createAiPlayer(game, options) {
             if (shouldBluff('tax')) {
                 possibleBluffs.push('tax');
             }
-            if (isReformation() & shouldBluff('embezzlement')) {
-                possibleBluffs.push('embezzlement');
+            if (isReformation() & shouldBluff('embezzle')) {
+                possibleBluffs.push('embezzle');
             }
             if (possibleBluffs.length && !randomizeChoice()) {
                 // Randomly select one.
@@ -478,8 +478,8 @@ function createAiPlayer(game, options) {
                     playAction('steal', captainTarget());
                 } else if (actionName == 'assassinate') {
                     playAction('assassinate', assassinTarget());
-                } else if (isReformation() && actionName == 'embezzlement') {
-                    playAction('embezzlement');
+                } else if (isReformation() && actionName == 'embezzle') {
+                    playAction('embezzle');
                 }
                 // Now that we've bluffed, recalculate whether or not to bluff next time.
                 bluffChoice = rand.random() < options.chanceToBluff;
@@ -508,10 +508,10 @@ function createAiPlayer(game, options) {
         } else {
             role = actionNameOrRole;
         }
-        if (actionNameOrRole === 'embezzlement' && state.treasuryReserve == 0) {
+        if (actionNameOrRole === 'embezzle' && state.treasuryReserve == 0) {
             return false;
         } 
-        if (actionNameOrRole === 'embezzlement' && influence.indexOf('duke') >= 0 && state.treasuryReserve > 3) {
+        if (actionNameOrRole === 'embezzle' && influence.indexOf('duke') >= 0 && state.treasuryReserve > 3) {
             return true;
         }
         if (calledBluffs[state.playerIdx] && calledBluffs[state.playerIdx][role]) {

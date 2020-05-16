@@ -505,9 +505,9 @@ function canPlayAction(actionName) {
     if (!player) {
         return false;
     }
-    if (player.cash() >= 10 && actionName != 'coup' && actionName != 'apostatize' && actionName != 'conversion') {
+    if (player.cash() >= 10 && actionName != 'coup' && actionName != 'change-team' && actionName != 'convert') {
         return false;
-    } else if (actionName == 'embezzlement' && vm.state.treasuryReserve() == 0) {
+    } else if (actionName == 'embezzle' && vm.state.treasuryReserve() == 0) {
         return false;
     } else {
         return player.cash() >= action.cost;
@@ -610,7 +610,7 @@ function canTarget(playerIdx) {
         return false;
     }
     // If we are in team combat and these two players are on the same team, do not target
-    if (vm.targetedAction() !== 'conversion' && !vm.state.freeForAll() && vm.state.players()[vm.state.playerIdx()].team() === player.team()) {
+    if (vm.targetedAction() !== 'convert' && !vm.state.freeForAll() && vm.state.players()[vm.state.playerIdx()].team() === player.team()) {
         return false;
     }
     // Cannot target dead player.
@@ -845,9 +845,9 @@ function actionNames() {
         'income',
         'foreign-aid',
         'coup',
-        'apostatize',
-        'conversion',
-        'embezzlement'
+        'change-team',
+        'convert',
+        'embezzle'
     ];
 }
 // Exchange action requires inquisitor or ambassador - return whichever one is in the current game type.

@@ -163,13 +163,13 @@ GameTracker.prototype.encodeAction = function (action, target) {
     else if (action === 'income') {
         return (8+5) << 4;
     }
-    else if (action == 'apostatize') {
+    else if (action == 'change-team') {
         return 6 << 4;
     }
-    else if (action == 'conversion') {
+    else if (action == 'convert') {
         return 7 << 4 | (target & 0xf);
     }
-    else if (action == 'embezzlement') {
+    else if (action == 'embezzle') {
         return (8+6) << 4;
     }
 };
@@ -277,13 +277,13 @@ GameTracker.prototype.decodeActionEvent = function (actionCode) {
             action = 'income';
             break;
         case 6:
-            action = 'apostatize';
+            action = 'change-team';
             break;
         case 7:
-            action = 'conversion';
+            action = 'convert';
             break;
         case 8+6:
-            action = 'embezzlement';
+            action = 'embezzle';
             break;
     }
     var event = {

@@ -45,20 +45,20 @@
             targeted: true,
             message: (idx, target) => `{${idx}} attempted to interrogate {${target}}`
         },
-        'apostatize': {
+        'change-team': {
             gameType: 'reformation',
             cost: 1
         },
-        'conversion': {
+        'convert': {
             gameType: 'reformation',
             cost: 2,
             targeted: true
         },
-        'embezzlement': {
+        'embezzle': {
             gameType: 'reformation',
             cost: 0,
             roles: '!duke',
-            message: (idx, target) => `{${idx}} attempted to embezzel`
+            message: (idx, target) => `{${idx}} attempted to embezzle`
         }
     };
 
