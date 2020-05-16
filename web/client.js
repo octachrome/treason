@@ -505,7 +505,7 @@ function canPlayAction(actionName) {
     if (!player) {
         return false;
     }
-    if (player.cash() >= 10 && actionName != 'coup' && actionName != 'change-team' && actionName != 'convert') {
+    if (player.cash() >= 10 && actionName != 'coup') {
         return false;
     } else if (actionName == 'embezzle' && vm.state.treasuryReserve() == 0) {
         return false;
