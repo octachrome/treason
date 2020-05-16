@@ -102,6 +102,7 @@
             Waiting for blocks/challenges
         <!-- /ko -->
         <!-- ko if: weCanBlock() || weCanChallenge() -->
+            <p data-bind="text: ourTeamWarning()"></p>
             <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
                 <i class="allow"></i>
                 <span>Allow</span>

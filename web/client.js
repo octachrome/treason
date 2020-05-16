@@ -637,6 +637,22 @@ function isOnOurTeam(playerIdx) {
     var player = getPlayer(playerIdx);
     return p && player && !vm.state.freeForAll() && p.team() === player.team();
 }
+function ourTeamWarning() {
+    var teammateIdx = null;
+    if (vm.state.state.name() == states.ACTION_RESPONSE) {
+        if (vm.state.allowChallengeTeamMates() && isOnOurTeam(vm.state.state.playerIdx())) {
+            teammateIdx = vm.state.state.playerIdx();
+        }
+    } else if (vm.state.state.name() == states.BLOCK_RESPONSE) {
+        if (vm.state.allowChallengeTeamMates() && isOnOurTeam(vm.state.state.target())) {
+            teammateIdx = vm.state.state.target();
+        }
+    }
+    if (teammateIdx != null) {
+        var player = getPlayer(teammateIdx);
+        return player && (player.name() + ' is on your team');
+    }
+}
 function playerHasRole(player, role) {
     return player.influence()
         .filter(i=>!i.revealed())
