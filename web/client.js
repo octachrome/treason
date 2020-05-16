@@ -547,6 +547,9 @@ function command(command, options) {
     socket.emit('command', data);
 }
 function weCanBlock() {
+    if (vm.state.state.name() != states.ACTION_RESPONSE && vm.state.state.name() != states.FINAL_ACTION_RESPONSE) {
+        return false;
+    }
     if (!weAreAlive()) {
         return false;
     }
@@ -554,7 +557,8 @@ function weCanBlock() {
         // Cannot block our own action.
         return false;
     }
-    if (vm.state.state.name() != states.ACTION_RESPONSE && vm.state.state.name() != states.FINAL_ACTION_RESPONSE) {
+    if (isOnOurTeam(vm.state.state.playerIdx())) {
+        // Cannot block our teammate's action.
         return false;
     }
     var action = actions[vm.state.state.action()];
@@ -610,11 +614,15 @@ function canTarget(playerIdx) {
         return false;
     }
     // If we are in team combat and these two players are on the same team, do not target
-    if (vm.targetedAction() !== 'convert' && !vm.state.freeForAll() && vm.state.players()[vm.state.playerIdx()].team() === player.team()) {
+    if (vm.targetedAction() !== 'convert' && isOnOurTeam(playerIdx)) {
         return false;
     }
     // Cannot target dead player.
     return player.influenceCount() > 0;
+}
+function isOnOurTeam(playerIdx) {
+    var player = vm.state.players()[playerIdx];
+    return !vm.state.freeForAll() && vm.state.players()[vm.state.playerIdx()].team() === player.team()
 }
 function playerHasRole(player, role) {
     return player.influence()

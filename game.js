@@ -694,7 +694,7 @@ module.exports = function createGame(options) {
                 if (state.players[command.target].influenceCount == 0) {
                     throw new GameException('Cannot target dead player');
                 }
-                if (command.action != 'convert' && !state.freeForAll && state.players[playerIdx].team == state.players[command.target].team) {
+                if (command.action != 'convert' && !canTarget(playerIdx, command.target)) {
                     throw new GameException('Cannot target player on the same team');
                 }
             }
@@ -791,6 +791,9 @@ module.exports = function createGame(options) {
             }
             if (playerIdx == state.state.playerIdx) {
                 throw new GameException('Cannot block your own action');
+            }
+            if (!canTarget(playerIdx, state.state.playerIdx)) {
+                throw new GameException('Cannot block player on the same team');
             }
             if (!action.blockedBy) {
                 throw new GameException('Action cannot be blocked');
@@ -893,6 +896,10 @@ module.exports = function createGame(options) {
         emitState();
     }
 
+    function canTarget(playerIdx, target) {
+        return state.freeForAll || state.players[playerIdx].team != state.players[target].team;
+    }
+
     function allow(playerIdx) {
         if (state.state.name == stateNames.BLOCK_RESPONSE) {
             if (state.state.target == playerIdx) {
@@ -983,6 +990,12 @@ module.exports = function createGame(options) {
         allows = [];
         // The player who took the action does not need to allow it.
         allows[initiatingPlayerIdx] = true;
+        // Players on the same team do not need to allow each other's actions.
+        for (var i = 0; i < state.numPlayers; i++) {
+            if (!canTarget(initiatingPlayerIdx, i)) {
+                allows[i] = true;
+            }
+        }
     }
 
     function everyoneAllows() {

@@ -98,11 +98,10 @@
     <div data-bind="visible: theyAreInState('action-response')">
         <i data-bind="css: state.state.action"></i>
         <span data-bind="text: stateMessage()"></span><br/><br/>
-        <!-- ko if: !weAreAlive() -->
-            <br/>
+        <!-- ko if: !weCanBlock() && !weCanChallenge() -->
             Waiting for blocks/challenges
         <!-- /ko -->
-        <!-- ko if: weAreAlive() -->
+        <!-- ko if: weCanBlock() || weCanChallenge() -->
             <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
                 <i class="allow"></i>
                 <span>Allow</span>
