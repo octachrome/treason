@@ -597,8 +597,15 @@ module.exports = function createGame(options) {
         return false;
     }
 
-    function getGameRole(roles) {
-        return lodash.intersection(state.roles, lodash.flatten([roles]))[0];
+    // Exchange action requires inquisitor or ambassador - return whichever one is in the current game type.
+    function getActionRole(action) {
+        // action.roles can be a string or an array
+        for (let role of lodash.flatten([action.roles])) {
+            if (state.roles.includes(role.replace(/^!/, ''))) {
+                return role;
+            }
+        }
+        return null;
     }
 
     function actionPresentInGame(actionName) {
@@ -606,7 +613,7 @@ module.exports = function createGame(options) {
         if (action == null) {
             return false;
         }
-        if (action.roles && !getGameRole(action.roles)) {
+        if (action.roles && !getActionRole(action)) {
             return false;
         }
         if (action.gameType && action.gameType != state.gameType) {
@@ -727,7 +734,7 @@ module.exports = function createGame(options) {
                 if (!action.roles) {
                     throw new GameException('Action cannot be challenged');
                 }
-                challenge(playerIdx, state.state.playerIdx, getGameRole(action.roles));
+                challenge(playerIdx, state.state.playerIdx, getActionRole(action));
 
             } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 if (playerIdx == state.state.target) {
@@ -869,7 +876,9 @@ module.exports = function createGame(options) {
                 if (idx == null) {
                     throw new GameException('Target does not have the confessed role');
                 }
-                target.influence[idx].role = swapRole(state.state.confession);
+                deck.push(state.state.confession);
+                deck = shuffle(deck);
+                target.influence[idx].role = deck.pop();
                 addHistory('interrogate', curTurnHistGroup(), '{%d} forced {%d} to exchange roles', playerIdx, state.state.target);
             }
             else {
@@ -989,7 +998,29 @@ module.exports = function createGame(options) {
         return true;
     }
 
-    function challenge(playerIdx, challengedPlayerIdx, challegedRole) {
+    function proveHasRole(challengedPlayer, role) {
+        const influenceIdx = indexOfInfluence(challengedPlayer, role);
+        if (influenceIdx != null) {
+            return [influenceIdx];
+        }
+    }
+
+    function proveDoesNotHaveRole(challengedPlayer, role) {
+        const influenceIdx = indexOfInfluence(challengedPlayer, role);
+        if (influenceIdx == null) {
+            const proof = [];
+            for (var i = 0; i < challengedPlayer.influence.length; i++) {
+                if (!challengedPlayer.influence[i].revealed) {
+                    proof.push(i);
+                }
+            }
+            return proof;
+        } else {
+            return null;
+        }
+    }
+
+    function challenge(playerIdx, challengedPlayerIdx, challengedRole) {
         var revealedRole, endOfTurn;
         var playerState = state.players[playerIdx];
         var challengedPlayer = state.players[challengedPlayerIdx];
@@ -1003,110 +1034,35 @@ module.exports = function createGame(options) {
             // An action is being challenged - log it (<player> attempted to <action>).
             addHistory(state.state.action, curTurnHistGroup(), state.state.message);
         }
-
-        var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole.replace('!', ''));
-        /*if (challegedRole.indexOf('!') === 0) {
-            if (influenceIdx != null) {
-                // Player does not have role - challenge won.
-                gameTracker.challenge(playerIdx, challengedPlayerIdx, false);
-                
-                // Deal the challenged player a replacement card.
-                var oldRole = challengedPlayer.influence[influenceIdx].role;
-                challengedPlayer.influence[influenceIdx].role = swapRole(oldRole);
-
-                var message = format('{%d} incorrectly challenged {%d}; {%d} exchanged %s for a new role',
-                    playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRole);
-
-                // If someone assassinates you, you bluff contessa, and they challenge you, then you lose two influence: one for the assassination, one for the successful challenge.
-                var wouldLoseTwoInfluences = state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate' &&
-                    state.state.target == challengedPlayerIdx;
-
-                // If the challenged player is losing their last influence,
-                if (challengedPlayer.influenceCount <= 1 || wouldLoseTwoInfluences) {
-                    // Then the challenged player is dead. Reveal an influence.
-                    revealedRole = revealFirstInfluence(challengedPlayer);
-                    addHistory('successful-challenge', curTurnHistGroup(), '%s; {%d} revealed %s', message, challengedPlayerIdx, revealedRole);
-
-                    if (challengedPlayer.influenceCount == 0) {
-                        afterPlayerDeath(challengedPlayerIdx);
-                    }
-
-                    endOfTurn = afterSuccessfulChallenge();
-
-                    if (endOfTurn) {
-                        nextTurn();
-                    }
-                } else {
-                    setState({
-                        name: stateNames.REVEAL_INFLUENCE,
-                        playerIdx: state.state.playerIdx,
-                        action: state.state.action,
-                        target: state.state.target,
-                        blockingRole: state.state.blockingRole,
-                        message: message,
-                        reason: 'successful-challenge',
-                        playerToReveal: challengedPlayerIdx
-                    });
-                }
-            } else {
-                // Player has no duke, embezzlement is legal
-                gameTracker.challenge(playerIdx, challengedPlayerIdx, true);
-
-                // Must swap entire hand when embezzlement is incorrectly challenged
-                for (var i in challengedPlayer.influence) {
-                    var oldRole = challengedPlayer.influence[i].role;
-                    challengedPlayer.influence[i].role = swapRole(oldRole);
-                }
-
-                var message = format('{%d} incorrectly challenged {%d}; {%d} exchanged entire hand for new roles',
-                    playerIdx, challengedPlayerIdx, challengedPlayerIdx);
-
-                // Refund the challenged player, if the action cost them money.
-                if (state.state.name == stateNames.ACTION_RESPONSE) {
-                    var cost = actions[state.state.action].cost;
-                    if (cost) {
-                        challengedPlayer.cash += cost;
-                    }
-                }
-
-                // If the challenger is losing their last influence,
-                if (playerState.influenceCount <= 1) {
-                    // Then the challenger is dead. Reveal an influence.
-                    revealedRole = revealFirstInfluence(playerState);
-                    addHistory('incorrect-challenge', curTurnHistGroup(), '%s; {%d} revealed %s', message, playerIdx, revealedRole);
-
-                    endOfTurn = afterIncorrectChallenge();
-
-                    afterPlayerDeath(playerIdx);
-
-                    if (endOfTurn) {
-                        nextTurn();
-                    }
-                } else {
-                    // The action will take place after the reveal.
-                    setState({
-                        name: stateNames.REVEAL_INFLUENCE,
-                        playerIdx: state.state.playerIdx,
-                        action: state.state.action,
-                        target: state.state.target,
-                        blockingRole: state.state.blockingRole,
-                        message: message,
-                        reason: 'incorrect-challenge',
-                        playerToReveal: playerIdx
-                    });
-                }
-            }
-        } else*/
-        if (influenceIdx != null) {
-            // Player has role - challenge lost.
+        let proof;
+        if (challengedRole[0] == '!') {
+            proof = proveDoesNotHaveRole(challengedPlayer, challengedRole.substr(1));
+        }
+        else {
+            proof = proveHasRole(challengedPlayer, challengedRole);
+        }
+        if (proof != null) {
+            // There is proof - challenge lost.
             gameTracker.challenge(playerIdx, challengedPlayerIdx, false);
 
-            // Deal the challenged player a replacement card.
-            var oldRole = challengedPlayer.influence[influenceIdx].role;
-            challengedPlayer.influence[influenceIdx].role = swapRole(oldRole);
+            // Deal the challenged player replacement cards.
+            let oldRoles = '';
+            for (let influenceIdx of proof) {
+                const role = challengedPlayer.influence[influenceIdx].role;
+                if (oldRoles) {
+                    oldRoles += ' and ';
+                }
+                oldRoles += role;
+                deck.push(role);
+            }
+            deck = shuffle(deck);
+            for (let influenceIdx of proof) {
+                challengedPlayer.influence[influenceIdx].role = deck.pop();
+            }
 
-            var message = format('{%d} incorrectly challenged {%d}; {%d} exchanged %s for a new role',
-                playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRole);
+            var message = format('{%d} incorrectly challenged {%d}; {%d} exchanged %s for %s',
+                playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRoles,
+                proof.length == 1 ? 'a new role' : 'new roles');
 
             // If the challenger is losing their last influence,
             if (playerState.influenceCount <= 1) {
@@ -1299,12 +1255,6 @@ module.exports = function createGame(options) {
     function setState(s) {
         debug('State change from ' + state.state.name + ' to ' + s.name);
         state.state = s;
-    }
-
-    function swapRole(role) {
-        deck.push(role);
-        deck = shuffle(deck);
-        return deck.pop();
     }
 
     function nextTurn() {

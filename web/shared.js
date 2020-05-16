@@ -57,8 +57,8 @@
         'embezzlement': {
             gameType: 'reformation',
             cost: 0,
+            roles: '!duke',
             message: (idx, target) => `{${idx}} attempted to embezzel`
-            //,roles: '!duke'
         }
     };
 
