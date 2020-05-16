@@ -156,6 +156,7 @@
             Waiting for challenges
         <!-- /ko -->
         <!-- ko if: weAreAlive() -->
+            <p data-bind="text: ourTeamWarning()"></p>
             <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
                 <i class="allow"></i>
                 <span>Allow</span>
