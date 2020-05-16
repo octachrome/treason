@@ -492,7 +492,7 @@ function actionPresentInGame(actionName) {
     if (action == null) {
         return false;
     }
-    if (action.roles && !getActionRole(action.roles)) {
+    if (action.roles && !getActionRole(action)) {
         return false;
     }
     if (action.gameType && action.gameType != vm.state.gameType()) {
@@ -816,7 +816,7 @@ function roleDescription(role) {
         return 'Pay $3 to reveal another player\'s influence; blocked by contessa';
     }
     if (role === 'captain') {
-        return 'Steal $2 from another player; blocked by captain and ' + getActionRole(['ambassador', 'inquisitor']);
+        return 'Steal $2 from another player; blocked by captain and ' + getActionRole(actions.exchange);
     }
     if (role === 'contessa') {
         return 'Block assassination';
@@ -832,7 +832,8 @@ function roleDescription(role) {
 }
 function buttonActionClass(actionName) {
     var action = actions[actionName];
-    if (action && action.roles) {
+    var role = getActionRole(action);
+    if (role && role[0] != '!') {
         return 'btn-' + actionName;
     }
     for (var property in actions) {
@@ -871,14 +872,16 @@ function actionNames() {
     ];
 }
 // Exchange action requires inquisitor or ambassador - return whichever one is in the current game type.
-function getActionRole(roles) {
-    var gameRoles = vm.state && vm.state.roles && vm.state.roles() || [];
-    // roles can be a string or an array
-    roles = _.flatten([roles]);
-    for (var i = 0; i < roles.length; i++) {
-        var role = roles[i];
-        if (gameRoles.indexOf(role.replace(/^!/, '')) >= 0) {
-            return role;
+function getActionRole(action) {
+    if (action && action.roles) {
+        var gameRoles = vm.state && vm.state.roles && vm.state.roles() || [];
+        // action.roles can be a string or an array
+        var roles = _.flatten([action.roles]);
+        for (var i = 0; i < roles.length; i++) {
+            var role = roles[i];
+            if (gameRoles.indexOf(role.replace(/^!/, '')) >= 0) {
+                return role;
+            }
         }
     }
     return null;
