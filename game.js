@@ -215,6 +215,7 @@ module.exports = function createGame(options) {
                     }
                 }
                 playerState.influenceCount = 0;
+                checkFreeForAll();
                 var end = checkForGameEnd();
                 if (!end) {
                     if (state.state.playerIdx == playerIdx) {
@@ -335,25 +336,12 @@ module.exports = function createGame(options) {
             gameStats.playerRank.unshift(playerIface.playerId);
         }
         addHistory('player-died', nextAdhocHistGroup(), '{%d} suffered a humiliating defeat', playerIdx);
+        checkFreeForAll();
         checkForGameEnd();
     }
 
     function checkForGameEnd() {
-        var freeForAll = true;
-        for (var i = 0; i < state.players.length; i++) {
-            if (state.players[i].influenceCount > 0) {
-                if (lastTeam == null) {
-                    lastTeam = state.players[i].team;
-                } else if (state.players[i].team != lastTeam) {
-                    freeForAll = false;
-                    break;
-                }
-            }
-        }
-        state.freeForAll = freeForAll;
-
         var winnerIdx = null;
-        var lastTeam = null;
         for (var i = 0; i < state.players.length; i++) {
             if (state.players[i].influenceCount > 0) {
                 if (winnerIdx == null) {
@@ -386,6 +374,22 @@ module.exports = function createGame(options) {
         } else {
             return false;
         }
+    }
+
+    function checkFreeForAll() {
+        var freeForAll = true;
+        var lastTeam = null;
+        for (var i = 0; i < state.players.length; i++) {
+            if (state.players[i].influenceCount > 0) {
+                if (lastTeam == null) {
+                    lastTeam = state.players[i].team;
+                } else if (state.players[i].team != lastTeam) {
+                    freeForAll = false;
+                    break;
+                }
+            }
+        }
+        state.freeForAll = freeForAll;
     }
 
     function resetReadyStates() {
@@ -1274,31 +1278,13 @@ module.exports = function createGame(options) {
             playerState.team *= -1;
             addHistory('apostatize', curTurnHistGroup(), '{%d} became an apostate', playerIdx);
             state.treasuryReserve += 1;
-
-            var freeForAll = true;
-            for (var i = 0; i < state.numPlayers; i++) {
-                if (state.players[i].influenceCount > 0) {
-                    if (state.players[i].team != playerState.team) {
-                        freeForAll = false;
-                    }
-                }
-            }
-            state.freeForAll = freeForAll;
+            checkFreeForAll();
         } else if (actionState.action == 'conversion') {
             target = state.players[actionState.target];
             target.team *= -1;
             addHistory('conversion', curTurnHistGroup(), '{%d} converted {%d}', playerIdx, actionState.target);
             state.treasuryReserve += 2;
-
-            var freeForAll = true;
-            for (var i = 0; i < state.numPlayers; i++) {
-                if (state.players[i].influenceCount > 0) {
-                    if (state.players[i].team != target.team) {
-                        freeForAll = false;
-                    }
-                }
-            }
-            state.freeForAll = freeForAll;
+            checkFreeForAll();
         } else if (actionState.action == 'embezzlement') {
             addHistory('conversion', curTurnHistGroup(), '{%d} embezzled from the treasury', playerIdx);
             playerState.cash += state.treasuryReserve;
