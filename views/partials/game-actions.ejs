@@ -36,10 +36,10 @@
                 <!-- ko if: actionPresentInGame($data) -->
                     <button class="btn btn-action" data-bind="enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)">
                         <i data-bind="css: $data"></i>
-                        <!-- ko if: $data == 'embezzle' -->
-                            <span class="badge" style="margin-top: 9px; margin-bottom: 8px;" data-bind="text: '$' + $root.state.treasuryReserve()"></span>
-                        <!-- /ko -->
                         <span data-bind="text: $data.replace('-', ' ')"></span>
+                        <!-- ko if: $data == 'embezzle' -->
+                            <span class="badge" style="margin-top: 9px; margin-bottom: 8px;" data-bind="text: '+$' + $root.state.treasuryReserve()"></span>
+                        <!-- /ko -->
                     </button>
                 <!-- /ko -->
                 <!-- ko if: $data == 'coup' -->

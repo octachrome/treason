@@ -36,6 +36,14 @@ var INFLUENCES = 2;
 
 var epithets = fs.readFileSync(__dirname + '/epithets.txt', 'utf8').split(/\r?\n/);
 
+const actionMessages = {
+    'assassinate': (idx, target) => `{${idx}} attempted to assassinate {${target}}`,
+    'steal': (idx, target) => `{${idx}} attempted to steal from {${target}}`,
+    'exchange': (idx) => `{${idx}} attempted to exchange`,
+    'interrogate': (idx, target) => `{${idx}} attempted to interrogate {${target}}`,
+    'embezzle': (idx, target, action, state) => `{${idx}} attempted to embezzle $${state.treasuryReserve}`
+}
+
 module.exports = function createGame(options) {
     options = options || {};
     var gameId = nextGameId++;
@@ -706,8 +714,8 @@ module.exports = function createGame(options) {
                 }
             } else {
                 debug('checking for blocks/challenges');
-                const msgFunc = action.message || ((idx, _, action) => `{${idx}} attempted to draw ${action.replace('-', ' ')}`);
-                const message = msgFunc(playerIdx, command.target, command.action);
+                const msgFunc = actionMessages[command.action] || ((idx, _, action) => `{${idx}} attempted to draw ${action.replace('-', ' ')}`);
+                const message = msgFunc(playerIdx, command.target, command.action, state);
 
                 setState({
                     name: stateNames.ACTION_RESPONSE,
@@ -1264,7 +1272,7 @@ module.exports = function createGame(options) {
             state.treasuryReserve += 2;
             checkFreeForAll();
         } else if (actionState.action == 'embezzle') {
-            addHistory('convert', curTurnHistGroup(), '{%d} embezzled from the treasury', playerIdx);
+            addHistory('convert', curTurnHistGroup(), '{%d} embezzled $%d from the treasury', playerIdx, state.treasuryReserve);
             playerState.cash += state.treasuryReserve;
             state.treasuryReserve = 0;
         } else {
