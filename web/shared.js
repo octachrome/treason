@@ -46,13 +46,16 @@
             message: (idx, target) => `{${idx}} attempted to interrogate {${target}}`
         },
         'apostatize': {
+            gameType: 'reformation',
             cost: 1
         },
         'conversion': {
+            gameType: 'reformation',
             cost: 2,
             targeted: true
         },
         'embezzlement': {
+            gameType: 'reformation',
             cost: 0,
             message: (idx, target) => `{${idx}} attempted to embezzel`
             //,roles: '!duke'

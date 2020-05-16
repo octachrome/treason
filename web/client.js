@@ -487,20 +487,17 @@ function playerName(playerIdx) {
     return '';
 }
 function actionPresentInGame(actionName) {
-    if (vm.state.gameType() != 'reformation') {
-        switch (actionName) {
-            case 'apostatize':
-            case 'conversion':
-            case 'embezzlement':
-                return false;
-        }
+    var action = actions[actionName];
+    if (action == null) {
+        return false;
     }
-    if (vm.state.gameType() == 'original' && actionName == 'interrogate') {
+    if (action.roles && !getGameRole(action.roles)) {
+        return false;
+    }
+    if (action.gameType && action.gameType != vm.state.gameType()) {
         return false;
     }
     return true;
-    //var action = actions[actionName];
-    //return !action.roles || getGameRole(action.roles);
 }
 function canPlayAction(actionName) {
     var action = actions[actionName];
@@ -518,7 +515,7 @@ function canPlayAction(actionName) {
 }
 function playAction(actionName, event) {
     // Sometimes a click event gets fired on a disabled button.
-    if ($(event.target).closest('button:enabled').length == 0) {
+    if (event && $(event.target).closest('button:enabled').length == 0) {
         return;
     }
     var action = actions[actionName];

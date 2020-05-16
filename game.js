@@ -598,15 +598,14 @@ module.exports = function createGame(options) {
     }
 
     function actionPresentInGame(actionName) {
-        if (state.gameType != 'reformation') {
-            switch (actionName) {
-                case 'apostatize':
-                case 'conversion':
-                case 'embezzlement':
-                    return false;
-            }
+        const action = actions[actionName];
+        if (action == null) {
+            return false;
         }
-        if (state.gameType == 'original' && actionName == 'interrogate') {
+        if (action.roles && !getGameRole(action.roles)) {
+            return false;
+        }
+        if (action.gameType && action.gameType != state.gameType) {
             return false;
         }
         return true;
@@ -664,13 +663,10 @@ module.exports = function createGame(options) {
             if (state.state.playerIdx != playerIdx) {
                 throw new GameException('Not your turn');
             }
+            if (!actionPresentInGame(command.action)) {
+                throw new GameException('Unknown action');
+            }
             action = actions[command.action];
-            if (action == null) {
-                throw new GameException('Unknown play action');
-            }
-            if (action.roles && !getGameRole(action.roles)) {
-                throw new GameException('Action not allowed in this game');
-            }
             if (playerState.cash >= 10 && command.action != 'coup') {
                 throw new GameException('You must coup with >= 10 cash');
             }
