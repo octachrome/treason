@@ -706,7 +706,7 @@ module.exports = function createGame(options) {
                 }
             } else {
                 debug('checking for blocks/challenges');
-                const msgFunc = action.message || ((idx, _, action) => `{${idx}} attempted to draw ${action}`);
+                const msgFunc = action.message || ((idx, _, action) => `{${idx}} attempted to draw ${action.replace('-', ' ')}`);
                 const message = msgFunc(playerIdx, command.target, command.action);
 
                 setState({
@@ -1260,7 +1260,7 @@ module.exports = function createGame(options) {
             state.treasuryReserve = 0;
         } else {
             // Income or foreign aid.
-            addHistory(actionState.action, curTurnHistGroup(), '{%d} drew %s', playerIdx, actionState.action);
+            addHistory(actionState.action, curTurnHistGroup(), '{%d} drew %s', playerIdx, actionState.action.replace('-', ' '));
         }
         return true; // End of turn
     }
