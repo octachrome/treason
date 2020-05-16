@@ -176,14 +176,22 @@ function createAiPlayer(game, options) {
         }
     }
 
-    function isOnOurTeam(playerIdx) {
-        return !state.freeForAll && currentPlayer.team !== state.players[playerIdx].team;
+    function isTeammate(playerIdx) {
+        if (playerIdx == state.playerIdx) {
+            // For the purpose here, we are not our own teammate.
+            return false;
+        }
+        return !state.freeForAll && aiPlayer.team == state.players[playerIdx].team;
     }
 
     function respondToAction() {
         trackClaim(state.state.playerIdx, state.state.action);
-        if (isOnOurTeam(state.state.playerIdx)) {
-            // No need to respond to our teammates' actions.
+        if (isTeammate(state.state.playerIdx)) {
+            // Allow our teammate's actions.
+            debug('allowing');
+            command({
+                command: 'allow'
+            });
             return;
         }
         if (state.state.action === 'steal' && aiPlayer.cash === 0) {
@@ -236,8 +244,12 @@ function createAiPlayer(game, options) {
 
     function respondToBlock() {
         trackClaim(state.state.target, state.state.blockingRole);
-        if (isOnOurTeam(state.state.playerIdx)) {
-            // No need to respond to our teammates' actions.
+        if (isTeammate(state.state.target)) {
+            // Allow our teammate's actions.
+            debug('allowing');
+            command({
+                command: 'allow'
+            });
             return;
         }
         if (shouldChallenge()) {
@@ -630,24 +642,13 @@ function createAiPlayer(game, options) {
 
     // Rank opponents by influence first, and money second
     function playersByStrength() {
-        // Start with live opponents
+        // Start with live opponents who are not ourselves and who are not on our team
         var indices = [];
-        var currentPlayer = state.players[state.playerIdx];
 
         for (var i = 0; i < state.numPlayers; i++) {
-            if (i != state.playerIdx && state.players[i].influenceCount > 0) {
-                if (currentPlayer.team == 0) {
-                    indices.push(i);
-                } else {
-                    if (state.freeForAll) {
-                        indices.push(i);
-                    } else {
-                        if (currentPlayer.team != state.players[i].team) {
-                            indices.push(i);
-                        }
-                        // else do not add 
-                    }
-                }
+            if (i != state.playerIdx && state.players[i].influenceCount > 0 &&
+                (state.freeForAll || aiPlayer.team != state.players[i].team)) {
+                indices.push(i);
             }
         }
 
