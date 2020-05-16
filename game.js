@@ -484,7 +484,6 @@ module.exports = function createGame(options) {
         else {
             state.roles.push('ambassador');
         }
-        state.treasuryReserve = 4;
 
         let nonObservers = [];
 
