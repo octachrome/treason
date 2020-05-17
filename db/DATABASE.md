@@ -1,4 +1,4 @@
-This database contains around 280,000 games recorded from http://treason.thebrown.net. It is compressed using GZIP, and is around 4GB in size when decompressed.
+A database containing around 600,000 online games of Coup recorded from http://treason.thebrown.net is available here: https://s3-eu-west-1.amazonaws.com/treason.thebrown.net/games.json.gz. It is 150 MB compressed, 400 MB when uncompressed.
 
 The database is a JSON array, where each entry in the array is an object representing a single game. Each game object has the following fields:
 
@@ -9,9 +9,11 @@ The database is a JSON array, where each entry in the array is an object represe
     winner          number          the player who won the game, as an index into the players array
     playerRank      Array<number>   the ranking of the players, as indices into the players array
                                     i.e., [winner, player who came second, ..., player who lost]
-    events          Array<Event>    the events of the game
+    events          string          the events of the game
 
-The array of events represents the actions that the players took and their consequences. Each event object has a `type` field which determines the other fields that will be present. All the possible events are described by example below:
+The events field represents the actions that the players took and their consequences. Events are encoded as a base64 string, which can be decoded into JSON objects using `game-tracker.js` in this project. There is also a script, `extract-games.js`, which will decode the events from all the games from `games.json.gz` and write them to a file called `games_full.json.gz`. This file is also available for download here: https://s3-eu-west-1.amazonaws.com/treason.thebrown.net/games_full.json.gz. Beware: this file is a lot larger, 16 GB when decompressed. I advise you to instead use `games.json.gz` and only decode the games you are interested in.
+
+Each event object has a `type` field which determines the other fields that will be present. All the possible events are described by example below:
 
     {
       "type": "START_OF_TURN",  // the start of each turn begins with an event of this type

@@ -1,12 +1,10 @@
+// Decodes the events from games downloaded from CouchDB.
+
 const fs = require('fs');
 const zlib = require('zlib');
-const cradle = require('cradle');
-const pr = require('promise-ring');
-const GameTracker = require('./game-tracker');
+const cliProgress = require('cli-progress');
+const GameTracker = require('../game-tracker');
 
-const dbname = 'treason_backup_20180303';
-const connection = new cradle.Connection();
-const treasonDb = pr.wrapAll(connection.database(dbname));
 const tracker = new GameTracker();
 
 const eventTypes = {};
@@ -16,58 +14,51 @@ Object.keys(GameTracker).forEach(key => {
     }
 });
 
-if (process.argv.length < 3) {
-    return Promise.resolve().then(() => {
-        // return treasonDb.save('_design/extract', {
-        //     with_events: {
-        //         map: function (doc) {
-        //             if (doc.type === 'game' && doc.events) {
-        //                 emit(doc._id, doc);
-        //             }
-        //         }
-        //     }
-        // });
-    }).then(() => treasonDb.view('extract/with_events')).then(results => {
-        fs.writeFileSync('raw.json', JSON.stringify(results));
-    }).catch(err => console.error(err));
-}
-else {
-    const results = JSON.parse(fs.readFileSync(process.argv[2]));
-    const stream = zlib.createGzip();
-    stream.pipe(fs.createWriteStream('games.json.gz'));
-    stream.write('[\n');
-    let i = 0;
+const filename = process.argv.length >= 3 ? process.argv[2] : 'games.json.gz';
+console.log(`Reading ${filename}`);
+const games = JSON.parse(zlib.gunzipSync(fs.readFileSync(filename)));
 
-    function processResults() {
-        while (i < results.length) {
-            const result = results[i++];
-            const processed = processResult(result);
-            if (!processed) continue;
-            const cont = stream.write(JSON.stringify(processed, null, 2) + ',\n');
-            if (i % 1000 === 0) {
-                console.log(`Processed ${i}`);
-            }
-            if (!cont) {
-                stream.once('drain', processResults);
-                return;
-            }
+console.log('Processing games');
+const stream = zlib.createGzip();
+stream.pipe(fs.createWriteStream('games_full.json.gz'));
+stream.write('[\n');
+const bar = new cliProgress.SingleBar();
+bar.start(games.length);
+let i = 0;
+let skipped = 0;
+processGames();
+
+function processGames() {
+    while (i < games.length) {
+        const game = games[i++];
+        if (!game || !game.events) {
+            skipped++;
+            continue;
         }
-        stream.end(']');
-        console.log(`Processed ${i}`);
+        const processed = processGame(game);
+        bar.increment();
+        if (!processed) {
+            skipped++;
+            continue;
+        }
+        const cont = stream.write(JSON.stringify(processed) + ',\n');
+        if (!cont) {
+            stream.once('drain', processGames);
+            return;
+        }
     }
-
-    processResults();
+    stream.end('null]');
+    bar.stop();
+    console.log(`Processed ${i}, skipped ${skipped}`);
 }
 
-function processResult(result) {
-    const data = result.value;
-
+function processGame(data) {
     const info = {
         roles: ['duke', 'captain', 'assassin', 'contessa', data.gameType === 'original' ? 'ambassador' : 'inquisitor'],
         playerCount: data.players,
     };
 
-    const events = tracker.unpack(new Buffer(data.events, 'base64'), info);
+    const events = tracker.unpack(Buffer.from(data.events, 'base64'), info);
 
     const losers = [];
 
@@ -96,7 +87,7 @@ function processResult(result) {
         }
     }
     if (data.players !== losers.length) {
-        throw new Error('could not identify winner');
+        return null;
     }
     const winners = losers.reverse();
     const playerIds = [];
@@ -104,7 +95,7 @@ function processResult(result) {
         playerIds[winners[idx]] = id;
     });
     return {
-        gameId: result.id,
+        gameId: data._id,
         gameType: data.gameType,
         playerCount: data.players,
         playerIds: playerIds,
