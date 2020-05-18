@@ -169,6 +169,7 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
     this.gameInfo = gameInfo;
     var events = [];
     var offset = 0;
+    gameInfo.playerStateCount = 0;
     while (offset < buffer.length) {
         var first = buffer[offset++];
         var type = first >> 4;
@@ -181,13 +182,35 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
             case GameTracker.TYPE_GAME_OVER:
                 event.whoseTurn = first & 0xf;
                 event.playerStates = [];
-                for (var p = 0; p < gameInfo.playerCount; p++) {
-                    var cash = buffer[offset++];
-                    var influence = buffer[offset++];
-                    event.playerStates.push({
-                        cash: cash,
-                        influence: [this.decodeInfluence(influence >> 4), this.decodeInfluence(influence & 0xf)]
-                    });
+                if (gameInfo.playerStateCount == 0) {
+                    // Detect players
+                    let detectedPlayers = 0;
+                    while (detectedPlayers < gameInfo.playerCount) {
+                        const cash = buffer[offset++];
+                        const influence = buffer[offset++]
+                        event.playerStates.push({
+                            cash: cash,
+                            influence: [this.decodeInfluence(influence >> 4), this.decodeInfluence(influence & 0xf)]
+                        });
+                        if (influence != 0) {
+                            detectedPlayers++;
+                        }
+                        gameInfo.playerStateCount++;
+                    }
+                    // Skip past any additional observers at the end.
+                    while (offset + 1 < buffer.length && buffer[offset] == 0 && buffer[offset+1] == 0) {
+                        gameInfo.playerStateCount++;
+                        offset++;
+                    }
+                } else {
+                    for (let p = 0; p < gameInfo.playerStateCount; p++) {
+                        const cash = buffer[offset++];
+                        const influence = buffer[offset++];
+                        event.playerStates.push({
+                            cash: cash,
+                            influence: [this.decodeInfluence(influence >> 4), this.decodeInfluence(influence & 0xf)]
+                        });
+                    }
                 }
                 if (offset < buffer.length) {
                     events.push(this.decodeActionEvent(buffer[offset++]));
