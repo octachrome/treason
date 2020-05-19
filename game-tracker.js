@@ -1,3 +1,5 @@
+const debug = require('debug')('GameTracker');
+
 module.exports = GameTracker;
 
 function GameTracker() {
@@ -11,6 +13,13 @@ GameTracker.TYPE_CHALLENGE_FAIL = 4;
 GameTracker.TYPE_BLOCK = 5;
 GameTracker.TYPE_PLAYER_LEFT = 6;
 GameTracker.TYPE_GAME_OVER = 7;
+
+GameTracker.EventTypes = {};
+Object.keys(GameTracker).forEach(key => {
+    if (/^TYPE_/.test(key)) {
+        GameTracker.EventTypes[GameTracker[key]] = key.substr('TYPE_'.length);
+    }
+});
 
 GameTracker.prototype.startOfTurn = function (state) {
     this._recordState(GameTracker.TYPE_START_OF_TURN, state);
@@ -83,7 +92,7 @@ GameTracker.prototype.pack = function () {
             case GameTracker.TYPE_GAME_OVER:
                 bytes[offset++] = (event.type << 4) | (event.whoseTurn & 0xf);
                 event.playerStates.forEach(function (playerState) {
-                    bytes[offset++] = playerState.cash & 255;
+                    bytes[offset++] = playerState.cash & 0xff;
                     bytes[offset++] = (tracker.encodeInfluence(playerState.influence[0]) << 4) |
                         tracker.encodeInfluence(playerState.influence[1]);
                 });
@@ -170,7 +179,9 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
     var events = [];
     var offset = 0;
     gameInfo.playerStateCount = 0;
+    gameInfo.disconnects = 0;
     while (offset < buffer.length) {
+        this._debugEventByte(offset, buffer[offset], true);
         var first = buffer[offset++];
         var type = first >> 4;
         var event = {
@@ -178,64 +189,170 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
         };
         events.push(event);
         switch (type) {
-            case GameTracker.TYPE_START_OF_TURN:
             case GameTracker.TYPE_GAME_OVER:
-                event.whoseTurn = first & 0xf;
-                event.playerStates = [];
-                if (gameInfo.playerStateCount == 0) {
-                    // Detect players
-                    let detectedPlayers = 0;
-                    while (detectedPlayers < gameInfo.playerCount) {
-                        const cash = buffer[offset++];
-                        const influence = buffer[offset++]
-                        event.playerStates.push({
-                            cash: cash,
-                            influence: [this.decodeInfluence(influence >> 4), this.decodeInfluence(influence & 0xf)]
-                        });
-                        if (influence != 0) {
-                            detectedPlayers++;
-                        }
-                        gameInfo.playerStateCount++;
-                    }
-                    // Skip past any additional observers at the end.
-                    while (offset + 1 < buffer.length && buffer[offset] == 0 && buffer[offset+1] == 0) {
-                        gameInfo.playerStateCount++;
-                        offset++;
-                    }
-                } else {
-                    for (let p = 0; p < gameInfo.playerStateCount; p++) {
-                        const cash = buffer[offset++];
-                        const influence = buffer[offset++];
-                        event.playerStates.push({
-                            cash: cash,
-                            influence: [this.decodeInfluence(influence >> 4), this.decodeInfluence(influence & 0xf)]
-                        });
-                    }
+                if (offset < events.length) {
+                    throw new Error('Unexpected game over event');
                 }
-                if (offset < buffer.length) {
-                    events.push(this.decodeActionEvent(buffer[offset++]));
+            case GameTracker.TYPE_START_OF_TURN:
+                event.whoseTurn = first & 0xf;
+                if (event.challenger >= gameInfo.playerStateCount) {
+                    throw new Error('Unknown current player');
+                }
+                event.playerStates = [];
+                // Detect player states: this includes observers, which gameInfo.playerCount does not account for.
+                // Observers can also join mid-game.
+                let playersFound = 0;
+                let statesFound = 0;
+                while (playersFound < gameInfo.playerCount) {
+                    this._debugEventByte(offset, buffer[offset]);
+                    const cash = buffer[offset++];
+                    this._debugEventByte(offset, buffer[offset]);
+                    const influence = buffer[offset++]
+                    event.playerStates.push({
+                        cash: cash,
+                        influence: [this.decodeInfluence(influence >> 4), this.decodeInfluence(influence & 0xf)]
+                    });
+                    if (influence != 0 || cash != 0) {
+                        playersFound++;
+                    }
+                    statesFound++;
+                }
+                // Skip past any additional observers at the end.
+                while (offset + 1 < buffer.length && buffer[offset] == 0 && buffer[offset+1] == 0) {
+                    statesFound++;
+                    offset += 2;
+                }
+                gameInfo.playerStateCount = statesFound;
+                debug(`>   found ${statesFound} states, ${gameInfo.playerCount} players`);
+
+                // START_OF_TURN is usually followed by ACTION, which is not labelled with a type field,
+                // but one or more PLAYER_LEFT events may also occur, in which case, any of these events can
+                // follow it: START_OF_TURN, GAME_OVER, ACTION.
+                while (offset < buffer.length) {
+                    const action = this.decodeActionEvent(buffer[offset++]);
+                    try {
+                        this.validateActionEvent(action, gameInfo.playerStateCount);
+                        events.push(action);
+                        debug('>   action detected');
+                        break;
+                    } catch (e) {
+                        const type2 = buffer[offset - 1] >> 4;
+                        const player2 = buffer[offset - 1] & 0xf;
+                        this._debugEventByte(offset - 1, buffer[offset - 1], true);
+                        if (type2 == GameTracker.TYPE_PLAYER_LEFT) {
+                            // Cannot validate player2, because an observer can join after the start of turn and leave before the action!
+                            debug(`>   player ${player2} left`);
+                            events.push({type: type2, player: player2});
+                            gameInfo.disconnects++;
+                            if (player2 == event.whoseTurn) {
+                                // If the player whose turn it was left the game, a new START_OF_TURN event will occur.
+                                debug('>   skipping turn');
+                                break;
+                            }
+                        } else if (type2 == GameTracker.TYPE_GAME_OVER && player2 < gameInfo.playerStateCount) {
+                            // Break out and parse this event properly.
+                            debug('>   game over');
+                            offset--;
+                            break;
+                        } else {
+                            for (let i = 0; i < 5 && offset + i < buffer.length; i++) {
+                                this._debugEventByte(offset + i, buffer[offset + i]);
+                            }
+                            throw e;
+                        }
+                    }
                 }
                 break;
             case GameTracker.TYPE_CHALLENGE_SUCCESS:
             case GameTracker.TYPE_CHALLENGE_FAIL:
                 event.challenger = first & 0xf;
                 event.challenged = buffer[offset++] & 0xf;
+                if (event.challenger >= gameInfo.playerStateCount) {
+                    throw new Error('Unknown challenger player');
+                }
+                if (event.challenged >= gameInfo.playerStateCount) {
+                    throw new Error('Unknown challenged player');
+                }
                 break;
             case GameTracker.TYPE_BLOCK:
                 event.blockingPlayer = first & 0xf;
                 event.blockingRole = this.decodeRole(buffer[offset++]);
+                if (event.blockingPlayer >= gameInfo.playerStateCount) {
+                    throw new Error('Unknown blocking player');
+                }
                 break;
             case GameTracker.TYPE_PLAYER_LEFT:
                 event.player = first & 0xf;
+                gameInfo.disconnects++;
                 break;
         }
+    }
+    if (!events || events.length == 0) {
+        throw new Error('No events');
+    }
+    if (events[0].type != GameTracker.TYPE_START_OF_TURN) {
+        throw new Error('Missing initial start of turn event');
+    }
+    if (events[events.length - 1].type != GameTracker.TYPE_GAME_OVER) {
+        throw new Error('Missing final game over event');
     }
     return events;
 };
 
+GameTracker.prototype._debugEventByte = function (offset, byte, showType) {
+    if (!debug.enabled) {
+        return;
+    }
+    let x = byte;
+    const qw = [];
+    const hw = [];
+    for (let j = 0; j < 2; j++) {
+        hw.push(x & 0xf);
+        qw.push((x & 0x8) ? 1 : 0);
+        qw.push(x & 0x7);
+        x = x >> 4;
+    }
+    debug(offset, showType ? GameTracker.EventTypes[hw[1]] : '', byte, hw.reverse(), qw.reverse());
+};
+
+GameTracker.prototype.validateActionEvent = function (event, playerStateCount) {
+    const ACTION_INFO = {
+        'tax': {
+            targeted: false
+        },
+        'foreign-aid': {
+            targeted: false
+        },
+        'steal': {
+            targeted: true
+        },
+        'assassinate': {
+            targeted: true
+        },
+        'exchange': {
+            targeted: false
+        },
+        'interrogate': {
+            targeted: true
+        },
+        'coup': {
+            targeted: true
+        },
+        'income': {
+            targeted: false
+        }
+    };
+    if (!(event.action in ACTION_INFO)) {
+        throw new Error(`Unknown action: ${event.action}`);
+    }
+    if (ACTION_INFO[event.action].targeted && event.target >= playerStateCount) {
+        throw new Error('Unknown player targeted by action');
+    }
+};
+
 GameTracker.prototype.decodeInfluence = function (influenceCode) {
     return {
-        revealed: !!(influenceCode & 8),
+        revealed: !!(influenceCode & 0x8),
         role: this.decodeRole(influenceCode & 0x7)
     };
 };
