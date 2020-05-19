@@ -732,7 +732,7 @@ module.exports = function createGame(options) {
             if (state.state.name == stateNames.ACTION_RESPONSE) {
                 addHistory(state.state.action, curTurnHistGroup(), state.state.message);
             }
-            gameTracker.block(target, command.blockingRole);
+            gameTracker.block(playerIdx, command.blockingRole);
             setState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: state.state.playerIdx,
