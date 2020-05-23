@@ -11,7 +11,7 @@ The database is a JSON array, where each entry in the array is an object represe
                                     i.e., [winner, player who came second, ..., player who lost]
     events          string          the events of the game
 
-The events field represents the actions that the players took and their consequences. Events are encoded as a base64 string, which can be decoded into JSON objects using `game-tracker.js` in this project. There is also a script, `extract-games.js`, which will decode the events from all the games from `games.json.gz` and write them to a file called `games_full.json.gz`. This file is also available for download here: https://s3-eu-west-1.amazonaws.com/treason.thebrown.net/games_full.json.gz. Beware: this file is a lot larger, 8 GB when decompressed. I advise you to instead use `games.json.gz` and only decode the games you are interested in.
+The events field represents the actions that the players took and their consequences. Events are encoded as a base64 string, which can be decoded into JSON objects using `game-tracker.js` in this project. There is also a script, `extract-games.js`, which will decode the events from all the games from `games.json.gz` and write them to a file called `games_full.json.gz`. This file is also available for download here: https://s3-eu-west-1.amazonaws.com/treason.thebrown.net/games_full.json.gz. Beware: this file is a lot larger, 8 GB when decompressed, and it may not fit in memory when using a regular JSON reader. An example of how to read `games_full.json.gz` using a streaming JSON reader can be found in `example-read-games.js`.
 
 Each event object has a `type` field which determines the other fields that will be present. All the possible events are described by example below:
 
