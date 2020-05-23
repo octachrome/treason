@@ -7,44 +7,46 @@ const GameTracker = require('../game-tracker');
 
 const tracker = new GameTracker();
 
-const eventTypes = {};
-Object.keys(GameTracker).forEach(key => {
-    if (/^TYPE_/.test(key)) {
-        eventTypes[GameTracker[key]] = key.substr('TYPE_'.length);
-    }
-});
-
 const filename = process.argv.length >= 3 ? process.argv[2] : 'games.json.gz';
 console.log(`Reading ${filename}`);
 const games = JSON.parse(zlib.gunzipSync(fs.readFileSync(filename)));
+const numToExtract = process.argv.length >= 4 ? parseInt(process.argv[3]) : games.length;
 
 console.log('Processing games');
 const stream = zlib.createGzip();
 stream.pipe(fs.createWriteStream('games_full.json.gz'));
 stream.write('[\n');
 const bar = new cliProgress.SingleBar();
-bar.start(games.length);
+bar.start(numToExtract);
 let i = 0;
 let skipped = 0;
 processGames();
 
 function processGames() {
-    while (i < games.length) {
+    while (i < numToExtract) {
         const game = games[i++];
         if (!game || !game.events) {
             skipped++;
             continue;
         }
-        const processed = processGame(game);
-        bar.increment();
-        if (!processed) {
+        let processed;
+        try {
+            processed = processGame(game);
+        } catch (e) {
+            console.log(e.stack);
+            if (e.message != 'Player overflow') {
+                fs.writeFileSync('game.json', JSON.stringify(game));
+                break;
+            }
             skipped++;
-            continue;
         }
-        const cont = stream.write(JSON.stringify(processed) + ',\n');
-        if (!cont) {
-            stream.once('drain', processGames);
-            return;
+        bar.increment();
+        if (processed) {
+            const cont = stream.write(JSON.stringify(processed) + ',\n');
+            if (!cont) {
+                stream.once('drain', processGames);
+                return;
+            }
         }
     }
     stream.end('null]');
@@ -58,42 +60,10 @@ function processGame(data) {
         playerCount: data.players,
     };
 
-    const events = tracker.unpack(Buffer.from(data.events, 'base64'), info);
+    let events = tracker.unpack(Buffer.from(data.events, 'base64'), info);
+    tracker.removeObservers(events, data.players);
+    const {playerIds, winners} = tracker.identifyPlayers(events, data);
 
-    const losers = [];
-
-    events.forEach(event => {
-        event.type = eventTypes[event.type]; 
-        if (event.playerStates) {
-            event.playerStates.forEach((state, idx) => {
-                if (state.influence.every(influence => influence.revealed)) {
-                    if (losers.indexOf(idx) === -1) {
-                        losers.push(idx);
-                    }
-                }
-            });
-        }
-    });
-
-    if (losers.length !== data.players - 1) {
-        return null;
-    }
-
-    // Add the winning player index.
-    for (let i = 0; i < data.players; i++) {
-        if (losers.indexOf(i) === -1) {
-            losers.push(i);
-            break;
-        }
-    }
-    if (data.players !== losers.length) {
-        return null;
-    }
-    const winners = losers.reverse();
-    const playerIds = [];
-    data.playerRank.forEach((id, idx) => {
-        playerIds[winners[idx]] = id;
-    });
     return {
         gameId: data._id,
         gameType: data.gameType,

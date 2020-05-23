@@ -180,6 +180,9 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
     var offset = 0;
     gameInfo.playerStateCount = 0;
     gameInfo.disconnects = 0;
+    let lastStart = null;
+    let lastAction = null;
+    let lastBlock = null;
     while (offset < buffer.length) {
         this._debugEventByte(offset, buffer[offset], true);
         var first = buffer[offset++];
@@ -194,28 +197,16 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
                     throw new Error('Unexpected game over event');
                 }
             case GameTracker.TYPE_START_OF_TURN:
-                event.whoseTurn = first & 0xf;
-                if (event.challenger >= gameInfo.playerStateCount) {
-                    throw new Error('Unknown current player');
+                lastStart = event;
+                lastAction = null;
+                lastBlock = null;
+                if (type == GameTracker.TYPE_START_OF_TURN) {
+                    event.whoseTurn = first & 0xf;
                 }
-                event.playerStates = [];
-                // Detect player states: this includes observers, which gameInfo.playerCount does not account for.
-                // Observers can also join mid-game.
-                let playersFound = 0;
-                let statesFound = 0;
-                while (playersFound < gameInfo.playerCount) {
-                    this._debugEventByte(offset, buffer[offset]);
-                    const cash = buffer[offset++];
-                    this._debugEventByte(offset, buffer[offset]);
-                    const influence = buffer[offset++]
-                    event.playerStates.push({
-                        cash: cash,
-                        influence: [this.decodeInfluence(influence >> 4), this.decodeInfluence(influence & 0xf)]
-                    });
-                    if (influence != 0 || cash != 0) {
-                        playersFound++;
-                    }
-                    statesFound++;
+                offset += this.readPlayerStates(buffer, offset, event, gameInfo.playerCount);
+                let statesFound = event.playerStates.length;
+                if (type == GameTracker.TYPE_START_OF_TURN && event.whoseTurn >= statesFound) {
+                    throw new Error('Unknown current player');
                 }
                 // Skip past any additional observers at the end.
                 while (offset + 1 < buffer.length && buffer[offset] == 0 && buffer[offset+1] == 0) {
@@ -229,11 +220,14 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
                 // but one or more PLAYER_LEFT events may also occur, in which case, any of these events can
                 // follow it: START_OF_TURN, GAME_OVER, ACTION.
                 while (offset < buffer.length) {
+                    this._debugEventByte(offset, buffer[offset]);
                     const action = this.decodeActionEvent(buffer[offset++]);
                     try {
                         this.validateActionEvent(action, gameInfo.playerStateCount);
                         events.push(action);
-                        debug('>   action detected');
+                        lastAction = action;
+                        lastBlock = null;
+                        debug('>   action detected', action);
                         break;
                     } catch (e) {
                         const type2 = buffer[offset - 1] >> 4;
@@ -244,16 +238,12 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
                             debug(`>   player ${player2} left`);
                             events.push({type: type2, player: player2});
                             gameInfo.disconnects++;
-                            if (player2 == event.whoseTurn) {
-                                // If the player whose turn it was left the game, a new START_OF_TURN event will occur.
-                                debug('>   skipping turn');
+                            // After a player leaves, it might become someone else's turn, or the game might end.
+                            // Both of these can be mis-interpreted as actions, so check more carefully for them.
+                            if (this.looksLikePlayerStateEvent(buffer, offset, lastStart, gameInfo.playerCount)) {
+                                // Break out and parse this event properly.
                                 break;
                             }
-                        } else if (type2 == GameTracker.TYPE_GAME_OVER && player2 < gameInfo.playerStateCount) {
-                            // Break out and parse this event properly.
-                            debug('>   game over');
-                            offset--;
-                            break;
                         } else {
                             for (let i = 0; i < 5 && offset + i < buffer.length; i++) {
                                 this._debugEventByte(offset + i, buffer[offset + i]);
@@ -273,18 +263,37 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
                 if (event.challenged >= gameInfo.playerStateCount) {
                     throw new Error('Unknown challenged player');
                 }
+                if (lastBlock) {
+                    lastBlock.blockingPlayer = event.challenged;
+                }
                 break;
             case GameTracker.TYPE_BLOCK:
-                event.blockingPlayer = first & 0xf;
+                // Blocking player was recorded incorrectly - always zero
+                // event.blockingPlayer = first & 0xf;
                 event.blockingRole = this.decodeRole(buffer[offset++]);
-                if (event.blockingPlayer >= gameInfo.playerStateCount) {
-                    throw new Error('Unknown blocking player');
+                if (lastAction && typeof lastAction.target == 'number') {
+                    // The blocking player will be the person who is being targeted.
+                    event.blockingPlayer = lastAction.target;
+                } else {
+                    // Foreign aid. We will only know who blocked if they are challenged.
+                    event.blockingPlayer = -1;
+                    if (!lastAction) {
+                        throw new Error(`Block was not preceeded by action`);
+                    } else if (lastAction.action != 'foreign-aid') {
+                        throw new Error(`Unexpected blocked action: ${lastAction && lastAction.action}`);
+                    }
                 }
+                lastBlock = event;
                 break;
             case GameTracker.TYPE_PLAYER_LEFT:
                 event.player = first & 0xf;
                 gameInfo.disconnects++;
                 break;
+            default:
+                for (let i = 0; i < 5 && offset + i < buffer.length; i++) {
+                    this._debugEventByte(offset + i, buffer[offset + i]);
+                }
+                throw new Error('Unexpected event');
         }
     }
     if (!events || events.length == 0) {
@@ -297,6 +306,63 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
         throw new Error('Missing final game over event');
     }
     return events;
+};
+
+GameTracker.prototype.readPlayerStates = function (buffer, offset, event, playerCount) {
+    event.playerStates = [];
+    // Detect player states: this includes observers, which gameInfo.playerCount does not account for.
+    // Observers can also join mid-game.
+    let playersFound = 0;
+    let statesFound = 0;
+    while (playersFound < playerCount) {
+        this._debugEventByte(offset, buffer[offset]);
+        const cash = buffer[offset++];
+        this._debugEventByte(offset, buffer[offset]);
+        const influence = buffer[offset++]
+        event.playerStates.push({
+            cash: cash,
+            influence: [this.decodeInfluence(influence >> 4), this.decodeInfluence(influence & 0xf)]
+        });
+        if (influence != 0 || cash != 0) {
+            playersFound++;
+        }
+        statesFound++;
+    }
+    if (statesFound > 16) {
+        // We only have 4 bits in which to store the current player, so there can't be more than 16.
+        throw new Error('Player overflow');
+    }
+    return statesFound * 2;
+};
+
+GameTracker.prototype.looksLikePlayerStateEvent = function (buffer, offset, lastStart, playerCount) {
+    if (!lastStart) {
+        throw new Error('No previous start event');
+    }
+    const first = buffer[offset++];
+    const type = first >> 4;
+    if (type != GameTracker.TYPE_START_OF_TURN && type != GameTracker.TYPE_GAME_OVER) {
+        return false;
+    }
+    const event = {};
+    this.readPlayerStates(buffer, offset, event, playerCount);
+    if (event.playerStates.length < lastStart.playerStates.length) {
+        return false;
+    }
+    for (let i = 0; i < lastStart.playerStates.length; i++) {
+        const state1 = event.playerStates[i];
+        const state2 = lastStart.playerStates[i];
+        if (state1.cash != state2.cash) {
+            return false;
+        }
+        for (let j = 0; j < state1.influence.length; j++) {
+            // Don't check the revealed flag - this can change when a player leaves.
+            if (state1.influence[j].role != state2.influence[j].role) {
+                return false;
+            }
+        }
+    }
+    return true;
 };
 
 GameTracker.prototype._debugEventByte = function (offset, byte, showType) {
@@ -346,7 +412,7 @@ GameTracker.prototype.validateActionEvent = function (event, playerStateCount) {
         throw new Error(`Unknown action: ${event.action}`);
     }
     if (ACTION_INFO[event.action].targeted && event.target >= playerStateCount) {
-        throw new Error('Unknown player targeted by action');
+        throw new Error(`Unknown player ${event.target} targeted by action ${event.action}`);
     }
 };
 
@@ -416,4 +482,114 @@ GameTracker.prototype.decodeActionEvent = function (actionCode) {
         event.target = target;
     }
     return event;
+};
+
+GameTracker.prototype.removeObservers = function (events, playerCount) {
+    const initialStateCount = events[0].playerStates.length;
+    const playerMap = {};
+    let nextPlayer = 0;
+    for (let i = 0; i < initialStateCount; i++) {
+        if (events[0].playerStates[i].cash > 0) {
+            // Real players start with cash.
+            playerMap[i] = nextPlayer++;
+        }
+    }
+    if (Object.keys(playerMap).length != playerCount) {
+        throw new Error('Incorrect number of players')
+    }
+    for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        switch (event.type) {
+            case GameTracker.TYPE_START_OF_TURN:
+            case GameTracker.TYPE_GAME_OVER:
+                for (let j = event.playerStates.length - 1; j >= 0; j--) {
+                    if (!(j in playerMap)) {
+                        event.playerStates.splice(j, 1);
+                    }
+                }
+                if (event.type == GameTracker.TYPE_START_OF_TURN) {
+                    if (!(event.whoseTurn in playerMap)) {
+                        throw new Error(`Unknown current player ${event.whoseTurn}`);
+                    }
+                    event.whoseTurn = playerMap[event.whoseTurn];
+                }
+                break;
+            case GameTracker.TYPE_ACTION:
+                if (typeof event.target == 'number') {
+                    if (!(event.target in playerMap)) {
+                        throw new Error(`Unknown target player ${event.target}`);
+                    }
+                    event.target = playerMap[event.target];
+                }
+                break;
+            case GameTracker.TYPE_CHALLENGE_SUCCESS:
+            case GameTracker.TYPE_CHALLENGE_FAIL:
+                if (!(event.challenger in playerMap)) {
+                    throw new Error(`Unknown challenger player ${event.challenger}`);
+                }
+                if (!(event.challenged in playerMap)) {
+                    throw new Error(`Unknown challenged player ${event.challenged}`);
+                }
+                event.challenger = playerMap[event.challenger];
+                event.challenged = playerMap[event.challenged];
+                break;
+            case GameTracker.TYPE_BLOCK:
+                if (!(event.blockingPlayer in playerMap)) {
+                    // throw new Error(`Unknown blocking player ${event.blockingPlayer}`);
+                }
+                else {
+                    event.blockingPlayer = playerMap[event.blockingPlayer];
+                }
+                break;
+            case GameTracker.TYPE_PLAYER_LEFT:
+                if (event.player in playerMap) {
+                    event.player = playerMap[event.player];
+                } else {
+                    // An observer left
+                    events.splice(i, 1);
+                    i--;
+                }
+                break;
+        }
+    }
+};
+
+GameTracker.prototype.identifyPlayers = function (events, game) {
+    const playerDeaths = [];
+
+    events.forEach(event => {
+        event.type = GameTracker.EventTypes[event.type];
+        if (event.playerStates) {
+            event.playerStates.forEach((state, idx) => {
+                if (state.influence.every(influence => influence.revealed)) {
+                    if (playerDeaths.indexOf(idx) === -1) {
+                        playerDeaths.push(idx);
+                    }
+                }
+            });
+        }
+    });
+
+    if (playerDeaths.length !== game.players - 1) {
+        console.log(`wrong number of deaths: ${playerDeaths.length}, for players: ${game.players}`)
+        return {playerIds: null, winners: null};
+    }
+
+    // Add the winning player index.
+    for (let i = 0; i < game.players; i++) {
+        if (playerDeaths.indexOf(i) === -1) {
+            playerDeaths.push(i);
+            break;
+        }
+    }
+    if (game.players !== playerDeaths.length) {
+        console.log(`wrong number of winners: ${playerDeaths.length}, for players: ${game.players}`)
+        return {playerIds: null, winners: null};
+    }
+    const winners = playerDeaths.reverse();
+    const playerIds = [];
+    game.playerRank.forEach((id, idx) => {
+        playerIds[winners[idx]] = id;
+    });
+    return {playerIds, winners};
 };
