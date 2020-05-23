@@ -83,7 +83,15 @@ module.exports = function createGame(options) {
     game._test_setDeck = _test_setDeck;
     game._test_resetAllows = resetAllows;
 
+    //The game is created but relies on the creating player joining. If they fail to join after a few minutes, assume
+    //they timed out and reap game.
+    var reaperHandle = setTimeout(function () {
+        debug('No players joined, destroying game');
+        destroyGame();
+    }, 120000);
+
     function playerJoined(playerIface) {
+        clearTimeout(reaperHandle);
         var isObserver;
         if (countReadyPlayers() < MAX_PLAYERS) {
             isObserver = false;
