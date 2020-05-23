@@ -11,7 +11,7 @@ The database is a JSON array, where each entry in the array is an object represe
                                     i.e., [winner, player who came second, ..., player who lost]
     events          string          the events of the game
 
-The events field represents the actions that the players took and their consequences. Events are encoded as a base64 string, which can be decoded into JSON objects using `game-tracker.js` in this project. There is also a script, `extract-games.js`, which will decode the events from all the games from `games.json.gz` and write them to a file called `games_full.json.gz`. This file is also available for download here: https://s3-eu-west-1.amazonaws.com/treason.thebrown.net/games_full.json.gz. Beware: this file is a lot larger, 16 GB when decompressed. I advise you to instead use `games.json.gz` and only decode the games you are interested in.
+The events field represents the actions that the players took and their consequences. Events are encoded as a base64 string, which can be decoded into JSON objects using `game-tracker.js` in this project. There is also a script, `extract-games.js`, which will decode the events from all the games from `games.json.gz` and write them to a file called `games_full.json.gz`. This file is also available for download here: https://s3-eu-west-1.amazonaws.com/treason.thebrown.net/games_full.json.gz. Beware: this file is a lot larger, 8 GB when decompressed. I advise you to instead use `games.json.gz` and only decode the games you are interested in.
 
 Each event object has a `type` field which determines the other fields that will be present. All the possible events are described by example below:
 
@@ -75,6 +75,7 @@ Notes:
 
 - In the `events` array, players are always identified using their numerical index into the playerIds array; never using their player id.
 - The first player is random; it is not always player 0.
+- Due to a bug, the player who blocked foreign aid is not always recorded. If unknown, `blockingPlayer` is set to `-1`.
 
 I think the rules below summarise the possible sequences in which events can occur, where `*` means repeated zero or more times, `?` means may appear zero or one times, `A | B` means either A or B, and parentheses indicate where these operators are applied to sub-sequences of events.
 

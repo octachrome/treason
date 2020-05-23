@@ -27,6 +27,7 @@ function processGames() {
         const game = games[i++];
         if (!game || !game.events) {
             skipped++;
+            bar.increment();
             continue;
         }
         let processed;
