@@ -34,10 +34,7 @@ function processGames() {
             processed = processGame(game);
         } catch (e) {
             console.log(e.stack);
-            if (e.message != 'Player overflow') {
-                fs.writeFileSync('game.json', JSON.stringify(game));
-                break;
-            }
+            fs.writeFileSync('game-debug.json', JSON.stringify(game));
             skipped++;
         }
         bar.increment();

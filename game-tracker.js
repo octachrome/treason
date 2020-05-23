@@ -534,10 +534,11 @@ GameTracker.prototype.removeObservers = function (events, playerCount) {
                 event.challenged = playerMap[event.challenged];
                 break;
             case GameTracker.TYPE_BLOCK:
-                if (!(event.blockingPlayer in playerMap)) {
-                    // throw new Error(`Unknown blocking player ${event.blockingPlayer}`);
-                }
-                else {
+                if (event.blockingPlayer == -1) {
+                    // We cannot determine who blocks foreign aid: ignore this.
+                } else if (!(event.blockingPlayer in playerMap)) {
+                    throw new Error(`Unknown blocking player ${event.blockingPlayer}`);
+                } else {
                     event.blockingPlayer = playerMap[event.blockingPlayer];
                 }
                 break;
