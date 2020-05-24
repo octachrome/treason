@@ -14,6 +14,8 @@
                 <span data-bind="text: name, css: { 'dead-player' : influenceCount() == 0 }"></span>
                 <span class="badge" data-bind="text: '$' + cash(), visible: !isObserver()"></span>
                 <span class="glyphicon glyphicon-eye-open observer" data-bind="visible: isObserver()"></span>
+                <i class="team-red" data-bind="visible: influenceCount() > 0 && team() == 1"></i>
+                <i class="team-blue" data-bind="visible: influenceCount() > 0 && team() == -1"></i>
             </div>
             <div class="col-xs-6">
                 <!-- ko foreach: influence -->
@@ -36,6 +38,16 @@
         <div data-bind="visible: sidebar() == 'cheat'">
             <!-- ko foreach: state.roles -->
                 <p><span class="label" data-bind="text: $data, css: labelClass($data)"></span> <span data-bind="text: roleDescription($data)"></span></p>
+            <!-- /ko -->
+            <!-- ko if: state.roles().length > 0 -->
+            <p>Foreign aid +$2; blocked by duke</p>
+            <p>Income +$1</p>
+            <!-- ko if: state.gameType() == 'reformation' -->
+            <p>Pay $7 to stage a coup, revealing another player's influence</p>
+            <p>Pay $1 to change teams</p>
+            <p>Pay $2 to convert another player to the other team</p>
+            <p>Embezzle from the treasury reserve $?; forbidden to duke</p>
+            <!-- /ko -->
             <!-- /ko -->
             <!-- ko if: state.roles().length === 0 -->
             <p>Not available until the game starts</p>

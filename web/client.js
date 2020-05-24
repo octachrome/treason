@@ -72,12 +72,16 @@ vm = {
 vm.state = ko.mapping.fromJS({
     stateId: null,
     gameId: null,
+    gameType: null,
     players: [],
     playerIdx: null,
     numPlayers: null,
     maxPlayers: null,
     gameName: null,
     roles: [],
+    treasuryReserve: null,
+    freeForAll: null,
+    allowChallengeTeamMates: null,
     state: {
         name: null,
         playerIdx: null,
@@ -271,7 +275,7 @@ socket.on('chat', function (data) {
     if (data.from == vm.state.playerIdx()) {
         from = 'You';
     } else {
-        var player = vm.state.players()[data.from];
+        var player = getPlayer(data.from);
         from = player ? player.name() : 'Unknown';
         notifyPlayer(from + ' says: ' + data.message);
     }
@@ -477,7 +481,7 @@ function winnerName() {
     return playerName(vm.state.state.winnerIdx());
 }
 function playerName(playerIdx) {
-    var player = vm.state.players()[playerIdx];
+    var player = getPlayer(playerIdx);
     if (player) {
         return player.name();
     }
@@ -485,7 +489,16 @@ function playerName(playerIdx) {
 }
 function actionPresentInGame(actionName) {
     var action = actions[actionName];
-    return !action.roles || getGameRole(action.roles);
+    if (action == null) {
+        return false;
+    }
+    if (action.roles && !getActionRole(action)) {
+        return false;
+    }
+    if (action.gameType && action.gameType != vm.state.gameType()) {
+        return false;
+    }
+    return true;
 }
 function canPlayAction(actionName) {
     var action = actions[actionName];
@@ -495,13 +508,15 @@ function canPlayAction(actionName) {
     }
     if (player.cash() >= 10 && actionName != 'coup') {
         return false;
+    } else if (actionName == 'embezzle' && vm.state.treasuryReserve() == 0) {
+        return false;
     } else {
         return player.cash() >= action.cost;
     }
 }
 function playAction(actionName, event) {
     // Sometimes a click event gets fired on a disabled button.
-    if ($(event.target).closest('button:enabled').length == 0) {
+    if (event && $(event.target).closest('button:enabled').length == 0) {
         return;
     }
     var action = actions[actionName];
@@ -533,6 +548,9 @@ function command(command, options) {
     socket.emit('command', data);
 }
 function weCanBlock() {
+    if (vm.state.state.name() != states.ACTION_RESPONSE && vm.state.state.name() != states.FINAL_ACTION_RESPONSE) {
+        return false;
+    }
     if (!weAreAlive()) {
         return false;
     }
@@ -540,7 +558,8 @@ function weCanBlock() {
         // Cannot block our own action.
         return false;
     }
-    if (vm.state.state.name() != states.ACTION_RESPONSE && vm.state.state.name() != states.FINAL_ACTION_RESPONSE) {
+    if (isOnOurTeam(vm.state.state.playerIdx())) {
+        // Cannot block our teammate's action.
         return false;
     }
     var action = actions[vm.state.state.action()];
@@ -565,6 +584,9 @@ function blockingRoles() {
     return _.intersection(action.blockedBy || [], vm.state.roles());
 }
 function weCanChallenge() {
+    if (!weAreAlive()) {
+        return false;
+    }
     var action = actions[vm.state.state.action()];
     if (!action) {
         return false;
@@ -574,11 +596,19 @@ function weCanChallenge() {
             // Cannot challenge our own action.
             return false;
         }
+        if (!vm.state.allowChallengeTeamMates() && isOnOurTeam(vm.state.state.playerIdx())) {
+            // Cannot challenge our teammate's action.
+            return false;
+        }
         // Only role-based actions can be challenged.
         return !!action.roles;
     } else if (vm.state.state.name() == states.BLOCK_RESPONSE) {
         if (vm.state.state.target() === vm.state.playerIdx()) {
             // Cannot challenge our own block.
+            return false;
+        }
+        if (!vm.state.allowChallengeTeamMates() && isOnOurTeam(vm.state.state.target())) {
+            // Cannot challenge our teammate's blocks.
             return false;
         }
         return true;
@@ -591,12 +621,37 @@ function canTarget(playerIdx) {
         // Cannot target ourselves.
         return false;
     }
-    var player = vm.state.players()[playerIdx];
+    var player = getPlayer(playerIdx);
     if (!player) {
+        return false;
+    }
+    // If we are in team combat and these two players are on the same team, do not target
+    if (vm.targetedAction() !== 'convert' && isOnOurTeam(playerIdx)) {
         return false;
     }
     // Cannot target dead player.
     return player.influenceCount() > 0;
+}
+function isOnOurTeam(playerIdx) {
+    var p = ourPlayer();
+    var player = getPlayer(playerIdx);
+    return p && player && !vm.state.freeForAll() && p.team() === player.team();
+}
+function ourTeamWarning() {
+    var teammateIdx = null;
+    if (vm.state.state.name() == states.ACTION_RESPONSE) {
+        if (vm.state.allowChallengeTeamMates() && isOnOurTeam(vm.state.state.playerIdx())) {
+            teammateIdx = vm.state.state.playerIdx();
+        }
+    } else if (vm.state.state.name() == states.BLOCK_RESPONSE) {
+        if (vm.state.allowChallengeTeamMates() && isOnOurTeam(vm.state.state.target())) {
+            teammateIdx = vm.state.state.target();
+        }
+    }
+    if (teammateIdx != null) {
+        var player = getPlayer(teammateIdx);
+        return player && (player.name() + ' is on your team');
+    }
 }
 function playerHasRole(player, role) {
     return player.influence()
@@ -621,7 +676,7 @@ function possibleReconsiderAction(f) {
         localStorageGet('doubleKillWarningDisabled') !== 'true' &&
         vm.state.playerIdx() === vm.state.state.target() &&
         vm.state.state.action() === 'assassinate' &&
-        vm.state.players()[vm.state.playerIdx()].influenceCount() == 2
+        ourInfluenceCount() == 2
     ) {
         doublekillAction = f;
         $('#doubleRevealWarning').modal('show');
@@ -632,7 +687,7 @@ function possibleReconsiderAction(f) {
 
 function block(blockingRole) {
     if (playerHasRole(
-            vm.state.players()[vm.state.playerIdx()],
+            ourPlayer(),
             blockingRole
         )) {
         command('block', {blockingRole: blockingRole})
@@ -665,7 +720,10 @@ function theyMustReveal() {
     return vm.state.state.name() == states.REVEAL_INFLUENCE && vm.state.state.playerToReveal() != vm.state.playerIdx();
 }
 function ourPlayer() {
-    return vm.state.players()[vm.state.playerIdx()];
+    return getPlayer(vm.state.playerIdx());
+}
+function getPlayer(playerIdx) {
+    return vm.state.players()[playerIdx];
 }
 function ourInfluence() {
     var player = ourPlayer();
@@ -744,7 +802,7 @@ function formatMessage(message) {
         if (i == vm.state.playerIdx()) {
             playerName = 'you';
         } else {
-            var player = vm.state.players()[i];
+            var player = getPlayer(i);
             playerName = player ? player.name() : 'unknown';
         }
         message = message.replace(new RegExp('\\{' + i + '\\}', 'g'), playerName);
@@ -778,19 +836,24 @@ function roleDescription(role) {
         return 'Pay $3 to reveal another player\'s influence; blocked by contessa';
     }
     if (role === 'captain') {
-        return 'Steal $2 from another player; blocked by captain and ' + getGameRole(['ambassador', 'inquisitor']);
+        return 'Steal $2 from another player; blocked by captain and ' + getActionRole(actions.exchange);
     }
     if (role === 'contessa') {
         return 'Block assassination';
     }
     if (role === 'duke') {
-        return 'Tax +$3; block foreign aid';
+        var desc = 'Tax +$3; block foreign aid';
+        if (vm.state.gameType() == 'reformation') {
+            desc += '; cannot embezzle'
+        }
+        return desc;
     }
     return '';
 }
 function buttonActionClass(actionName) {
     var action = actions[actionName];
-    if (action && action.roles) {
+    var role = getActionRole(action);
+    if (role && role[0] != '!') {
         return 'btn-' + actionName;
     }
     for (var property in actions) {
@@ -822,13 +885,26 @@ function actionNames() {
         'exchange',
         'income',
         'foreign-aid',
-        'coup'
+        'coup',
+        'change-team',
+        'convert',
+        'embezzle'
     ];
 }
-function getGameRole(roles) {
-    var gameRoles = vm.state && vm.state.roles && vm.state.roles() || [];
-    return _.intersection(gameRoles, _.flatten([roles]))[0];
-
+// Exchange action requires inquisitor or ambassador - return whichever one is in the current game type.
+function getActionRole(action) {
+    if (action && action.roles) {
+        var gameRoles = vm.state && vm.state.roles && vm.state.roles() || [];
+        // action.roles can be a string or an array
+        var roles = _.flatten([action.roles]);
+        for (var i = 0; i < roles.length; i++) {
+            var role = roles[i];
+            if (gameRoles.indexOf(role.replace(/^!/, '')) >= 0) {
+                return role;
+            }
+        }
+    }
+    return null;
 }
 function showCheatSheet() {
     vm.sidebar('cheat');

@@ -204,6 +204,7 @@ describe('AI', function () {
             game._test_setInfluence(OPPONENT_IDX, 'ambassador', 'ambassador');
             game._test_setCash(AI_IDX, 2);
             game._test_setCash(OPPONENT_IDX, 2);
+            game._test_setTreasuryReserve(0);
         });
 
         describe('When it is the AI turn', function () {
@@ -276,6 +277,7 @@ describe('AI', function () {
             game._test_setInfluence(OPPONENT_IDX, 'ambassador');
             game._test_setCash(AI_IDX, 5);
             game._test_setCash(OPPONENT_IDX, 5);
+            game._test_setTreasuryReserve(0);
         });
 
         describe('When it is the AI turn', function () {

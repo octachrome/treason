@@ -63,6 +63,14 @@ i.allow:before {
 i.user:before {
     content: "\e971";
 }
+i.team-red:before {
+    content: "\e902";
+    color: darkred;
+}
+i.team-blue:before {
+    content: "\e904";
+    color: navy;
+}
 body {
     padding-top: 15px;
 }

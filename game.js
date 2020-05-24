@@ -30,11 +30,19 @@ var EventEmitter = require('events').EventEmitter;
 var nextGameId = 1;
 
 var MIN_PLAYERS = 2;
-var MAX_PLAYERS = 6;
+var MAX_PLAYERS = 10;
 var INITIAL_CASH = 2;
 var INFLUENCES = 2;
 
 var epithets = fs.readFileSync(__dirname + '/epithets.txt', 'utf8').split(/\r?\n/);
+
+const actionMessages = {
+    'assassinate': (idx, target) => `{${idx}} attempted to assassinate {${target}}`,
+    'steal': (idx, target) => `{${idx}} attempted to steal from {${target}}`,
+    'exchange': (idx) => `{${idx}} attempted to exchange`,
+    'interrogate': (idx, target) => `{${idx}} attempted to interrogate {${target}}`,
+    'embezzle': (idx, target, action, state) => `{${idx}} attempted to embezzle $${state.treasuryReserve}`
+}
 
 module.exports = function createGame(options) {
     options = options || {};
@@ -44,12 +52,17 @@ module.exports = function createGame(options) {
     var state = {
         stateId: 1,
         gameId: gameId,
+        gameType: 'original',
         players: [],
+        numRoles: 3,
         numPlayers: 0,
         maxPlayers: MAX_PLAYERS,
         gameName: options.gameName,
         created: options.created,
         roles: [],
+        treasuryReserve: 0,
+        freeForAll: true,
+        allowChallengeTeamMates: true,
         state: {
             name: stateNames.WAITING_FOR_PLAYERS
         },
@@ -81,6 +94,7 @@ module.exports = function createGame(options) {
     game._test_setInfluence = _test_setInfluence;
     game._test_setCash = _test_setCash;
     game._test_setDeck = _test_setDeck;
+    game._test_setTreasuryReserve = _test_setTreasuryReserve;
     game._test_resetAllows = resetAllows;
 
     //The game is created but relies on the creating player joining. If they fail to join after a few minutes, assume
@@ -93,11 +107,10 @@ module.exports = function createGame(options) {
     function playerJoined(playerIface) {
         clearTimeout(reaperHandle);
         var isObserver;
-        if (countReadyPlayers() < MAX_PLAYERS) {
+        if (countReadyPlayers() < state.maxPlayers) {
             isObserver = false;
         }
-        else if (countReadyPlayers(true) < MAX_PLAYERS) {
-            makeAiObserver();
+        else if (countReadyPlayers(true) < state.maxPlayers && makeAisObservers()) {
             isObserver = false;
         }
         else {
@@ -109,6 +122,7 @@ module.exports = function createGame(options) {
         var playerIdx = state.players.length;
         state.players.push(playerState);
         playerIfaces.push(playerIface);
+
         state.numPlayers++;
 
         addHistory('player-joined', nextAdhocHistGroup(), playerState.name + ' joined the game' + (isObserver ? ' as an observer' : ''));
@@ -123,6 +137,7 @@ module.exports = function createGame(options) {
         var playerState = {
             name: playerName(playerIface.name),
             cash: 0,
+            team: 0,
             influenceCount: 0,
             influence: [],
             isObserver: false,
@@ -217,6 +232,7 @@ module.exports = function createGame(options) {
                     }
                 }
                 playerState.influenceCount = 0;
+                checkFreeForAll();
                 var end = checkForGameEnd();
                 if (!end) {
                     if (state.state.playerIdx == playerIdx) {
@@ -257,7 +273,7 @@ module.exports = function createGame(options) {
     }
 
     function promoteObserverToPlayer() {
-        if (countReadyPlayers() < MAX_PLAYERS) {
+        if (countReadyPlayers() < state.maxPlayers) {
             for (var i = 0; i < state.numPlayers; i++) {
                 var playerState = state.players[i];
                 if (playerState.isReady === 'observe') {
@@ -272,11 +288,10 @@ module.exports = function createGame(options) {
         var playerState = state.players[playerIndex];
 
         if (!playerState.isReady) {
-            if (countReadyPlayers() < MAX_PLAYERS) {
+            if (countReadyPlayers() < state.maxPlayers) {
                 playerState.isReady = true;
             }
-            else if (countReadyPlayers(true) < MAX_PLAYERS) {
-                makeAiObserver();
+            else if (countReadyPlayers(true) < state.maxPlayers && makeAisObservers()) {
                 playerState.isReady = true;
             }
             else {
@@ -287,7 +302,7 @@ module.exports = function createGame(options) {
     }
 
     function addAiPlayer() {
-        if (countReadyPlayers() >= MAX_PLAYERS) {
+        if (countReadyPlayers() >= state.maxPlayers) {
             throw new GameException('Cannot add AI player: game is full');
         }
         createAiPlayer(game, options);
@@ -338,6 +353,7 @@ module.exports = function createGame(options) {
             gameStats.playerRank.unshift(playerIface.playerId);
         }
         addHistory('player-died', nextAdhocHistGroup(), '{%d} suffered a humiliating defeat', playerIdx);
+        checkFreeForAll();
         checkForGameEnd();
     }
 
@@ -354,6 +370,9 @@ module.exports = function createGame(options) {
             }
         }
         if (winnerIdx != null) {
+            for (var i = 0; i < state.players.length; i++) {
+                state.players[i].team = 0;
+            }
             setState({
                 name: stateNames.WAITING_FOR_PLAYERS,
                 winnerIdx: winnerIdx,
@@ -374,12 +393,28 @@ module.exports = function createGame(options) {
         }
     }
 
+    function checkFreeForAll() {
+        var freeForAll = true;
+        var lastTeam = null;
+        for (var i = 0; i < state.players.length; i++) {
+            if (state.players[i].influenceCount > 0) {
+                if (lastTeam == null) {
+                    lastTeam = state.players[i].team;
+                } else if (state.players[i].team != lastTeam) {
+                    freeForAll = false;
+                    break;
+                }
+            }
+        }
+        state.freeForAll = freeForAll;
+    }
+
     function resetReadyStates() {
         var readyCount = 0;
         for (var i = 0; i < state.players.length; i++) {
             var playerState = state.players[i];
             if (playerState.ai) {
-                if (readyCount < MAX_PLAYERS) {
+                if (readyCount < state.maxPlayers) {
                     playerState.isReady = true;
                     readyCount++;
                 }
@@ -457,21 +492,20 @@ module.exports = function createGame(options) {
             throw new GameException('Not enough players are ready to play');
         }
         gameStats = dataAccess.constructGameStats();
+        state.gameType = gameType || 'original';
         gameStats.gameType = gameType || 'original';
         state.roles = ['duke', 'captain', 'assassin', 'contessa'];
-        if (gameStats.gameType === 'inquisitors') {
+        if (gameStats.gameType === 'inquisitors' || gameStats.gameType == 'reformation') {
             state.roles.push('inquisitor');
         }
         else {
             state.roles.push('ambassador');
         }
-        deck = buildDeck();
-        gameTracker = new GameTracker();
 
-        var nonObservers = [];
+        let nonObservers = [];
 
-        for (var i = 0; i < state.numPlayers; i++) {
-            var playerState = state.players[i];
+        for (let i = 0; i < state.numPlayers; i++) {
+            const playerState = state.players[i];
 
             playerState.influence = [];
             playerState.influenceCount = 0;
@@ -493,25 +527,46 @@ module.exports = function createGame(options) {
                 playerState.cash = 0;
             } else {
                 playerState.isObserver = false;
-                for (var j = 0; j < INFLUENCES; j++) {
-                    playerState.influence[j] = {
-                        role: deck.pop(),
-                        revealed: false
-                    };
-                }
-                playerState.influenceCount = INFLUENCES;
-                playerState.cash = INITIAL_CASH;
-
-                gameStats.players++;
-                if (!playerState.ai) {
-                    gameStats.humanPlayers++;
-                }
-
                 nonObservers.push(i);
             }
         }
 
-        var firstPlayer;
+        // For each 2 players after 6, add 1 card
+        // e.x. 6 players is 3 of each,
+        // 7-8 players is 4 of each,
+        // 9-10 players is 5 of each, etc.
+        state.numRoles = 3 + (nonObservers.length > 6 ? Math.floor((nonObservers.length - 5) / 2) : 0);
+        deck = buildDeck();
+
+        let nextTeam = 1;
+
+        for (let i of nonObservers) {
+            const playerState = state.players[i];
+            for (let j = 0; j < INFLUENCES; j++) {
+                playerState.influence[j] = {
+                    role: deck.pop(),
+                    revealed: false
+                };
+            }
+            playerState.influenceCount = INFLUENCES;
+            playerState.cash = INITIAL_CASH;
+
+            gameStats.players++;
+            if (!playerState.ai) {
+                gameStats.humanPlayers++;
+            }
+
+            if (gameStats.gameType == 'reformation') {
+                playerState.team = nextTeam;
+                nextTeam *= -1;
+            }
+        }
+
+        if (gameStats.gameType == 'reformation') {
+            state.freeForAll = false;
+        }
+
+        let firstPlayer;
         if (typeof options.firstPlayer === 'number') {
             firstPlayer = options.firstPlayer;
         }
@@ -527,6 +582,7 @@ module.exports = function createGame(options) {
             playerIdx: firstPlayer,
             winnerIdx: null
         });
+        gameTracker = new GameTracker();
         gameTracker.startOfTurn(state);
     }
 
@@ -541,18 +597,45 @@ module.exports = function createGame(options) {
         return readyCount;
     }
 
-    function makeAiObserver() {
+    // Make space for a human player by demoting AI players to observers
+    function makeAisObservers() {
         for (var i = state.numPlayers - 1; i >= 0; i--) {
             var playerState = state.players[i];
             if (playerState.ai && playerState.isReady !== 'observe') {
                 playerState.isReady = 'observe';
-                return;
+                if (countReadyPlayers() < state.maxPlayers) {
+                    // There is space now.
+                    return true;
+                }
             }
         }
+        // No space
+        return false;
     }
 
-    function getGameRole(roles) {
-        return lodash.intersection(state.roles, lodash.flatten([roles]))[0];
+    // Exchange action requires inquisitor or ambassador - return whichever one is in the current game type.
+    function getActionRole(action) {
+        // action.roles can be a string or an array
+        for (let role of lodash.flatten([action.roles])) {
+            if (state.roles.includes(role.replace(/^!/, ''))) {
+                return role;
+            }
+        }
+        return null;
+    }
+
+    function actionPresentInGame(actionName) {
+        const action = actions[actionName];
+        if (action == null) {
+            return false;
+        }
+        if (action.roles && !getActionRole(action)) {
+            return false;
+        }
+        if (action.gameType && action.gameType != state.gameType) {
+            return false;
+        }
+        return true;
     }
 
     function command(playerIdx, command) {
@@ -607,13 +690,10 @@ module.exports = function createGame(options) {
             if (state.state.playerIdx != playerIdx) {
                 throw new GameException('Not your turn');
             }
-            action = actions[command.action];
-            if (action == null) {
+            if (!actionPresentInGame(command.action)) {
                 throw new GameException('Unknown action');
             }
-            if (action.roles && !getGameRole(action.roles)) {
-                throw new GameException('Action not allowed in this game');
-            }
+            action = actions[command.action];
             if (playerState.cash >= 10 && command.action != 'coup') {
                 throw new GameException('You must coup with >= 10 cash');
             }
@@ -622,13 +702,16 @@ module.exports = function createGame(options) {
             }
             if (action.targeted) {
                 if (command.target == null) {
-                    throw new GameException('No target specified');
+                    throw new GameException('No target specified for action ' + command.action);
                 }
                 if (command.target < 0 || command.target >= state.numPlayers) {
                     throw new GameException('Invalid target specified');
                 }
                 if (state.players[command.target].influenceCount == 0) {
                     throw new GameException('Cannot target dead player');
+                }
+                if (command.action != 'convert' && !canTarget(playerIdx, command.target)) {
+                    throw new GameException('Cannot target player on the same team');
                 }
             }
             gameTracker.action(command.action, command.target);
@@ -639,8 +722,8 @@ module.exports = function createGame(options) {
                 }
             } else {
                 debug('checking for blocks/challenges');
-                const msgFunc = action.message || ((idx, _, action) => `{${idx}} attempted to draw ${action}`);
-                const message = msgFunc(playerIdx, command.target, command.action);
+                const msgFunc = actionMessages[command.action] || ((idx, _, action) => `{${idx}} attempted to draw ${action.replace('-', ' ')}`);
+                const message = msgFunc(playerIdx, command.target, command.action, state);
 
                 setState({
                     name: stateNames.ACTION_RESPONSE,
@@ -660,18 +743,24 @@ module.exports = function createGame(options) {
                 if (playerIdx == state.state.playerIdx) {
                     throw new GameException('Cannot challenge your own action');
                 }
+                if (!state.allowChallengeTeamMates && !canTarget(playerIdx, state.state.playerIdx)) {
+                    throw new GameException('Cannot challenge player on the same team');
+                }
                 action = actions[state.state.action];
                 if (!action) {
-                    throw new GameException('Unknown action');
+                    throw new GameException('Unknown challenge action');
                 }
                 if (!action.roles) {
                     throw new GameException('Action cannot be challenged');
                 }
-                challenge(playerIdx, state.state.playerIdx, getGameRole(action.roles));
+                challenge(playerIdx, state.state.playerIdx, getActionRole(action));
 
             } else if (state.state.name == stateNames.BLOCK_RESPONSE) {
                 if (playerIdx == state.state.target) {
                     throw new GameException('Cannot challenge your own block');
+                }
+                if (!state.allowChallengeTeamMates && !canTarget(playerIdx, state.state.target)) {
+                    throw new GameException('Cannot challenge player on the same team');
                 }
                 challenge(playerIdx, state.state.target, state.state.blockingRole);
 
@@ -692,6 +781,7 @@ module.exports = function createGame(options) {
                     influence.revealed = true;
                     playerState.influenceCount--;
                     addHistory(state.state.reason, curTurnHistGroup(), '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
+
                     if (state.state.reason == 'incorrect-challenge') {
                         if (afterIncorrectChallenge()) {
                             nextTurn();
@@ -719,10 +809,13 @@ module.exports = function createGame(options) {
             }
             action = actions[state.state.action];
             if (!action) {
-                throw new GameException('Unknown action');
+                throw new GameException('Unknown block action');
             }
             if (playerIdx == state.state.playerIdx) {
                 throw new GameException('Cannot block your own action');
+            }
+            if (!canTarget(playerIdx, state.state.playerIdx)) {
+                throw new GameException('Cannot block player on the same team');
             }
             if (!action.blockedBy) {
                 throw new GameException('Action cannot be blocked');
@@ -808,7 +901,9 @@ module.exports = function createGame(options) {
                 if (idx == null) {
                     throw new GameException('Target does not have the confessed role');
                 }
-                target.influence[idx].role = swapRole(state.state.confession);
+                deck.push(state.state.confession);
+                deck = shuffle(deck);
+                target.influence[idx].role = deck.pop();
                 addHistory('interrogate', curTurnHistGroup(), '{%d} forced {%d} to exchange roles', playerIdx, state.state.target);
             }
             else {
@@ -821,6 +916,10 @@ module.exports = function createGame(options) {
         }
 
         emitState();
+    }
+
+    function canTarget(playerIdx, target) {
+        return state.freeForAll || state.players[playerIdx].team != state.players[target].team;
     }
 
     function allow(playerIdx) {
@@ -913,6 +1012,15 @@ module.exports = function createGame(options) {
         allows = [];
         // The player who took the action does not need to allow it.
         allows[initiatingPlayerIdx] = true;
+
+        if (state.state.action == 'foreign-aid') {
+            // Players on the same team cannot block each other from taking foreign aid.
+            for (var i = 0; i < state.numPlayers; i++) {
+                if (!canTarget(initiatingPlayerIdx, i)) {
+                    allows[i] = true;
+                }
+            }
+        }
     }
 
     function everyoneAllows() {
@@ -928,7 +1036,29 @@ module.exports = function createGame(options) {
         return true;
     }
 
-    function challenge(playerIdx, challengedPlayerIdx, challegedRole) {
+    function proveHasRole(challengedPlayer, role) {
+        const influenceIdx = indexOfInfluence(challengedPlayer, role);
+        if (influenceIdx != null) {
+            return [influenceIdx];
+        }
+    }
+
+    function proveDoesNotHaveRole(challengedPlayer, role) {
+        const influenceIdx = indexOfInfluence(challengedPlayer, role);
+        if (influenceIdx == null) {
+            const proof = [];
+            for (var i = 0; i < challengedPlayer.influence.length; i++) {
+                if (!challengedPlayer.influence[i].revealed) {
+                    proof.push(i);
+                }
+            }
+            return proof;
+        } else {
+            return null;
+        }
+    }
+
+    function challenge(playerIdx, challengedPlayerIdx, challengedRole) {
         var revealedRole, endOfTurn;
         var playerState = state.players[playerIdx];
         var challengedPlayer = state.players[challengedPlayerIdx];
@@ -942,18 +1072,35 @@ module.exports = function createGame(options) {
             // An action is being challenged - log it (<player> attempted to <action>).
             addHistory(state.state.action, curTurnHistGroup(), state.state.message);
         }
-
-        var influenceIdx = indexOfInfluence(challengedPlayer, challegedRole);
-        if (influenceIdx != null) {
-            // Player has role - challenge lost.
+        let proof;
+        if (challengedRole[0] == '!') {
+            proof = proveDoesNotHaveRole(challengedPlayer, challengedRole.substr(1));
+        }
+        else {
+            proof = proveHasRole(challengedPlayer, challengedRole);
+        }
+        if (proof != null) {
+            // There is proof - challenge lost.
             gameTracker.challenge(playerIdx, challengedPlayerIdx, false);
 
-            // Deal the challenged player a replacement card.
-            var oldRole = challengedPlayer.influence[influenceIdx].role;
-            challengedPlayer.influence[influenceIdx].role = swapRole(oldRole);
+            // Deal the challenged player replacement cards.
+            let oldRoles = '';
+            for (let influenceIdx of proof) {
+                const role = challengedPlayer.influence[influenceIdx].role;
+                if (oldRoles) {
+                    oldRoles += ' and ';
+                }
+                oldRoles += role;
+                deck.push(role);
+            }
+            deck = shuffle(deck);
+            for (let influenceIdx of proof) {
+                challengedPlayer.influence[influenceIdx].role = deck.pop();
+            }
 
-            var message = format('{%d} incorrectly challenged {%d}; {%d} exchanged %s for a new role',
-                playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRole);
+            var message = format('{%d} incorrectly challenged {%d}; {%d} exchanged %s for %s',
+                playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRoles,
+                proof.length == 1 ? 'a new role' : 'new roles');
 
             // If the challenger is losing their last influence,
             if (playerState.influenceCount <= 1) {
@@ -1121,22 +1268,35 @@ module.exports = function createGame(options) {
                 confession: confession
             });
             return false; // Not yet end of turn
+        } else if (actionState.action == 'change-team') {
+            playerState.team *= -1;
+            addHistory('change-team', curTurnHistGroup(), '{%d} changed to the %s team', playerIdx, getTeamName(playerState.team));
+            state.treasuryReserve += 1;
+            checkFreeForAll();
+        } else if (actionState.action == 'convert') {
+            target = state.players[actionState.target];
+            target.team *= -1;
+            addHistory('convert', curTurnHistGroup(), '{%d} converted {%d} to the %s team', playerIdx, actionState.target, getTeamName(target.team));
+            state.treasuryReserve += 2;
+            checkFreeForAll();
+        } else if (actionState.action == 'embezzle') {
+            addHistory('convert', curTurnHistGroup(), '{%d} embezzled $%d from the treasury', playerIdx, state.treasuryReserve);
+            playerState.cash += state.treasuryReserve;
+            state.treasuryReserve = 0;
         } else {
             // Income or foreign aid.
-            addHistory(actionState.action, curTurnHistGroup(), '{%d} drew %s', playerIdx, actionState.action);
+            addHistory(actionState.action, curTurnHistGroup(), '{%d} drew %s', playerIdx, actionState.action.replace('-', ' '));
         }
         return true; // End of turn
+    }
+
+    function getTeamName(team) {
+        return team == 1 ? 'red' : 'blue';
     }
 
     function setState(s) {
         debug('State change from ' + state.state.name + ' to ' + s.name);
         state.state = s;
-    }
-
-    function swapRole(role) {
-        deck.push(role);
-        deck = shuffle(deck);
-        return deck.pop();
     }
 
     function nextTurn() {
@@ -1193,7 +1353,7 @@ module.exports = function createGame(options) {
 
     function buildDeck() {
         var deck = [];
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < state.numRoles; i++) {
             deck = deck.concat(state.roles);
         }
         return shuffle(deck);
@@ -1224,7 +1384,7 @@ module.exports = function createGame(options) {
     // Returns whether another person can join as an actual player.
     // If it returns false, you can still join as an observer.
     function canJoin() {
-        return state.state.name == stateNames.WAITING_FOR_PLAYERS && state.players.length < MAX_PLAYERS;
+        return state.state.name == stateNames.WAITING_FOR_PLAYERS && state.players.length < state.maxPlayers;
     }
 
     function password() {
@@ -1249,7 +1409,7 @@ module.exports = function createGame(options) {
             }
         }
 
-        return currentState + ' (' + playerCount + '/' + MAX_PLAYERS + ')';
+        return currentState + ' (' + playerCount + '/' + state.maxPlayers + ')';
     }
 
     function gameType() {
@@ -1314,6 +1474,10 @@ module.exports = function createGame(options) {
     function _test_setDeck(d) {
         deck = d;
         _test_fixedDeck = true;
+    }
+
+    function _test_setTreasuryReserve(reserve) {
+        state.treasuryReserve = reserve;
     }
 
     return game;

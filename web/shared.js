@@ -24,26 +24,36 @@
             cost: 3,
             roles: 'assassin',
             targeted: true,
-            blockedBy: ['contessa'],
-            message: (idx, target) => `{${idx}} attempted to assassinate {${target}}`
+            blockedBy: ['contessa']
         },
         'steal': {
             cost: 0,
             roles: 'captain',
             targeted: true,
-            blockedBy: ['captain', 'ambassador', 'inquisitor'],
-            message: (idx, target) => `{${idx}} attempted to steal from {${target}}`
+            blockedBy: ['captain', 'ambassador', 'inquisitor']
         },
         'exchange': {
             cost: 0,
-            roles: ['ambassador', 'inquisitor'],
-            message: (idx) => `{${idx}} attempted to exchange`
+            roles: ['ambassador', 'inquisitor']
         },
         'interrogate': {
             cost: 0,
             roles: 'inquisitor',
-            targeted: true,
-            message: (idx, target) => `{${idx}} attempted to interrogate {${target}}`
+            targeted: true
+        },
+        'change-team': {
+            gameType: 'reformation',
+            cost: 1
+        },
+        'convert': {
+            gameType: 'reformation',
+            cost: 2,
+            targeted: true
+        },
+        'embezzle': {
+            gameType: 'reformation',
+            cost: 0,
+            roles: '!duke'
         }
     };
 

@@ -176,8 +176,24 @@ function createAiPlayer(game, options) {
         }
     }
 
+    function isTeammate(playerIdx) {
+        if (playerIdx == state.playerIdx) {
+            // For the purpose here, we are not our own teammate.
+            return false;
+        }
+        return !state.freeForAll && aiPlayer.team == state.players[playerIdx].team;
+    }
+
     function respondToAction() {
         trackClaim(state.state.playerIdx, state.state.action);
+        if (isTeammate(state.state.playerIdx)) {
+            // Allow our teammate's actions.
+            debug('allowing');
+            command({
+                command: 'allow'
+            });
+            return;
+        }
         if (state.state.action === 'steal' && aiPlayer.cash === 0) {
             // If someone wants to steal nothing from us, go ahead.
             debug('allowing');
@@ -228,6 +244,14 @@ function createAiPlayer(game, options) {
 
     function respondToBlock() {
         trackClaim(state.state.target, state.state.blockingRole);
+        if (isTeammate(state.state.target)) {
+            // Allow our teammate's actions.
+            debug('allowing');
+            command({
+                command: 'allow'
+            });
+            return;
+        }
         if (shouldChallenge()) {
             debug('challenging');
             command({
@@ -255,7 +279,7 @@ function createAiPlayer(game, options) {
                 usedRoles++;
             }
         }
-        if (usedRoles === 3) {
+        if (usedRoles === state.numRoles) {
             return true;
         }
 
@@ -273,7 +297,7 @@ function createAiPlayer(game, options) {
             && state.players[state.playerIdx].influenceCount === 1) {
             // Challenge if you're being assassinated, it's your last influence and all contessas have been revealed
             var contessas = countRevealedRoles('contessa');
-            if (contessas === 3) {
+            if (contessas === state.numRoles) {
                 return true;
             }
             // If all contessas have been revealed or claimed then we challenge the assassin
@@ -282,7 +306,7 @@ function createAiPlayer(game, options) {
                     contessas++;
                 }
             }
-            if (contessas >= 3) {
+            if (contessas >= state.numRoles) {
                 return true;
             }
             // Challenge if we already bluffed contessa and were caught
@@ -291,6 +315,12 @@ function createAiPlayer(game, options) {
             }
             // Otherwise we will bluff contessa
             return false;
+        }
+
+        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'embezzle') {
+            if (countRevealedRoles('duke') === state.numRoles) {
+                return false;
+            }
         }
 
         // Only challenge actions that could lead to a victory if not challenged.
@@ -414,6 +444,10 @@ function createAiPlayer(game, options) {
         debug('player ' + playerIdx + ' claimed ' + role);
     }
 
+    function isReformation() {
+        return state.gameType == 'reformation';
+    }
+
     function playOurTurn() {
         var influence = ourInfluence();
         debug('influence: ' + influence);
@@ -424,8 +458,14 @@ function createAiPlayer(game, options) {
             playAction('assassinate', assassinTarget());
         } else if (influence.indexOf('captain') >= 0 && captainTarget() != null && !randomizeChoice()) {
             playAction('steal', captainTarget());
-        } else if (influence.indexOf('duke') >= 0 && !randomizeChoice()) {
-            playAction('tax')
+        } else if (influence.indexOf('duke') >= 0 && state.treasuryReserve < 4 && !randomizeChoice()) {
+            playAction('tax');
+        } else if (isReformation() & influence.indexOf('duke') == -1 && influence.indexOf('captain') > -1 && state.treasuryReserve > 2 && !randomizeChoice()) {
+            playAction('embezzle');
+        } else if (isReformation() & influence.indexOf('duke') == -1 && influence.indexOf('captain') == -1 && state.treasuryReserve > 1 && !randomizeChoice()) {
+            playAction('embezzle');
+        } else if (countRevealedRoles('duke') == state.numRoles && influence.indexOf('captain') == -1 && !randomizeChoice()) {
+            playAction('foreign-aid');
         } else {
             // No good moves - check whether to bluff.
             var possibleBluffs = [];
@@ -438,15 +478,20 @@ function createAiPlayer(game, options) {
             if (shouldBluff('tax')) {
                 possibleBluffs.push('tax');
             }
+            if (isReformation() & shouldBluff('embezzle')) {
+                possibleBluffs.push('embezzle');
+            }
             if (possibleBluffs.length && !randomizeChoice()) {
                 // Randomly select one.
                 var actionName = possibleBluffs[rand(possibleBluffs.length)];
                 if (actionName == 'tax') {
-                    playAction('tax')
+                    playAction('tax');
                 } else if (actionName == 'steal') {
                     playAction('steal', captainTarget());
                 } else if (actionName == 'assassinate') {
                     playAction('assassinate', assassinTarget());
+                } else if (isReformation() && actionName == 'embezzle') {
+                    playAction('embezzle');
                 }
                 // Now that we've bluffed, recalculate whether or not to bluff next time.
                 bluffChoice = rand.random() < options.chanceToBluff;
@@ -457,7 +502,7 @@ function createAiPlayer(game, options) {
                     playAction('exchange');
                 } else {
                     // We have an assassin, but can't afford to assassinate.
-                    if (countRevealedRoles('duke') == 3) {
+                    if (countRevealedRoles('duke') == state.numRoles) {
                         playAction('foreign-aid');
                     } else {
                         playAction('income');
@@ -468,17 +513,24 @@ function createAiPlayer(game, options) {
     }
 
     function shouldBluff(actionNameOrRole) {
+        var influence = ourInfluence();
         var role;
         if (actions[actionNameOrRole]) {
             role = actions[actionNameOrRole].role;
         } else {
             role = actionNameOrRole;
         }
+        if (actionNameOrRole === 'embezzle' && state.treasuryReserve == 0) {
+            return false;
+        } 
+        if (actionNameOrRole === 'embezzle' && influence.indexOf('duke') >= 0 && state.treasuryReserve > 3) {
+            return true;
+        }
         if (calledBluffs[state.playerIdx] && calledBluffs[state.playerIdx][role]) {
             // Don't bluff a role that we previously bluffed and got caught out on.
             return false;
         }
-        if (countRevealedRoles(role) == 3) {
+        if (countRevealedRoles(role) == state.numRoles) {
             // Don't bluff a role that has already been revealed three times.
             return false;
         }
@@ -590,13 +642,19 @@ function createAiPlayer(game, options) {
 
     // Rank opponents by influence first, and money second
     function playersByStrength() {
-        // Start with live opponents
+        // Start with live opponents who are not ourselves and who are not on our team
         var indices = [];
+
         for (var i = 0; i < state.numPlayers; i++) {
-            if (i != state.playerIdx && state.players[i].influenceCount > 0) {
+            if (i != state.playerIdx && state.players[i].influenceCount > 0 &&
+                (state.freeForAll || aiPlayer.team != state.players[i].team)) {
                 indices.push(i);
             }
         }
+
+        debug('Indices without teammates: ' + indices.join());
+
+
         var randomNumber = rand(1000000000000000);
 
         return indices.sort(function (a, b) {
