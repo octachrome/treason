@@ -14,9 +14,10 @@ function openWindowWithUrl (targetUrl, clientWindows) {
   return null;
 }
 
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', (event = {}) => {
+  if (!event.notification || !event.notification.data || !event.notification.data.url) return;
   event.notification.close();
-  const notificationUrl = event?.notification?.data?.url;
+  const notificationUrl = event.notification.data.url;
   event.waitUntil(
     self.clients.matchAll({
       type: 'window',
@@ -24,10 +25,12 @@ self.addEventListener('notificationclick', (event) => {
     })
       .then(clientWindows => {
         const client = openWindowWithUrl(notificationUrl, clientWindows);
-        client?.postMessage({
-          name: 'notification:clicked',
-          id: event?.action
-        });
+        if (client) {
+          client.postMessage({
+            name: 'notification:clicked',
+            id: event?.action
+          });
+        }
       })
       .catch(error => {
         console.error(error);
