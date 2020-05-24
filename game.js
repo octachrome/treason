@@ -1091,7 +1091,7 @@ module.exports = function createGame(options) {
                 challengedPlayer.influence[influenceIdx].role = deck.pop();
             }
 
-            const message = `${playerIdx} incorrectly challenged ${challengedPlayerIdx}; ${challengedPlayerIdx} exchanged ${oldRoles} for ${proof.length == 1 ? 'a new role' : 'new roles'}`;
+            const message = `{${playerIdx}} incorrectly challenged {${challengedPlayerIdx}}; {${challengedPlayerIdx}} exchanged ${oldRoles} for ${proof.length == 1 ? 'a new role' : 'new roles'}`;
             // If the challenger is losing their last influence,
             if (playerState.influenceCount <= 1) {
                 // Then the challenger is dead. Reveal an influence.

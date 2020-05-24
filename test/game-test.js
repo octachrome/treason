@@ -48,9 +48,9 @@ describe('Game', function () {
 
         describe('Given a player is revealing an influence due to a failed ambassador challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'ambassador', 'assassin');
-                game._test_setInfluence(1, 'duke', 'captain');
-                game._test_setTurnState({
+                game.testSetInfluence(0, 'ambassador', 'assassin');
+                game.testSetInfluence(1, 'duke', 'captain');
+                game.testSetTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
                     action: 'exchange',
@@ -84,9 +84,9 @@ describe('Game', function () {
 
         describe('Given a player is revealing an influence due to a correct ambassador challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'duke', 'captain');
-                game._test_setInfluence(1, 'duke', 'captain');
-                game._test_setTurnState({
+                game.testSetInfluence(0, 'duke', 'captain');
+                game.testSetInfluence(1, 'duke', 'captain');
+                game.testSetTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
                     action: 'exchange',
@@ -120,10 +120,10 @@ describe('Game', function () {
 
         describe('Given a player is revealing an influence due to a failed assassin challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'assassin', 'captain');
-                game._test_setInfluence(1, 'duke', 'ambassador');
-                game._test_setInfluence(2, 'duke', 'captain');
-                game._test_setTurnState({
+                game.testSetInfluence(0, 'assassin', 'captain');
+                game.testSetInfluence(1, 'duke', 'ambassador');
+                game.testSetInfluence(2, 'duke', 'captain');
+                game.testSetTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
                     action: 'assassinate',
@@ -176,9 +176,9 @@ describe('Game', function () {
 
         describe('Given a player is revealing an influence due to a correct assassin challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'duke', 'captain');
-                game._test_setInfluence(1, 'duke', 'captain');
-                game._test_setTurnState({
+                game.testSetInfluence(0, 'duke', 'captain');
+                game.testSetInfluence(1, 'duke', 'captain');
+                game.testSetTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
                     action: 'assassinate',
@@ -213,11 +213,11 @@ describe('Game', function () {
 
         describe('Given a player is revealing an influence due to an incorrect duke challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'duke', 'duke');
-                game._test_setInfluence(1, 'captain', 'captain');
-                game._test_setCash(0, 0);
-                game._test_setCash(1, 0);
-                game._test_setTurnState({
+                game.testSetInfluence(0, 'duke', 'duke');
+                game.testSetInfluence(1, 'captain', 'captain');
+                game.testSetCash(0, 0);
+                game.testSetCash(1, 0);
+                game.testSetTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
                     action: 'tax',
@@ -257,11 +257,11 @@ describe('Game', function () {
 
         describe('Given a player is revealing an influence due to an correct duke challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'contessa', 'contessa');
-                game._test_setInfluence(1, 'captain', 'captain');
-                game._test_setCash(0, 0);
-                game._test_setCash(1, 0);
-                game._test_setTurnState({
+                game.testSetInfluence(0, 'contessa', 'contessa');
+                game.testSetInfluence(1, 'captain', 'captain');
+                game.testSetCash(0, 0);
+                game.testSetCash(1, 0);
+                game.testSetTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
                     action: 'tax',
@@ -301,11 +301,11 @@ describe('Game', function () {
 
         describe('Given a player is revealing an influence due to an incorrect challenge of a block', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'captain', 'captain');
-                game._test_setInfluence(1, 'ambassador', 'ambassador');
-                game._test_setCash(0, 2);
-                game._test_setCash(1, 2);
-                game._test_setTurnState({
+                game.testSetInfluence(0, 'captain', 'captain');
+                game.testSetInfluence(1, 'ambassador', 'ambassador');
+                game.testSetCash(0, 2);
+                game.testSetCash(1, 2);
+                game.testSetTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
                     action: 'steal',
@@ -351,9 +351,9 @@ describe('Game', function () {
         describe('Given a player is revealing an influence due to a coup', function () {
             beforeEach(function () {
                 return testPlayers.startGame().then(function () {
-                    game._test_setInfluence(0, 'ambassador', 'assassin');
-                    game._test_setInfluence(1, 'duke', 'captain');
-                    game._test_setTurnState({
+                    game.testSetInfluence(0, 'ambassador', 'assassin');
+                    game.testSetInfluence(1, 'duke', 'captain');
+                    game.testSetTurnState({
                         name: stateNames.REVEAL_INFLUENCE,
                         playerIdx: 0,
                         action: 'coup',
@@ -397,10 +397,10 @@ describe('Game', function () {
 
         describe('Given player1 is revealing an influence due to a coup', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'ambassador', 'assassin');
-                game._test_setInfluence(1, 'duke', 'captain');
-                game._test_setInfluence(2, 'ambassador', 'ambassador');
-                game._test_setTurnState({
+                game.testSetInfluence(0, 'ambassador', 'assassin');
+                game.testSetInfluence(1, 'duke', 'captain');
+                game.testSetInfluence(2, 'ambassador', 'ambassador');
+                game.testSetTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
                     action: 'coup',
@@ -425,15 +425,15 @@ describe('Game', function () {
 
         describe('Given player0 is attempting to draw tax, and player2 has allowed', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'ambassador', 'assassin');
-                game._test_setInfluence(1, 'duke', 'captain');
-                game._test_setInfluence(2, 'ambassador', 'ambassador');
-                game._test_setTurnState({
+                game.testSetInfluence(0, 'ambassador', 'assassin');
+                game.testSetInfluence(1, 'duke', 'captain');
+                game.testSetInfluence(2, 'ambassador', 'ambassador');
+                game.testSetTurnState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: 0,
                     action: 'tax'
                 });
-                game._test_resetAllows(0);
+                game.testResetAllows(0);
 
                 player2.command({
                     command: 'allow'
