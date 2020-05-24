@@ -883,33 +883,38 @@ function registerServiceWorker() {
     }
 }
 function listenForNotificationAction() {
-    window?.navigator?.serviceWorker?.addEventListener('message', event => {
-        if (event?.data?.name === 'notification:clicked') {
-            switch (event?.data?.id) {
+    if (!('serviceWorker' in navigator)) return;
+
+    navigator.serviceWorker.addEventListener('message', event => {
+        if (event && event.data && event.data.name === 'notification:clicked') {
+            if (!event.data.id) return;
+            switch (event.data.id) {
                 case 'play-again':
                     playAgain();
-                    break
+                    break;
                 case 'allow-play':
                     allow();
-                    break
+                    break;
                 case 'challenge-play':
                     challenge();
-                    break
+                    break;
                 case 'reveal-influence-0':
                     reveal(ourInfluence()[0]);
-                    break
+                    break;
                 case 'reveal-influence-1':
                     reveal(ourInfluence()[1]);
-                    break
-                default: break
+                    break;
+                default: break;
             }
         }
     })
 }
 function notifyPlayer(title, actions = []) {
-    if (vm.notifsEnabled() && !document.hasFocus()) {
+    if (!vm.notifsEnabled() || document.hasFocus()) return;
+
+    if ('serviceWorker' in navigator) {
         // Only notify if the user is looking at a different window.
-        navigator?.serviceWorker?.ready.then(registration => {
+        navigator.serviceWorker.ready.then(registration => {
             registration.showNotification(title, {
                 actions,
                 data: {
@@ -917,6 +922,8 @@ function notifyPlayer(title, actions = []) {
                 }
             });
         });
+    } else {
+        new Notification(title);
     }
 }
 function notifyPlayerOfState() {
