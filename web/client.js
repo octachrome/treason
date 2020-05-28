@@ -947,59 +947,18 @@ function sendGlobalMessage() {
         vm.globalMessage('');
     }
 }
-function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js').then((registration) => {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            }, (err) => {
-                console.log('ServiceWorker registration failed: ', err);
-            });
-        });
-    }
-}
-function listenForNotificationAction() {
-    if (!('serviceWorker' in navigator)) return;
 
-    navigator.serviceWorker.addEventListener('message', event => {
-        if (event && event.data && event.data.name === 'notification:clicked') {
-            if (!event.data.id) return;
-            switch (event.data.id) {
-                case 'play-again':
-                    playAgain();
-                    break;
-                case 'allow-play':
-                    allow();
-                    break;
-                case 'challenge-play':
-                    challenge();
-                    break;
-                case 'reveal-influence-0':
-                    reveal(ourInfluence()[0]);
-                    break;
-                case 'reveal-influence-1':
-                    reveal(ourInfluence()[1]);
-                    break;
-                default: break;
-            }
-        }
-    })
-}
-function notifyPlayer(title, actions = []) {
-    if (!vm.notifsEnabled() || document.hasFocus()) return;
-
-    if ('serviceWorker' in navigator) {
+var windowVisible = true;
+$(window).on('focus', function () {
+    windowVisible = true;
+});
+$(window).on('blur', function () {
+    windowVisible = false;
+});
+function notifyPlayer(message) {
+    if (vm.notifsEnabled() && !windowVisible) {
         // Only notify if the user is looking at a different window.
-        navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification(title, {
-                actions,
-                data: {
-                    url: window.location.href
-                }
-            });
-        });
-    } else {
-        new Notification(title);
+        new Notification(message);
     }
 }
 function notifyPlayerOfState() {
@@ -1009,37 +968,20 @@ function notifyPlayerOfState() {
     else if (weAreInState(states.EXCHANGE)) {
         notifyPlayer('Choose the roles to keep');
     }
-    else if (ourInfluenceCount() && (weCanBlock() || weCanChallenge())) {
-        notifyPlayer(stateMessage(), [{
-            action: 'allow-play',
-            title: 'Allow'
-        }, {
-            action: 'challenge-play',
-            title: 'Challenge'
-        }]);
+    else if (weCanBlock() || weCanChallenge()) {
+        notifyPlayer(stateMessage());
     }
     else if (weAreInState(states.EXCHANGE)) {
         notifyPlayer('Choose the roles to keep');
     }
     else if (weMustReveal()) {
-        notifyPlayer('You must reveal an influence', ourInfluence().map((influence, index) => {
-            return {
-                action: `reveal-influence-${index}`,
-                title: influence.role._latestValue
-            }
-        }));
+        notifyPlayer('You must reveal an influence');
     }
     else if (weHaveWon()) {
-        notifyPlayer('You have won!', [{
-            action: 'play-again',
-            title: 'Play again'
-        }]);
+        notifyPlayer('You have won!');
     }
     else if (theyHaveWon()) {
-        notifyPlayer(winnerName() + ' has won!', [{
-            action: 'play-again',
-            title: 'Play again'
-        }]);
+        notifyPlayer(winnerName() + ' has won!');
     }
 }
 function notifsSupported() {
@@ -1113,9 +1055,6 @@ $(window).on('keydown', function (event) {
 });
 
 $('document').ready(function() {
-    registerServiceWorker();
-    listenForNotificationAction();
-
     var $joinGameModal = $('#joinGameModal');
     $joinGameModal.on('show.bs.modal', function (event) {
         var gameName = $(event.relatedTarget).data('game-name');
