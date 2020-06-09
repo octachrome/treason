@@ -2,58 +2,58 @@
     'use strict';
 
     var actions = {
-        'coup': {
+        'golpe': {
             cost: 7,
             targeted: true
         },
-        'income': {
+        'renda': {
             cost: 0,
             gain: 1
         },
-        'foreign-aid': {
+        'ajuda-externa': {
             cost: 0,
             gain: 2,
-            blockedBy: ['duke']
+            blockedBy: ['duque']
         },
-        'tax': {
+        'taxa': {
             cost: 0,
             gain: 3,
-            roles: 'duke'
+            roles: 'duque'
         },
-        'assassinate': {
+        'assassinar': {
             cost: 3,
-            roles: 'assassin',
+            roles: 'assassino',
             targeted: true,
-            blockedBy: ['contessa']
+            blockedBy: ['condessa']
         },
-        'steal': {
+        'extorquir': {
             cost: 0,
-            roles: 'captain',
+            roles: 'capitão',
             targeted: true,
-            blockedBy: ['captain', 'ambassador', 'inquisitor']
+            blockedBy: ['capitão', 'embaixador', 'inquisidor']
         },
-        'exchange': {
+        'trocar': {
             cost: 0,
-            roles: ['ambassador', 'inquisitor']
+            roles: ['embaixador', 'inquisidor']
         },
-        'interrogate': {
+        'interrogar': {
             cost: 0,
-            roles: 'inquisitor',
+            roles: 'inquisidor',
             targeted: true
         },
-        'change-team': {
-            gameType: 'reformation',
+        'trocar-religiao': {
+            gameType: 'reforma',
             cost: 1
         },
-        'convert': {
-            gameType: 'reformation',
+        'converter': {
+            gameType: 'reforma',
             cost: 2,
             targeted: true
         },
-        'embezzle': {
-            gameType: 'reformation',
+        'desviar': {
+            gameType: 'reforma',
             cost: 0,
-            roles: '!duke'
+            roles: '!duque'
         }
     };
 
@@ -64,8 +64,8 @@
         FINAL_ACTION_RESPONSE: 'final-action-response',
         BLOCK_RESPONSE: 'block-response',
         REVEAL_INFLUENCE: 'reveal-influence',
-        EXCHANGE: 'exchange',
-        INTERROGATE: 'interrogate'
+        trocar: 'trocar',
+        interrogar: 'interrogar'
     };
 
     if (typeof window != 'undefined') {

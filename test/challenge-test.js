@@ -26,14 +26,14 @@ describe('Challenges', function () {
         });
     });
 
-    describe('Given player0 assassinates player1 with a real assassin', function () {
+    describe('Given player0 assassinars player1 with a real assassino', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'captain');
+            game._test_setInfluence(0, 'duque', 'assassino');
+            game._test_setInfluence(1, 'duque', 'capitão');
             game._test_setTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
-                action: 'assassinate',
+                action: 'assassinar',
                 target: 1
             });
         });
@@ -61,14 +61,14 @@ describe('Challenges', function () {
         });
     });
 
-    describe('Given player0 assassinates player1 with a real assassin', function () {
+    describe('Given player0 assassinars player1 with a real assassino', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'captain');
+            game._test_setInfluence(0, 'duque', 'assassino');
+            game._test_setInfluence(1, 'duque', 'capitão');
             game._test_setTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
-                action: 'assassinate',
+                action: 'assassinar',
                 target: 1
             });
         });
@@ -96,15 +96,15 @@ describe('Challenges', function () {
         });
     });
 
-    describe('Given player0 assassinates player1 with a real assassin, and player2 has only one influence', function () {
+    describe('Given player0 assassinars player1 with a real assassino, and player2 has only one influence', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'captain');
-            game._test_setInfluence(2, 'duke');
+            game._test_setInfluence(0, 'duque', 'assassino');
+            game._test_setInfluence(1, 'duque', 'capitão');
+            game._test_setInfluence(2, 'duque');
             game._test_setTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
-                action: 'assassinate',
+                action: 'assassinar',
                 target: 1
             });
         });
@@ -137,14 +137,14 @@ describe('Challenges', function () {
         });
     });
 
-    describe('Given player0 assassinates player1 with a bluffed assassin', function () {
+    describe('Given player0 assassinars player1 with a bluffed assassino', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'captain');
-            game._test_setInfluence(1, 'duke', 'captain');
+            game._test_setInfluence(0, 'duque', 'capitão');
+            game._test_setInfluence(1, 'duque', 'capitão');
             game._test_setTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
-                action: 'assassinate',
+                action: 'assassinar',
                 target: 1
             });
         });
@@ -166,16 +166,16 @@ describe('Challenges', function () {
         });
     });
 
-    describe('Given player1 blocks player0\'s assassination with a bluffed contessa', function () {
+    describe('Given player1 blocks player0\'s assassinoation with a bluffed condessa', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'captain');
+            game._test_setInfluence(0, 'duque', 'assassino');
+            game._test_setInfluence(1, 'duque', 'capitão');
             game._test_setTurnState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: 0,
-                action: 'assassinate',
+                action: 'assassinar',
                 target: 1,
-                blockingRole: 'contessa'
+                blockingRole: 'condessa'
             });
         });
 
@@ -201,16 +201,16 @@ describe('Challenges', function () {
         });
     });
 
-    describe('Given player1 blocks player0\'s assassination with a real contessa', function () {
+    describe('Given player1 blocks player0\'s assassinoation with a real condessa', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'contessa');
+            game._test_setInfluence(0, 'duque', 'assassino');
+            game._test_setInfluence(1, 'duque', 'condessa');
             game._test_setTurnState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: 0,
-                action: 'assassinate',
+                action: 'assassinar',
                 target: 1,
-                blockingRole: 'contessa'
+                blockingRole: 'condessa'
             });
         });
 
@@ -234,7 +234,7 @@ describe('Challenges', function () {
                 });
             });
 
-            it('Then the assassination should still target player1', function () {
+            it('Then the assassinoation should still target player1', function () {
                 return player0.getNextState().then(function (state) {
                     expect(state.state.target).to.be(1);
                 });
@@ -245,7 +245,7 @@ describe('Challenges', function () {
                     return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                         player0.command({
                             command: 'reveal',
-                            role: 'assassin'
+                            role: 'assassino'
                         });
                     });
                 });
@@ -259,16 +259,16 @@ describe('Challenges', function () {
         });
     });
 
-    describe('Given player1 blocks player0\'s assassination with a real contessa, and player0 has only one influence', function () {
+    describe('Given player1 blocks player0\'s assassinoation with a real condessa, and player0 has only one influence', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'assassin');
-            game._test_setInfluence(1, 'duke', 'contessa');
+            game._test_setInfluence(0, 'assassino');
+            game._test_setInfluence(1, 'duque', 'condessa');
             game._test_setTurnState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: 0,
-                action: 'assassinate',
+                action: 'assassinar',
                 target: 1,
-                blockingRole: 'contessa'
+                blockingRole: 'condessa'
             });
         });
 
@@ -300,14 +300,14 @@ describe('Challenges', function () {
         });
     });
 
-    describe('Given a player0 exchanges using a real ambassador', function () {
+    describe('Given a player0 trocars using a real embaixador', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'ambassador', 'assassin');
-            game._test_setInfluence(1, 'duke');
+            game._test_setInfluence(0, 'embaixador', 'assassino');
+            game._test_setInfluence(1, 'duque');
             game._test_setTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
-                action: 'exchange'
+                action: 'trocar'
             });
         });
 
@@ -324,27 +324,27 @@ describe('Challenges', function () {
                 });
             });
 
-            it('Then player0 should be in exchange state', function () {
+            it('Then player0 should be in trocar state', function () {
                 return player0.getNextState().then(function (state) {
-                    expect(state.state.name).to.be(stateNames.EXCHANGE);
+                    expect(state.state.name).to.be(stateNames.trocar);
                     expect(state.state.playerIdx).to.be(0);
                 });
             });
         });
     });
 
-    describe('Given player1 blocks a steal with a bluffed ambassador', function () {
+    describe('Given player1 blocks a extorquir with a bluffed embaixador', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'captain');
-            game._test_setInfluence(1, 'duke', 'contessa');
+            game._test_setInfluence(0, 'duque', 'capitão');
+            game._test_setInfluence(1, 'duque', 'condessa');
             game._test_setCash(0, 4);
             game._test_setCash(1, 4);
             game._test_setTurnState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: 0,
-                action: 'steal',
+                action: 'extorquir',
                 target: 1,
-                blockingRole: 'ambassador'
+                blockingRole: 'embaixador'
             });
         });
 
@@ -355,7 +355,7 @@ describe('Challenges', function () {
                 });
             });
 
-            it('Then the steal should not be performed yet', function () {
+            it('Then the extorquir should not be performed yet', function () {
                 return player1.getNextState().then(function (state) {
                     expect(state.players[0].cash).to.be(4);
                     expect(state.players[1].cash).to.be(4);
@@ -375,12 +375,12 @@ describe('Challenges', function () {
                     return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                         player1.command({
                             command: 'reveal',
-                            role: 'contessa'
+                            role: 'condessa'
                         });
                     })
                 });
 
-                it('Then the steal should be applied', function () {
+                it('Then the extorquir should be applied', function () {
                     return player0.getNextState().then(function (state) {
                         expect(state.players[0].cash).to.be(6);
                         expect(state.players[1].cash).to.be(2);

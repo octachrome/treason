@@ -33,10 +33,10 @@ describe('AI', function () {
         });
     });
 
-    describe('Given an AI with a duke vs an opponent with a captain', function () {
+    describe('Given an AI with a duque vs an opponent with a capitão', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'duke');
-            game._test_setInfluence(OPPONENT_IDX, 'captain');
+            game._test_setInfluence(AI_IDX, 'duque');
+            game._test_setInfluence(OPPONENT_IDX, 'capitão');
             game._test_setCash(AI_IDX, 6);
             game._test_setCash(OPPONENT_IDX, 2);
 
@@ -46,11 +46,11 @@ describe('AI', function () {
             });
         });
 
-        describe('When the opponent attempts to steal', function () {
+        describe('When the opponent attempts to extorquir', function () {
             beforeEach(function () {
                 testPlayer.command({
                     command: 'play-action',
-                    action: 'steal',
+                    action: 'extorquir',
                     target: AI_IDX
                 });
 
@@ -68,10 +68,10 @@ describe('AI', function () {
         });
     });
 
-    describe('Given an AI with a contessa vs an opponent with a captain, and the endgame is a long way off', function () {
+    describe('Given an AI with a condessa vs an opponent with a capitão, and the endgame is a long way off', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'contessa', 'contessa');
-            game._test_setInfluence(OPPONENT_IDX, 'captain', 'captain');
+            game._test_setInfluence(AI_IDX, 'condessa', 'condessa');
+            game._test_setInfluence(OPPONENT_IDX, 'capitão', 'capitão');
             game._test_setCash(AI_IDX, 6);
             game._test_setCash(OPPONENT_IDX, 2);
 
@@ -81,11 +81,11 @@ describe('AI', function () {
             });
         });
 
-        describe('When the opponent attempts to steal', function () {
+        describe('When the opponent attempts to extorquir', function () {
             beforeEach(function () {
                 testPlayer.command({
                     command: 'play-action',
-                    action: 'steal',
+                    action: 'extorquir',
                     target: AI_IDX
                 });
 
@@ -94,21 +94,21 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should bluff captain/ambassador', function () {
+            it('Then the AI should bluff capitão/embaixador', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.BLOCK_RESPONSE);
-                    expect(state.state.blockingRole).to.match(/captain|ambassador/);
+                    expect(state.state.blockingRole).to.match(/capitão|embaixador/);
                     expect(state.state.playerIdx).to.be(OPPONENT_IDX);
                 });
             });
         });
 
         // todo
-        describe('When the opponent attempts to draw foreign aid', function () {
+        describe('When the opponent attempts to draw ajuda externa', function () {
             beforeEach(function () {
                 testPlayer.command({
                     command: 'play-action',
-                    action: 'foreign-aid'
+                    action: 'ajuda-externa'
                 });
 
                 return testPlayer.getNextState().then(function (state) {
@@ -116,27 +116,27 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should bluff duke', function () {
+            it('Then the AI should bluff duque', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.BLOCK_RESPONSE);
-                    expect(state.state.blockingRole).to.match(/duke/);
+                    expect(state.state.blockingRole).to.match(/duque/);
                     expect(state.state.playerIdx).to.be(OPPONENT_IDX);
                 });
             });
         });
     });
 
-    describe('Given an AI attempts a steal that will win the game', function () {
+    describe('Given an AI attempts a extorquir that will win the game', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'captain');
-            game._test_setInfluence(OPPONENT_IDX, 'contessa');
+            game._test_setInfluence(AI_IDX, 'capitão');
+            game._test_setInfluence(OPPONENT_IDX, 'condessa');
             game._test_setCash(AI_IDX, 6);
             game._test_setCash(OPPONENT_IDX, 6);
 
             game._test_setTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: AI_IDX,
-                action: 'steal',
+                action: 'extorquir',
                 target: OPPONENT_IDX
             });
         });
@@ -145,7 +145,7 @@ describe('AI', function () {
             beforeEach(function () {
                 testPlayer.command({
                     command: 'block',
-                    blockingRole: 'ambassador'
+                    blockingRole: 'embaixador'
                 });
 
                 return testPlayer.getNextState().then(function (state) {
@@ -162,17 +162,17 @@ describe('AI', function () {
         });
     });
 
-    describe('Given the AI attempts a steal, and the endgame is some way off', function () {
+    describe('Given the AI attempts a extorquir, and the endgame is some way off', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'captain');
-            game._test_setInfluence(OPPONENT_IDX, 'contessa');
+            game._test_setInfluence(AI_IDX, 'capitão');
+            game._test_setInfluence(OPPONENT_IDX, 'condessa');
             game._test_setCash(AI_IDX, 2);
             game._test_setCash(OPPONENT_IDX, 2);
 
             game._test_setTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: AI_IDX,
-                action: 'steal',
+                action: 'extorquir',
                 target: OPPONENT_IDX
             });
         });
@@ -181,7 +181,7 @@ describe('AI', function () {
             beforeEach(function () {
                 testPlayer.command({
                     command: 'block',
-                    blockingRole: 'ambassador'
+                    blockingRole: 'embaixador'
                 });
 
                 return testPlayer.getNextState().then(function (state) {
@@ -200,8 +200,8 @@ describe('AI', function () {
 
     describe('Given the AI has no good roles, and the endgame is some way off', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'contessa', 'contessa');
-            game._test_setInfluence(OPPONENT_IDX, 'ambassador', 'ambassador');
+            game._test_setInfluence(AI_IDX, 'condessa', 'condessa');
+            game._test_setInfluence(OPPONENT_IDX, 'embaixador', 'embaixador');
             game._test_setCash(AI_IDX, 2);
             game._test_setCash(OPPONENT_IDX, 2);
             game._test_setTreasuryReserve(0);
@@ -219,21 +219,21 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should bluff duke or captain', function () {
+            it('Then the AI should bluff duque or capitão', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
                     expect(state.state.playerIdx).to.be(AI_IDX);
-                    expect(state.state.action).to.match(/tax|steal/);
+                    expect(state.state.action).to.match(/taxa|extorquir/);
                 });
             });
         });
 
-        describe('When our captain bluff has previously been called', function () {
+        describe('When our capitão bluff has previously been called', function () {
             beforeEach(function () {
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: AI_IDX,
-                    action: 'steal',
+                    action: 'extorquir',
                     target: OPPONENT_IDX,
                     playerToReveal: AI_IDX,
                     reason: 'successful-challenge'
@@ -260,11 +260,11 @@ describe('AI', function () {
                     });
                 });
 
-                it('Then the AI should not bluff captain again', function () {
+                it('Then the AI should not bluff capitão again', function () {
                     return testPlayer.getNextState().then(function (state) {
                         expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
                         expect(state.state.playerIdx).to.be(AI_IDX);
-                        expect(state.state.action).not.to.be('steal');
+                        expect(state.state.action).not.to.be('extorquir');
                     });
                 });
             });
@@ -273,8 +273,8 @@ describe('AI', function () {
 
     describe('Given the AI has no good roles, and a bluff would win us the game', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'contessa');
-            game._test_setInfluence(OPPONENT_IDX, 'ambassador');
+            game._test_setInfluence(AI_IDX, 'condessa');
+            game._test_setInfluence(OPPONENT_IDX, 'embaixador');
             game._test_setCash(AI_IDX, 5);
             game._test_setCash(OPPONENT_IDX, 5);
             game._test_setTreasuryReserve(0);
@@ -292,20 +292,20 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should exchange instead of bluffing a winning move (because we will just get challenged)', function () {
+            it('Then the AI should trocar instead of bluffing a winning move (because we will just get challenged)', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.ACTION_RESPONSE);
                     expect(state.state.playerIdx).to.be(AI_IDX);
-                    expect(state.state.action).to.be('exchange');
+                    expect(state.state.action).to.be('trocar');
                 });
             });
         });
     });
 
-    describe('Given the AI has no cash and an ambassador', function () {
+    describe('Given the AI has no cash and an embaixador', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'ambassador');
-            game._test_setInfluence(OPPONENT_IDX, 'captain');
+            game._test_setInfluence(AI_IDX, 'embaixador');
+            game._test_setInfluence(OPPONENT_IDX, 'capitão');
             game._test_setCash(AI_IDX, 0);
             game._test_setCash(OPPONENT_IDX, 0);
 
@@ -315,11 +315,11 @@ describe('AI', function () {
             });
         });
 
-        describe('When the player steals from the AI', function () {
+        describe('When the player extorquirs from the AI', function () {
             beforeEach(function () {
                 testPlayer.command({
                     command: 'play-action',
-                    action: 'steal',
+                    action: 'extorquir',
                     target: AI_IDX
                 });
 
@@ -328,7 +328,7 @@ describe('AI', function () {
                 });
             });
 
-            it('Then the AI should allow the steal (because no cash will be lost)', function () {
+            it('Then the AI should allow the extorquir (because no cash will be lost)', function () {
                 return testPlayer.getNextState().then(function (state) {
                     expect(state.state.name).to.be(stateNames.START_OF_TURN);
                     expect(state.state.playerIdx).to.be(AI_IDX);

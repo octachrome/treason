@@ -526,12 +526,12 @@
 			}
 
 			// Copied from core's src/data.js:dataAttr()
-			// Convert from a string to a proper data type
+			// converter from a string to a proper data type
 			try {
 				data = data === "true" ? true :
 					data === "false" ? false :
 					data === "null" ? null :
-					// Only convert to a number if it doesn't change the string
+					// Only converter to a number if it doesn't change the string
 					+data + "" === data ? +data :
 					rbrace.test( data ) ? JSON.parse( data ) :
 					data;

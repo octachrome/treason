@@ -37,11 +37,11 @@ var INFLUENCES = 2;
 var epithets = fs.readFileSync(__dirname + '/epithets.txt', 'utf8').split(/\r?\n/);
 
 const actionMessages = {
-    'assassinate': (idx, target) => `{${idx}} attempted to assassinate {${target}}`,
-    'steal': (idx, target) => `{${idx}} attempted to steal from {${target}}`,
-    'exchange': (idx) => `{${idx}} attempted to exchange`,
-    'interrogate': (idx, target) => `{${idx}} attempted to interrogate {${target}}`,
-    'embezzle': (idx, target, action, state) => `{${idx}} attempted to embezzle $${state.treasuryReserve}`
+    'assassinar': (idx, target) => `{${idx}} tentou assassinar {${target}}`,
+    'extorquir': (idx, target) => `{${idx}} tentou extorquir de {${target}}`,
+    'trocar': (idx) => `{${idx}} tentou trocar`,
+    'interrogar': (idx, target) => `{${idx}} tentou interrogar {${target}}`,
+    'desviar': (idx, target, action, state) => `{${idx}} tentou desviar $${state.treasuryReserve}`
 }
 
 module.exports = function createGame(options) {
@@ -125,7 +125,7 @@ module.exports = function createGame(options) {
 
         state.numPlayers++;
 
-        addHistory('player-joined', nextAdhocHistGroup(), playerState.name + ' joined the game' + (isObserver ? ' as an observer' : ''));
+        addHistory('player-joined', nextAdhocHistGroup(), playerState.name + ' entrou no jogo' + (isObserver ? ' como espectador' : ''));
         emitState();
 
         var proxy = createGameProxy(playerIdx);
@@ -217,7 +217,7 @@ module.exports = function createGame(options) {
                 var influence = playerState.influence;
                 for (var j = 0; j < influence.length; j++) {
                     if (!influence[j].revealed) {
-                        historySuffix.push(format('{%d} revealed %s', playerIdx, influence[j].role));
+                        historySuffix.push(format('{%d} revelou %s', playerIdx, influence[j].role));
                         influence[j].revealed = true;
                     }
                 }
@@ -251,7 +251,7 @@ module.exports = function createGame(options) {
             playerIface.onPlayerLeft();
         }
 
-        addHistory('player-left', nextAdhocHistGroup(), playerState.name + ' left the game');
+        addHistory('player-left', nextAdhocHistGroup(), playerState.name + ' saiu do jogo');
         for (var k = 0; k < historySuffix.length; k++) {
             addHistory('player-left', curAdhocHistGroup(), historySuffix[k]);
         }
@@ -297,7 +297,7 @@ module.exports = function createGame(options) {
             else {
                 playerState.isReady = 'observe';
             }
-            addHistory('player-ready', nextAdhocHistGroup(), playerState.name + ' is ready to play again');
+            addHistory('player-ready', nextAdhocHistGroup(), playerState.name + ' está pronto para jogar novamente');
         }
     }
 
@@ -352,7 +352,7 @@ module.exports = function createGame(options) {
         if (playerIface) {
             gameStats.playerRank.unshift(playerIface.playerId);
         }
-        addHistory('player-died', nextAdhocHistGroup(), '{%d} suffered a humiliating defeat', playerIdx);
+        addHistory('player-died', nextAdhocHistGroup(), '{%d} foi humilhantemente derrotado', playerIdx);
         checkFreeForAll();
         checkForGameEnd();
     }
@@ -477,7 +477,7 @@ module.exports = function createGame(options) {
         }
         // If a player is exchanging or interrogating, show the roles to that player alone.
         if (state.state.playerIdx != playerIdx) {
-            delete masked.state.exchangeOptions;
+            delete masked.state.trocarOptions;
             delete masked.state.confession;
         }
         masked.playerIdx = playerIdx;
@@ -494,12 +494,12 @@ module.exports = function createGame(options) {
         gameStats = dataAccess.constructGameStats();
         state.gameType = gameType || 'original';
         gameStats.gameType = gameType || 'original';
-        state.roles = ['duke', 'captain', 'assassin', 'contessa'];
-        if (gameStats.gameType === 'inquisitors' || gameStats.gameType == 'reformation') {
-            state.roles.push('inquisitor');
+        state.roles = ['duque', 'capitão', 'assassino', 'condessa'];
+        if (gameStats.gameType === 'inquisidores' || gameStats.gameType == 'reforma') {
+            state.roles.push('inquisidor');
         }
         else {
-            state.roles.push('ambassador');
+            state.roles.push('embaixador');
         }
 
         let nonObservers = [];
@@ -556,13 +556,13 @@ module.exports = function createGame(options) {
                 gameStats.humanPlayers++;
             }
 
-            if (gameStats.gameType == 'reformation') {
+            if (gameStats.gameType == 'reforma') {
                 playerState.team = nextTeam;
                 nextTeam *= -1;
             }
         }
 
-        if (gameStats.gameType == 'reformation') {
+        if (gameStats.gameType == 'reforma') {
             state.freeForAll = false;
         }
 
@@ -613,7 +613,7 @@ module.exports = function createGame(options) {
         return false;
     }
 
-    // Exchange action requires inquisitor or ambassador - return whichever one is in the current game type.
+    // trocar action requires inquisidor or embaixador - return whichever one is in the current game type.
     function getActionRole(action) {
         // action.roles can be a string or an array
         for (let role of lodash.flatten([action.roles])) {
@@ -694,8 +694,8 @@ module.exports = function createGame(options) {
                 throw new GameException('Unknown action');
             }
             action = actions[command.action];
-            if (playerState.cash >= 10 && command.action != 'coup') {
-                throw new GameException('You must coup with >= 10 cash');
+            if (playerState.cash >= 10 && command.action != 'golpe') {
+                throw new GameException('You must golpe with >= 10 cash');
             }
             if (playerState.cash < action.cost) {
                 throw new GameException('Not enough cash');
@@ -710,7 +710,7 @@ module.exports = function createGame(options) {
                 if (state.players[command.target].influenceCount == 0) {
                     throw new GameException('Cannot target dead player');
                 }
-                if (command.action != 'convert' && !canTarget(playerIdx, command.target)) {
+                if (command.action != 'converter' && !canTarget(playerIdx, command.target)) {
                     throw new GameException('Cannot target player on the same team');
                 }
             }
@@ -722,7 +722,7 @@ module.exports = function createGame(options) {
                 }
             } else {
                 debug('checking for blocks/challenges');
-                const msgFunc = actionMessages[command.action] || ((idx, _, action) => `{${idx}} attempted to draw ${action.replace('-', ' ')}`);
+                const msgFunc = actionMessages[command.action] || ((idx, _, action) => `{${idx}} tentou usar ${action.replace('-', ' ')}`);
                 const message = msgFunc(playerIdx, command.target, command.action, state);
 
                 setState({
@@ -780,7 +780,7 @@ module.exports = function createGame(options) {
                 if (influence.role == command.role && !influence.revealed) {
                     influence.revealed = true;
                     playerState.influenceCount--;
-                    addHistory(state.state.reason, curTurnHistGroup(), '%s; {%d} revealed %s', state.state.message, playerIdx, command.role);
+                    addHistory(state.state.reason, curTurnHistGroup(), '%s; {%d} revelou %s', state.state.message, playerIdx, command.role);
 
                     if (state.state.reason == 'incorrect-challenge') {
                         if (afterIncorrectChallenge()) {
@@ -791,7 +791,7 @@ module.exports = function createGame(options) {
                             nextTurn();
                         }
                     } else {
-                        // The reveal is due to a coup or assassination.
+                        // The reveal is due to a golpe or assassinoation.
                         nextTurn();
                     }
                     emitState();
@@ -840,7 +840,7 @@ module.exports = function createGame(options) {
                 action: state.state.action,
                 target: playerIdx,
                 blockingRole: command.blockingRole,
-                message: format('{%d} attempted to block with ' + command.blockingRole, playerIdx)
+                message: format('{%d} tentou bloquear com a(o) ' + command.blockingRole, playerIdx)
             });
             resetAllows(playerIdx);
 
@@ -854,20 +854,20 @@ module.exports = function createGame(options) {
                 return;
             }
 
-        } else if (command.command == 'exchange') {
-            if (state.state.name != stateNames.EXCHANGE) {
+        } else if (command.command == 'trocar') {
+            if (state.state.name != stateNames.trocar) {
                 throw new GameException('Incorrect state');
             }
             if (state.state.playerIdx != playerIdx) {
                 throw new GameException('Not your turn');
             }
             if (!command.roles) {
-                throw new GameException('Must specify roles to exchange');
+                throw new GameException('Must specify roles to trocar');
             }
             if (command.roles.length != playerState.influenceCount) {
                 throw new GameException('Wrong number of roles');
             }
-            var unchosen = arrayDifference(state.state.exchangeOptions, command.roles);
+            var unchosen = arrayDifference(state.state.trocarOptions, command.roles);
             if (!unchosen) {
                 throw new GameException('Invalid choice of roles');
             }
@@ -879,23 +879,23 @@ module.exports = function createGame(options) {
             }
             // Return the other roles to the deck.
             deck = shuffle(deck.concat(unchosen));
-            addHistory('exchange', curTurnHistGroup(), '{%d} exchanged roles', playerIdx);
+            addHistory('trocar', curTurnHistGroup(), '{%d} trocar personagens', playerIdx);
             nextTurn();
 
-        } else if (command.command == 'interrogate') {
-            if (state.state.name != stateNames.INTERROGATE) {
+        } else if (command.command == 'interrogar') {
+            if (state.state.name != stateNames.interrogar) {
                 throw new GameException('Incorrect state');
             }
             if (state.state.playerIdx != playerIdx) {
                 throw new GameException('Not your turn');
             }
-            // Send a history event only to the player who was interrogated.
+            // Send a history event only to the player who was interrogard.
             addHistoryAsync(
                 state.state.target,
-                'interrogate',
+                'interrogar',
                 curTurnHistGroup(),
-                format('{%d} saw your %s', playerIdx, state.state.confession));
-            if (command.forceExchange) {
+                format('{%d} viu seu(sua) %s', playerIdx, state.state.confession));
+            if (command.forcetrocar) {
                 var target = state.players[state.state.target];
                 var idx = indexOfInfluence(target, state.state.confession);
                 if (idx == null) {
@@ -904,10 +904,10 @@ module.exports = function createGame(options) {
                 deck.push(state.state.confession);
                 deck = shuffle(deck);
                 target.influence[idx].role = deck.pop();
-                addHistory('interrogate', curTurnHistGroup(), '{%d} forced {%d} to exchange roles', playerIdx, state.state.target);
+                addHistory('interrogar', curTurnHistGroup(), '{%d} forçou {%d} a trocar de personagem', playerIdx, state.state.target);
             }
             else {
-                addHistory('interrogate', curTurnHistGroup(), '{%d} allowed {%d} to keep the same roles', playerIdx, state.state.target);
+                addHistory('interrogar', curTurnHistGroup(), '{%d} permitiu {%d} a continuar com os mesmos personagens', playerIdx, state.state.target);
             }
             nextTurn();
 
@@ -929,7 +929,7 @@ module.exports = function createGame(options) {
             }
             allows[playerIdx] = true;
             if (everyoneAllows()) {
-                addHistory('block', curTurnHistGroup(), '{%d} blocked with %s', state.state.target, state.state.blockingRole);
+                addHistory('block', curTurnHistGroup(), '{%d} bloqueou com %s', state.state.target, state.state.blockingRole);
                 nextTurn();
                 return true;
             } else {
@@ -1013,8 +1013,8 @@ module.exports = function createGame(options) {
         // The player who took the action does not need to allow it.
         allows[initiatingPlayerIdx] = true;
 
-        if (state.state.action == 'foreign-aid') {
-            // Players on the same team cannot block each other from taking foreign aid.
+        if (state.state.action == 'ajuda-externa') {
+            // Players on the same team cannot block each other from taking ajuda externa.
             for (var i = 0; i < state.numPlayers; i++) {
                 if (!canTarget(initiatingPlayerIdx, i)) {
                     allows[i] = true;
@@ -1098,7 +1098,7 @@ module.exports = function createGame(options) {
                 challengedPlayer.influence[influenceIdx].role = deck.pop();
             }
 
-            var message = format('{%d} incorrectly challenged {%d}; {%d} exchanged %s for %s',
+            var message = format('{%d} incorretamente contestou {%d}; {%d} trocar %s por %s',
                 playerIdx, challengedPlayerIdx, challengedPlayerIdx, oldRoles,
                 proof.length == 1 ? 'a new role' : 'new roles');
 
@@ -1106,7 +1106,7 @@ module.exports = function createGame(options) {
             if (playerState.influenceCount <= 1) {
                 // Then the challenger is dead. Reveal an influence.
                 revealedRole = revealFirstInfluence(playerState);
-                addHistory('incorrect-challenge', curTurnHistGroup(), '%s; {%d} revealed %s', message, playerIdx, revealedRole);
+                addHistory('incorrect-challenge', curTurnHistGroup(), '%s; {%d} revelou %s', message, playerIdx, revealedRole);
 
                 endOfTurn = afterIncorrectChallenge();
 
@@ -1131,7 +1131,7 @@ module.exports = function createGame(options) {
         } else {
             // Player does not have role - challenge won.
             gameTracker.challenge(playerIdx, challengedPlayerIdx, true);
-            var message = format('{%d} successfully challenged {%d}', playerIdx, challengedPlayerIdx);
+            var message = format('{%d} corretamente contestou {%d}', playerIdx, challengedPlayerIdx);
 
             // Refund the challenged player, if the action cost them money.
             if (state.state.name == stateNames.ACTION_RESPONSE) {
@@ -1141,15 +1141,15 @@ module.exports = function createGame(options) {
                 }
             }
 
-            // If someone assassinates you, you bluff contessa, and they challenge you, then you lose two influence: one for the assassination, one for the successful challenge.
-            var wouldLoseTwoInfluences = state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinate' &&
+            // If someone assassinars you, you bluff condessa, and they challenge you, then you lose two influence: one for the assassinoation, one for the successful challenge.
+            var wouldLoseTwoInfluences = state.state.name == stateNames.BLOCK_RESPONSE && state.state.action == 'assassinar' &&
                 state.state.target == challengedPlayerIdx;
 
             // If the challenged player is losing their last influence,
             if (challengedPlayer.influenceCount <= 1 || wouldLoseTwoInfluences) {
                 // Then the challenged player is dead. Reveal an influence.
                 revealedRole = revealFirstInfluence(challengedPlayer);
-                addHistory('successful-challenge', curTurnHistGroup(), '%s; {%d} revealed %s', message, challengedPlayerIdx, revealedRole);
+                addHistory('successful-challenge', curTurnHistGroup(), '%s; {%d} revelou %s', message, challengedPlayerIdx, revealedRole);
 
                 if (challengedPlayer.influenceCount == 0) {
                     afterPlayerDeath(challengedPlayerIdx);
@@ -1193,12 +1193,12 @@ module.exports = function createGame(options) {
         var playerState = state.players[playerIdx];
         var action = actions[actionState.action];
         playerState.cash += action.gain || 0;
-        if (actionState.action == 'assassinate') {
-            message = format('{%d} assassinated {%d}', playerIdx, actionState.target);
+        if (actionState.action == 'assassinar') {
+            message = format('{%d} assassinard {%d}', playerIdx, actionState.target);
             target = state.players[actionState.target];
             if (target.influenceCount == 1) {
                 revealedRole = revealFirstInfluence(target);
-                addHistory('assassinate', curTurnHistGroup(), '%s; {%d} revealed %s', message, actionState.target, revealedRole);
+                addHistory('assassinar', curTurnHistGroup(), '%s; {%d} revelou %s', message, actionState.target, revealedRole);
                 afterPlayerDeath(actionState.target);
             } else if (target.influenceCount > 1) {
                 setState({
@@ -1208,17 +1208,17 @@ module.exports = function createGame(options) {
                     target: actionState.target,
                     blockingRole: actionState.blockingRole,
                     message: message,
-                    reason: 'assassinate',
+                    reason: 'assassinar',
                     playerToReveal: actionState.target
                 });
                 return false; // Not yet end of turn
             }
-        } else if (actionState.action == 'coup') {
-            message = format('{%d} staged a coup on {%d}', playerIdx, actionState.target);
+        } else if (actionState.action == 'golpe') {
+            message = format('{%d} staged a golpe on {%d}', playerIdx, actionState.target);
             target = state.players[actionState.target];
             if (target.influenceCount <= 1) {
                 revealedRole = revealFirstInfluence(target);
-                addHistory('coup', curTurnHistGroup(), '%s; {%d} revealed %s', message, actionState.target, revealedRole);
+                addHistory('golpe', curTurnHistGroup(), '%s; {%d} revelou %s', message, actionState.target, revealedRole);
                 afterPlayerDeath(actionState.target);
             } else {
                 setState({
@@ -1228,14 +1228,14 @@ module.exports = function createGame(options) {
                     target: actionState.target,
                     blockingRole: actionState.blockingRole,
                     message: message,
-                    reason: 'coup',
+                    reason: 'golpe',
                     playerToReveal: actionState.target
                 });
                 return false; // Not yet end of turn
             }
-        } else if (actionState.action == 'steal') {
+        } else if (actionState.action == 'extorquir') {
             target = state.players[actionState.target];
-            addHistory('steal', curTurnHistGroup(), '{%d} stole from {%d}', playerIdx, actionState.target);
+            addHistory('extorquir', curTurnHistGroup(), '{%d} extorquiu {%d}', playerIdx, actionState.target);
             if (target.cash >= 2) {
                 target.cash -= 2;
                 playerState.cash += 2;
@@ -1243,55 +1243,55 @@ module.exports = function createGame(options) {
                 playerState.cash += target.cash;
                 target.cash = 0;
             }
-        } else if (actionState.action == 'exchange') {
-            var exchangeOptions = [deck.pop()].concat(getInfluence(playerState));
-            if (state.roles.indexOf('ambassador') !== -1) {
-                // Ambassadors draw two cards; inquisitors draw one.
-                exchangeOptions.unshift(deck.pop());
+        } else if (actionState.action == 'trocar') {
+            var trocarOptions = [deck.pop()].concat(getInfluence(playerState));
+            if (state.roles.indexOf('embaixador') !== -1) {
+                // embaixadors draw two cards; inquisidores draw one.
+                trocarOptions.unshift(deck.pop());
             }
             setState({
-                name: stateNames.EXCHANGE,
+                name: stateNames.trocar,
                 playerIdx: state.state.playerIdx,
                 action: actionState.action,
-                exchangeOptions: exchangeOptions
+                trocarOptions: trocarOptions
             });
             return false; // Not yet end of turn
-        } else if (actionState.action == 'interrogate') {
+        } else if (actionState.action == 'interrogar') {
             target = state.players[actionState.target];
             var influence = getInfluence(target);
             var confession = influence[rand(influence.length)];
             setState({
-                name: stateNames.INTERROGATE,
+                name: stateNames.interrogar,
                 playerIdx: state.state.playerIdx,
                 action: actionState.action,
                 target: state.state.target,
                 confession: confession
             });
             return false; // Not yet end of turn
-        } else if (actionState.action == 'change-team') {
+        } else if (actionState.action == 'trocar-religiao') {
             playerState.team *= -1;
-            addHistory('change-team', curTurnHistGroup(), '{%d} changed to the %s team', playerIdx, getTeamName(playerState.team));
+            addHistory('trocar-religiao', curTurnHistGroup(), '{%d} se converteu como %s', playerIdx, getTeamName(playerState.team));
             state.treasuryReserve += 1;
             checkFreeForAll();
-        } else if (actionState.action == 'convert') {
+        } else if (actionState.action == 'converter') {
             target = state.players[actionState.target];
             target.team *= -1;
-            addHistory('convert', curTurnHistGroup(), '{%d} converted {%d} to the %s team', playerIdx, actionState.target, getTeamName(target.team));
+            addHistory('converter', curTurnHistGroup(), '{%d} converteu {%d} em %s', playerIdx, actionState.target, getTeamName(target.team));
             state.treasuryReserve += 2;
             checkFreeForAll();
-        } else if (actionState.action == 'embezzle') {
-            addHistory('convert', curTurnHistGroup(), '{%d} embezzled $%d from the treasury', playerIdx, state.treasuryReserve);
+        } else if (actionState.action == 'desviar') {
+            addHistory('converter', curTurnHistGroup(), '{%d} desviou $%d do banco', playerIdx, state.treasuryReserve);
             playerState.cash += state.treasuryReserve;
             state.treasuryReserve = 0;
         } else {
-            // Income or foreign aid.
-            addHistory(actionState.action, curTurnHistGroup(), '{%d} drew %s', playerIdx, actionState.action.replace('-', ' '));
+            // renda or ajuda externa.
+            addHistory(actionState.action, curTurnHistGroup(), '{%d} usou %s', playerIdx, actionState.action.replace('-', ' '));
         }
         return true; // End of turn
     }
 
     function getTeamName(team) {
-        return team == 1 ? 'red' : 'blue';
+        return team == 1 ? 'protestante' : 'católico';
     }
 
     function setState(s) {
@@ -1395,10 +1395,10 @@ module.exports = function createGame(options) {
         var currentState;
         switch (state.state.name) {
             case stateNames.WAITING_FOR_PLAYERS:
-                currentState = 'waiting for players';
+                currentState = 'esperando por jogadores';
                 break;
             default:
-                currentState = 'in progress';
+                currentState = 'em progresso';
         }
 
         var playerCount = 0;
@@ -1461,7 +1461,7 @@ module.exports = function createGame(options) {
         for (var i = 0; i < INFLUENCES; i++) {
             var role = args.shift();
             influence[i] = {
-                role: role || 'ambassador',
+                role: role || 'embaixador',
                 revealed: !role
             };
         }

@@ -202,7 +202,7 @@ function clamp( value, prop, allowEmpty ) {
 
 	if ( type.mod ) {
 		// we add mod before modding to make sure that negatives values
-		// get converted properly: -10 -> 350
+		// get convertered properly: -10 -> 350
 		return (value + type.mod) % type.mod;
 	}
 
@@ -294,7 +294,7 @@ color.fn = jQuery.extend( color.prototype, {
 					var cache = space.cache;
 					each( space.props, function( key, prop ) {
 
-						// if the cache doesn't exist, and we know how to convert
+						// if the cache doesn't exist, and we know how to converter
 						if ( !inst[ cache ] && space.to ) {
 
 							// if the value was null, we don't need to copy it
@@ -1081,7 +1081,7 @@ function _normalizeArguments( effect, options, speed, callback ) {
 		effect = effect.effect;
 	}
 
-	// convert to an object
+	// converter to an object
 	effect = { effect: effect };
 
 	// catch (effect, null, ...)

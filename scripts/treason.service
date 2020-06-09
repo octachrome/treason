@@ -1,7 +1,7 @@
 # Lives in /lib/systemd/system/treason.service
 
 [Unit]
-Description=Treason Coup
+Description=Treason golpe
 
 [Service]
 ExecStart=/home/treason/deploy/scripts/run-node /home/treason/deploy/server.js --port 8080

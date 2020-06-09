@@ -46,9 +46,9 @@ vm = {
     playerName: ko.observable(localStorageGet('playerName') || ''), // The name of the current player.
     playerId: ko.observable(localStorageGet('playerId') || ''), // The id of the current user.
     alerts: ko.observableArray(), // Shown in a banner at the top of the screen.
-    targetedAction: ko.observable(''), // During a coup, steal or assassination, the player that the user is targeting.
+    targetedAction: ko.observable(''), // During a golpe, extorquir or assassinoation, the player that the user is targeting.
     weAllowed: ko.observable(false), // If true, the user has allowed the current action.
-    chosenExchangeOptions: ko.observable({}), // During an exchange, the roles that the user has selected so far.
+    chosentrocarOptions: ko.observable({}), // During an trocar, the roles that the user has selected so far.
     sidebar: ko.observable('chat'), // Which pane is shown in the sidebar: chat or cheat sheet.
     history: ko.observableArray(), // List of all history items in the game in play.
     needName: ko.observable(false), // If true, the user is trying to join a game but they haven't logged in.
@@ -62,7 +62,7 @@ vm = {
     incorrectPassword: ko.observable(false), // True if the user tried to join the game with the wrong password.
     currentGame: ko.observable(''), // The id of the game currently shown in the join game modal dialog.
     gameInfo: ko.observable(), // Info about the game  currently shown in the join game modal dialog.
-    globalChatMessages: ko.observableArray(['Welcome to Treason Coup']), // The global chat messages that have been received.
+    globalChatMessages: ko.observableArray(['Bem vindo ao chat Global']), // The global chat messages that have been received.
     globalMessage: ko.observable(''), // The message the user is typing into the global chat box.
     wantToStart: ko.observable(null), // The player clicked start, but not everyone is ready, so we're showing a confirm msg (holds the type of game the player wanted to start).
     playingGame: ko.observable(null), // The id of the game that we are currently playing, or null if there is no active game.
@@ -90,7 +90,7 @@ vm.state = ko.mapping.fromJS({
         action: null,
         target: null,
         message: null,
-        exchangeOptions: null,
+        trocarOptions: null,
         playerToReveal: null,
         confession: null
     }
@@ -245,7 +245,7 @@ socket.on('state', function (data) {
         ko.mapping.fromJS(data, vm.state);
         vm.targetedAction('');
         vm.weAllowed(false);
-        vm.chosenExchangeOptions({});
+        vm.chosentrocarOptions({});
         $('.activity').scrollTop(0);
         $('.action-bar').effect('highlight', {color: '#ddeeff'}, 'fast');
         notifyPlayerOfState();
@@ -273,11 +273,11 @@ socket.on('history', function (data) {
 socket.on('chat', function (data) {
     var from;
     if (data.from == vm.state.playerIdx()) {
-        from = 'You';
+        from = 'Você';
     } else {
         var player = getPlayer(data.from);
         from = player ? player.name() : 'Unknown';
-        notifyPlayer(from + ' says: ' + data.message);
+        notifyPlayer(from + ' diz: ' + data.message);
     }
     var html = '<b>' + from + ':</b> ' + data.message + '<br/>';
     $('.chat').append(html);
@@ -313,7 +313,7 @@ socket.on('rankings', function (data) {
     vm.rankings(data);
 });
 socket.on('gamenotfound', function (data) {
-    alert('Game not found');
+    alert('Jogo não encontrado');
     location.hash = '';
     hideModals();
 });
@@ -388,11 +388,11 @@ function confirmUserProfileDialog() {
 
 function isInvalidPlayerName() {
     if (!vm.playerName() || !vm.playerName().match(/^[a-zA-Z0-9_ !@#$*]+$/) || !vm.playerName().trim()) {
-        alert('Enter a valid name');
+        alert('Escolha um nome válido');
         return true;
     }
     if (vm.playerName().length > 30) {
-        alert('Enter a shorter name');
+        alert('Escolha um nome mais curto');
         return true;
     }
     return false;
@@ -506,9 +506,9 @@ function canPlayAction(actionName) {
     if (!player) {
         return false;
     }
-    if (player.cash() >= 10 && actionName != 'coup') {
+    if (player.cash() >= 10 && actionName != 'golpe') {
         return false;
-    } else if (actionName == 'embezzle' && vm.state.treasuryReserve() == 0) {
+    } else if (actionName == 'desviar' && vm.state.treasuryReserve() == 0) {
         return false;
     } else {
         return player.cash() >= action.cost;
@@ -571,7 +571,7 @@ function weCanBlock() {
         return false;
     }
     if (!action.targeted) {
-        // Untargeted actions foreign aid) can be blocked by anyone.
+        // Untargeted actions ajuda externa) can be blocked by anyone.
         return true;
     }
     return vm.state.state.target() == vm.state.playerIdx();
@@ -626,7 +626,7 @@ function canTarget(playerIdx) {
         return false;
     }
     // If we are in team combat and these two players are on the same team, do not target
-    if (vm.targetedAction() !== 'convert' && isOnOurTeam(playerIdx)) {
+    if (vm.targetedAction() !== 'converter' && isOnOurTeam(playerIdx)) {
         return false;
     }
     // Cannot target dead player.
@@ -650,7 +650,7 @@ function ourTeamWarning() {
     }
     if (teammateIdx != null) {
         var player = getPlayer(teammateIdx);
-        return player && (player.name() + ' is on your team');
+        return player && (player.name() + ' está no seu time');
     }
 }
 function playerHasRole(player, role) {
@@ -675,7 +675,7 @@ function possibleReconsiderAction(f) {
     if (
         localStorageGet('doubleKillWarningDisabled') !== 'true' &&
         vm.state.playerIdx() === vm.state.state.target() &&
-        vm.state.state.action() === 'assassinate' &&
+        vm.state.state.action() === 'assassinar' &&
         ourInfluenceCount() == 2
     ) {
         doublekillAction = f;
@@ -738,25 +738,25 @@ function reveal(influence) {
         role: influence.role()
     });
 }
-function toggleExchangeOption(index) {
-    var options = vm.chosenExchangeOptions();
+function toggletrocarOption(index) {
+    var options = vm.chosentrocarOptions();
     if (options[index]) {
         delete options[index];
     } else {
-        options[index] = vm.state.state.exchangeOptions()[index];
+        options[index] = vm.state.state.trocarOptions()[index];
     }
-    vm.chosenExchangeOptions(options);
+    vm.chosentrocarOptions(options);
 }
-function exchangeOptionClass(index) {
-    if (vm.chosenExchangeOptions()[index]) {
-        return buttonRoleClass(vm.state.state.exchangeOptions()[index]);
+function trocarOptionClass(index) {
+    if (vm.chosentrocarOptions()[index]) {
+        return buttonRoleClass(vm.state.state.trocarOptions()[index]);
     } else {
         return 'btn-default';
     }
 }
-function chosenExchangeOptions() {
+function chosentrocarOptions() {
     var roles = [];
-    var options = vm.chosenExchangeOptions();
+    var options = vm.chosentrocarOptions();
     for (key in options) {
         if (options[key]) {
             roles.push(options[key]);
@@ -764,27 +764,27 @@ function chosenExchangeOptions() {
     }
     return roles;
 }
-function exchangeOptionsValid() {
-    return chosenExchangeOptions().length == ourInfluenceCount();
+function trocarOptionsValid() {
+    return chosentrocarOptions().length == ourInfluenceCount();
 }
-function exchange() {
-    var roles = chosenExchangeOptions();
+function trocar() {
+    var roles = chosentrocarOptions();
     if (roles.length == ourInfluenceCount()) {
-        command('exchange', {
+        command('trocar', {
             roles: roles
         });
     }
 }
-function interrogate(forceExchange) {
-    command('interrogate', {
-        forceExchange: forceExchange
+function interrogar(forcetrocar) {
+    command('interrogar', {
+        forcetrocar: forcetrocar
     });
 }
 function leaveGame() {
     location.hash = '';
 }
 function onLeaveGame(oldUrl) {
-    if (confirm('Are you sure you want to leave this game?')) {
+    if (confirm('Tem certeza que quer sair do jogo?')) {
         command('leave');
     }
     else {
@@ -793,23 +793,23 @@ function onLeaveGame(oldUrl) {
 }
 $(window).on('beforeunload', function (e) {
     if (vm.playing()) {
-        return (e.returnValue = 'Are you sure you want to leave this game?');
+        return (e.returnValue = 'Tem certeza que quer sair do jogo?');
     }
 });
 function formatMessage(message) {
     for (var i = 0; i < vm.state.players().length; i++) {
         var playerName;
         if (i == vm.state.playerIdx()) {
-            playerName = 'you';
+            playerName = 'você';
         } else {
             var player = getPlayer(i);
-            playerName = player ? player.name() : 'unknown';
+            playerName = player ? player.name() : 'desconhecido';
         }
         message = message.replace(new RegExp('\\{' + i + '\\}', 'g'), playerName);
     }
-    if (message.indexOf('you ') == 0) {
+    if (message.indexOf('você ') == 0) {
         // Fix caps.
-        message = 'Y' + message.substr(1);
+        message = 'V' + message.substr(1);
     }
     return message;
 }
@@ -824,27 +824,27 @@ function labelClass(role, revealed) {
     } else {
         return 'label-' + role;
     }
-}
+} 
 function roleDescription(role) {
-    if (role === 'ambassador') {
-        return 'Draw two from the deck and exchange your influences';
+    if (role === 'embaixador') {
+        return 'Compre duas cartas do monte e troque suas influencias';
     }
-    if (role === 'inquisitor') {
-        return 'Draw one from the deck and exchange OR look at one opponent\'s role and optionally force an exchange';
+    if (role === 'inquisidor') {
+        return 'Draw one from the deck and trocar OR look at one opponent\'s role and optionally force an trocar';
     }
-    if (role === 'assassin') {
-        return 'Pay $3 to reveal another player\'s influence; blocked by contessa';
+    if (role === 'assassino') {
+        return 'Pague $3 pra revelar influencia de outro jogador; bloqueado pela condessa';
     }
-    if (role === 'captain') {
-        return 'Steal $2 from another player; blocked by captain and ' + getActionRole(actions.exchange);
+    if (role === 'capitão') {
+        return 'Roube $2 de outro jogador; Bloquado pelo capitão e ' + getActionRole(actions.trocar);
     }
-    if (role === 'contessa') {
-        return 'Block assassination';
+    if (role === 'condessa') {
+        return 'Bloqueia o assassinato';
     }
-    if (role === 'duke') {
-        var desc = 'Tax +$3; block foreign aid';
-        if (vm.state.gameType() == 'reformation') {
-            desc += '; cannot embezzle'
+    if (role === 'duque') {
+        var desc = 'taxa +$3; bloqueia ajuda externa';
+        if (vm.state.gameType() == 'reforma') {
+            desc += '; Não pode desviar o dinheiro do banco'
         }
         return desc;
     }
@@ -878,20 +878,20 @@ function historyBorderClass(items) {
 function actionNames() {
     // This is the order I want them to appear in the UI.
     return [
-        'tax',
-        'steal',
-        'assassinate',
-        'interrogate',
-        'exchange',
-        'income',
-        'foreign-aid',
-        'coup',
-        'change-team',
-        'convert',
-        'embezzle'
+        'taxa',
+        'extorquir',
+        'assassinar',
+        'interrogar',
+        'trocar',
+        'renda',
+        'ajuda-externa',
+        'golpe',
+        'trocar-religiao',
+        'converter',
+        'desviar'
     ];
 }
-// Exchange action requires inquisitor or ambassador - return whichever one is in the current game type.
+// trocar action requires inquisidor or embaixador - return whichever one is in the current game type.
 function getActionRole(action) {
     if (action && action.roles) {
         var gameRoles = vm.state && vm.state.roles && vm.state.roles() || [];
@@ -963,25 +963,25 @@ function notifyPlayer(message) {
 }
 function notifyPlayerOfState() {
     if (weAreInState(states.START_OF_TURN)) {
-        notifyPlayer('Your turn');
+        notifyPlayer('Sua vez');
     }
-    else if (weAreInState(states.EXCHANGE)) {
-        notifyPlayer('Choose the roles to keep');
+    else if (weAreInState(states.trocar)) {
+        notifyPlayer('Escolha os personagens a manter');
     }
     else if (weCanBlock() || weCanChallenge()) {
         notifyPlayer(stateMessage());
     }
-    else if (weAreInState(states.EXCHANGE)) {
-        notifyPlayer('Choose the roles to keep');
+    else if (weAreInState(states.trocar)) {
+        notifyPlayer('Escolha os personagens a manter');
     }
     else if (weMustReveal()) {
-        notifyPlayer('You must reveal an influence');
+        notifyPlayer('Você deve revelar uma influẽncia');
     }
     else if (weHaveWon()) {
-        notifyPlayer('You have won!');
+        notifyPlayer('Você ganhou!');
     }
     else if (theyHaveWon()) {
-        notifyPlayer(winnerName() + ' has won!');
+        notifyPlayer(winnerName() + ' ganhou!');
     }
 }
 function notifsSupported() {

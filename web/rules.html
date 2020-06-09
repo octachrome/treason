@@ -7,28 +7,28 @@
     <div class="container">
         <div class="row">
             <div class="col-xs-12">
-                <h3>About Treason Coup</h3>
+                <h3>About Treason golpe</h3>
                 <p>
-                    Coup is a card game by Rikki Tahta of <a href="https://sites.google.com/a/lamamegames.com/site1/our-games-1">La Mame Games</a>. Treason Coup is an <a href="https://github.com/octachrome/treason">open source</a> web version of the game by Chris Brown and Jackie Niebling. It's a lot more fun to play in person than on the web, so buy the card game on Amazon if you don't already have a copy. Treason Coup runs in <a href="https://nodejs.org/">Node.js</a> and is tested using <a href="https://www.browserstack.com/">BrowserStack</a> - thanks for the free account guys!
+                    golpe is a card game by Rikki Tahta of <a href="https://sites.google.com/a/lamamegames.com/site1/our-games-1">La Mame Games</a>. Treason golpe is an <a href="https://github.com/octachrome/treason">open source</a> web version of the game by Chris Brown and Jackie Niebling. It's a lot more fun to play in person than on the web, so buy the card game on Amazon if you don't already have a copy. Treason golpe runs in <a href="https://nodejs.org/">Node.js</a> and is tested using <a href="https://www.browserstack.com/">BrowserStack</a> - thanks for the free account guys!
                 </p>
                 <h3>How to play</h3>
                 <p>
                     Each player begins the game with two roles which are secret from the other players; these are your influences. Through various actions, players can be forced to reveal an influence. When both of a player's influences are revealed they are knocked out of the game. The last player with one or more unrevealed influences wins.
                 </p>
                 <p>
-                    There are five different roles: ambassador, assassin, captain, contessa and duke. Each player's influences are drawn from a pool of 15, containing three of each of the five roles. Each player also starts with $2, drawn from an unlimited central store of money.
+                    There are five different roles: embaixador, assassino, capitão, condessa and duque. Each player's influences are drawn from a pool of 15, containing three of each of the five roles. Each player also starts with $2, drawn from an unlimited central store of money.
                 </p>
                 <h4>Actions</h4>
                 <p>
                     At the start of their turn, a player performs one of several actions. Some actions can always be played, while others require a specific role:
                     <ul>
-                        <li>Draw $1 of income.</li>
-                        <li>Draw $2 of foreign aid; any player with the duke can block this action.</li>
-                        <li>Pay $7 to stage a coup, forcing a player of your choice to reveal one influence; this action cannot be blocked.</li>
-                        <li>The ambassador can draw two new roles and choose to exchange any of them with their remaining hidden influences.</li>
-                        <li>The assassin can pay $3 to make a player of their choice reveal an influence. If the targeted player has the contessa, they can block the assassination.</li>
-                        <li>The captain can steal $2 from another player. If the targeted player has the ambassador or the captain, they can block the action.</li>
-                        <li>The duke can claim tax, gaining $3.</li>
+                        <li>Draw $1 of renda.</li>
+                        <li>Draw $2 of ajuda externa; any player with the duque can block this action.</li>
+                        <li>Pay $7 to stage a golpe, forcing a player of your choice to reveal one influence; this action cannot be blocked.</li>
+                        <li>The embaixador can draw two new roles and choose to trocar any of them with their remaining hidden influences.</li>
+                        <li>The assassino can pay $3 to make a player of their choice reveal an influence. If the targeted player has the condessa, they can block the assassinoation.</li>
+                        <li>The capitão can extorquir $2 from another player. If the targeted player has the embaixador or the capitão, they can block the action.</li>
+                        <li>The duque can claim taxa, gaining $3.</li>
                     </ul>
                     After playing an action, the other players have an opportunity to block the action or to challenge it. After this, the turn passes to the next player.
                 </p>
@@ -37,44 +37,44 @@
                      Since your roles are hidden, no one but you knows whether or not you have the necessary role to play the action you chose. This means that you can play any of the above actions on your turn, regardless of what roles you actually have. However, if another player suspects that you do not have the role you claim, they may challenge you. If you are challenged, you must show the role that you claimed. If you do so, the challenger must reveal one of their influences as a penalty for challenging you incorrectly. They can no longer use this influence for the remainder of the game. The role you showed is shuffled back into the deck, and you draw a new card to replace it. After such a failed challenge, your original action is completed as usual.
                  </p>
                  <p>
-                    On the other hand, if the challenger is right and you do not have the role that you claimed, you must instead reveal one of your own influences, which you can no longer use for the remainder of the game. If successfully challenged in this way, your original action is not carried out. Note that there are three basic actions which do not require a specific role and can never be challenged: income, foreign aid and coup.
+                    On the other hand, if the challenger is right and you do not have the role that you claimed, you must instead reveal one of your own influences, which you can no longer use for the remainder of the game. If successfully challenged in this way, your original action is not carried out. Note that there are three basic actions which do not require a specific role and can never be challenged: renda, ajuda externa and golpe.
                 </p>
                 <h4>Blocking</h4>
                 <p>
                     If your action is not challenged, a player may instead choose to block your action with one of their own roles, as described in the list above. If anyone suspects that the blocking player does not have the role they need in order to block the action, the blocking player can be challenged too, in the same way as above, with the same consequences.
                 </p>
                 <p>
-                    Note that there are two ways to lose both your influences in the same turn. Firstly, by incorrectly challenging an assassination: you lose one influence for the failed challenge, and another by being assassinated. Secondly, when a player tries to assassinate you, and you falsely claim to have a contessa in order to block the assassination: if challenged, you lose one influence for the successful challenge against you, and another by being assassinated.
+                    Note that there are two ways to lose both your influences in the same turn. Firstly, by incorrectly challenging an assassinoation: you lose one influence for the failed challenge, and another by being assassinard. Secondly, when a player tries to assassinar you, and you falsely claim to have a condessa in order to block the assassinoation: if challenged, you lose one influence for the successful challenge against you, and another by being assassinard.
                 </p>
-                <h4>Inquisitors</h4>
+                <h4>inquisidores</h4>
                 <p>
-                    Coup Reformation introduces a new role, the inquisitor, who can choose one of the following actions:
+                    golpe reforma introduces a new role, the inquisidor, who can choose one of the following actions:
                     <ul>
-                        <li>Draw one new role from the deck and choose to exchange it with either of their remaining hidden influences.</li>
-                        <li>Choose an opponent and look at one of their influences (picked at random). The inquisitor then has the option to force the opponent to swap that role for another drawn from the deck.</li>
+                        <li>Draw one new role from the deck and choose to trocar it with either of their remaining hidden influences.</li>
+                        <li>Choose an opponent and look at one of their influences (picked at random). The inquisidor then has the option to force the opponent to swap that role for another drawn from the deck.</li>
                     </ul>
-                    The inquisitor is used instead of the ambassador, and as such can also block a captain from stealing.
+                    The inquisidor is used instead of the embaixador, and as such can also block a capitão from extorquiring.
                 </p>
-                <h4>Reformation</h4>
+                <h4>reforma</h4>
                 <p>
-                    Coup Reformation is an expansion that adds teams to the base game. Each player starts off as a loyalist or a reformist. Players cannot do the following actions on other players who are on the same team:
+                    golpe reforma is an expansion that adds teams to the base game. Each player starts off as a loyalist or a reformist. Players cannot do the following actions on other players who are on the same team:
                     <ul>
-                        <li>Stage a coup</li>
-                        <li>Assassinate</li>
-                        <li>Steal</li>
-                        <li>Interrogate</li>
-                        <li>Block foreign aid</li>
+                        <li>Stage a golpe</li>
+                        <li>assassinar</li>
+                        <li>extorquir</li>
+                        <li>interrogar</li>
+                        <li>Block ajuda externa</li>
                     </ul>
                     Note that you <b>can</b> challenge other players on your team. There are some additional actions that everyone can use:
                     <ul>
                         <li>Pay $1 to change to the other team.</li>
-                        <li>Pay $2 to convert another player to the other team.</li>
+                        <li>Pay $2 to converter another player to the other team.</li>
                     </ul>
                     The money for these actions goes into a pot called the treasury reserve.
                     <ul>
-                        <li>Any player who is not the duke can take all money from the treasury reserve (embezzle).</li>
+                        <li>Any player who is not the duque can take all money from the treasury reserve (desviar).</li>
                     </ul>
-                    When a player attempts to embezzle and you suspect that they have the duke role, you can challenge them. If the player has the duke role, they must forfeit an influence and return the money. Note that this is different to a normal challenge: they player must <b>not</b> have the duke role in order to embezzle.
+                    When a player attempts to desviar and you suspect that they have the duque role, you can challenge them. If the player has the duque role, they must forfeit an influence and return the money. Note that this is different to a normal challenge: they player must <b>not</b> have the duque role in order to desviar.
                 <p>
                 <p>
                     If it happens that all players are on the same team, then everyone can attack whoever they want. The game only ends when one player is left alive.

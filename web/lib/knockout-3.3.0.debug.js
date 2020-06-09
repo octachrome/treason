@@ -1616,11 +1616,11 @@ ko.computed = ko.dependentObservable = function (evaluatorFunctionOrOptions, eva
         isSleeping = false;
 
     if (readFunction && typeof readFunction == "object") {
-        // Single-parameter syntax - everything is on this "options" param
+        // Single-parameter syntaxa - everything is on this "options" param
         options = readFunction;
         readFunction = options["read"];
     } else {
-        // Multi-parameter syntax - construct the options according to the params passed
+        // Multi-parameter syntaxa - construct the options according to the params passed
         options = options || {};
         if (!readFunction)
             readFunction = options["read"];
@@ -1996,7 +1996,7 @@ ko.exportSymbol('pureComputed', ko.pureComputed);
 
     ko.toJS = function(rootObject) {
         if (arguments.length == 0)
-            throw new Error("When calling ko.toJS, pass the object you want to convert.");
+            throw new Error("When calling ko.toJS, pass the object you want to converter.");
 
         // We just unwrap everything at every level in the object graph
         return mapJsObjectGraph(rootObject, function(valueToMap) {
@@ -2819,7 +2819,7 @@ ko.exportSymbol('bindingProvider', ko.bindingProvider);
 
         // Preprocessing allows a binding provider to mutate a node before bindings are applied to it. For example it's
         // possible to insert new siblings after it, and/or replace the node with a different one. This can be used to
-        // implement custom binding syntaxes, such as {{ value }} for string interpolation, or custom element types that
+        // implement custom binding syntaxaes, such as {{ value }} for string interpolation, or custom element types that
         // trigger insertion of <template> contents at that point in the document.
         if (preprocessNode) {
             while (currentChild = nextInQueue) {
@@ -3294,7 +3294,7 @@ ko.exportSymbol('bindingProvider', ko.bindingProvider);
 
     var createViewModelKey = 'createViewModel';
 
-    // Takes a config object of the form { template: ..., viewModel: ... }, and asynchronously convert it
+    // Takes a config object of the form { template: ..., viewModel: ... }, and asynchronously converter it
     // into the standard component definition format:
     //    { template: <ArrayOfDomNodes>, createViewModel: function(params, componentInfo) { ... } }.
     // Since both template and viewModel may need to be resolved asynchronously, both tasks are performed
@@ -3367,7 +3367,7 @@ ko.exportSymbol('bindingProvider', ko.bindingProvider);
 
     function resolveViewModel(errorCallback, viewModelConfig, callback) {
         if (typeof viewModelConfig === 'function') {
-            // Constructor - convert to standard factory function format
+            // Constructor - converter to standard factory function format
             // By design, this does *not* supply componentInfo to the constructor, as the intent is that
             // componentInfo contains non-viewmodel data (e.g., the component's element) that should only
             // be used in factory functions, not viewmodel constructors.
@@ -3829,7 +3829,7 @@ ko.bindingHandlers['disable'] = {
         ko.bindingHandlers['enable']['update'](element, function() { return !ko.utils.unwrapObservable(valueAccessor()) });
     }
 };
-// For certain common events (currently just 'click'), allow a simplified data-binding syntax
+// For certain common events (currently just 'click'), allow a simplified data-binding syntaxa
 // e.g. click:handler instead of the usual full-length event:{click:handler}
 function makeEventHandlerShortcut(eventName) {
     ko.bindingHandlers[eventName] = {
@@ -4492,7 +4492,7 @@ ko.bindingHandlers['value'] = {
         }
 
         ko.utils.arrayForEach(eventsToCatch, function(eventName) {
-            // The syntax "after<eventname>" means "run the handler asynchronously after the event"
+            // The syntaxa "after<eventname>" means "run the handler asynchronously after the event"
             // This is useful, for example, to catch "keydown" events after the browser has updated the control
             // (otherwise, ko.selectExtensions.readValue(this) will receive the control's value *before* the key event)
             var handler = valueUpdateHandler;
@@ -4584,8 +4584,8 @@ makeEventHandlerShortcut('click');
 // [3] Override 'createJavaScriptEvaluatorBlock', supplying a function with this signature:
 //
 //        function (script) {
-//            // Return value: Whatever syntax means "Evaluate the JavaScript statement 'script' and output the result"
-//            //               For example, the jquery.tmpl template engine converts 'someScript' to '${ someScript }'
+//            // Return value: Whatever syntaxa means "Evaluate the JavaScript statement 'script' and output the result"
+//            //               For example, the jquery.tmpl template engine converters 'someScript' to '${ someScript }'
 //        }
 //
 //     This is only necessary if you want to allow data-bind attributes to reference arbitrary template variables.
@@ -4639,8 +4639,8 @@ ko.templateEngine.prototype['rewriteTemplate'] = function (template, rewriterCal
 ko.exportSymbol('templateEngine', ko.templateEngine);
 
 ko.templateRewriting = (function () {
-    var memoizeDataBindingAttributeSyntaxRegex = /(<([a-z]+\d*)(?:\s+(?!data-bind\s*=\s*)[a-z0-9\-]+(?:=(?:\"[^\"]*\"|\'[^\']*\'|[^>]*))?)*\s+)data-bind\s*=\s*(["'])([\s\S]*?)\3/gi;
-    var memoizeVirtualContainerBindingSyntaxRegex = /<!--\s*ko\b\s*([\s\S]*?)\s*-->/g;
+    var memoizeDataBindingAttributeSyntaxaRegex = /(<([a-z]+\d*)(?:\s+(?!data-bind\s*=\s*)[a-z0-9\-]+(?:=(?:\"[^\"]*\"|\'[^\']*\'|[^>]*))?)*\s+)data-bind\s*=\s*(["'])([\s\S]*?)\3/gi;
+    var memoizeVirtualContainerBindingSyntaxaRegex = /<!--\s*ko\b\s*([\s\S]*?)\s*-->/g;
 
     function validateDataBindValuesForRewriting(keyValueArray) {
         var allValidators = ko.expressionRewriting.bindingRewriteValidators;
@@ -4677,14 +4677,14 @@ ko.templateRewriting = (function () {
         ensureTemplateIsRewritten: function (template, templateEngine, templateDocument) {
             if (!templateEngine['isTemplateRewritten'](template, templateDocument))
                 templateEngine['rewriteTemplate'](template, function (htmlString) {
-                    return ko.templateRewriting.memoizeBindingAttributeSyntax(htmlString, templateEngine);
+                    return ko.templateRewriting.memoizeBindingAttributeSyntaxa(htmlString, templateEngine);
                 }, templateDocument);
         },
 
-        memoizeBindingAttributeSyntax: function (htmlString, templateEngine) {
-            return htmlString.replace(memoizeDataBindingAttributeSyntaxRegex, function () {
+        memoizeBindingAttributeSyntaxa: function (htmlString, templateEngine) {
+            return htmlString.replace(memoizeDataBindingAttributeSyntaxaRegex, function () {
                 return constructMemoizedTagReplacement(/* dataBindAttributeValue: */ arguments[4], /* tagToRetain: */ arguments[1], /* nodeName: */ arguments[2], templateEngine);
-            }).replace(memoizeVirtualContainerBindingSyntaxRegex, function() {
+            }).replace(memoizeVirtualContainerBindingSyntaxaRegex, function() {
                 return constructMemoizedTagReplacement(/* dataBindAttributeValue: */ arguments[1], /* tagToRetain: */ "<!-- ko -->", /* nodeName: */ "#comment", templateEngine);
             });
         },

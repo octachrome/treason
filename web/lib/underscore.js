@@ -595,7 +595,7 @@
     return result;
   };
 
-  // Converts lists into objects. Pass either a single array of `[key, value]`
+  // converters lists into objects. Pass either a single array of `[key, value]`
   // pairs, or two parallel arrays of the same length -- one of keys, and one of
   // the corresponding values.
   _.object = function(list, values) {
@@ -971,7 +971,7 @@
       return results;
   };
 
-  // Convert an object into a list of `[key, value]` pairs.
+  // converter an object into a list of `[key, value]` pairs.
   _.pairs = function(obj) {
     var keys = _.keys(obj);
     var length = keys.length;

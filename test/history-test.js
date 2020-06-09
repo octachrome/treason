@@ -29,10 +29,10 @@ describe('History', function () {
             return testPlayers.startGame();
         });
 
-        describe('Given player0 has a captain and player1 has an ambassador', function () {
+        describe('Given player0 has a capitão and player1 has an embaixador', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'captain', 'contessa');
-                game._test_setInfluence(1, 'ambassador', 'contessa');
+                game._test_setInfluence(0, 'capitão', 'condessa');
+                game._test_setInfluence(1, 'embaixador', 'condessa');
 
                 game._test_setTurnState({
                     name: stateNames.START_OF_TURN,
@@ -42,11 +42,11 @@ describe('History', function () {
                 return player0.getHistory();
             });
 
-            describe('When player0 tries to steal from player1', function () {
+            describe('When player0 tries to extorquir from player1', function () {
                 beforeEach(function () {
                     player0.command({
                         command: 'play-action',
-                        action: 'steal',
+                        action: 'extorquir',
                         target: 1
                     });
                 });
@@ -68,13 +68,13 @@ describe('History', function () {
                     });
                 });
 
-                // A attempted to steal from B; B blocked with ambassador
+                // A attempted to extorquir from B; B blocked with embaixador
                 describe('When player1 blocks and player0 allows the block', function () {
                     beforeEach(function () {
                         return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                             player1.command({
                                 command: 'block',
-                                blockingRole: 'ambassador'
+                                blockingRole: 'embaixador'
                             });
 
                             return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
@@ -85,11 +85,11 @@ describe('History', function () {
                         });
                     });
 
-                    it('Then the history should record that player0 attempted to steal, and then that player1 blocked', function () {
+                    it('Then the history should record that player0 attempted to extorquir, and then that player1 blocked', function () {
                         return player0.getHistory().then(function (history) {
                             expect(history).to.eql([
-                                '{0} attempted to steal from {1}',
-                                '{1} blocked with ambassador'
+                                '{0} attempted to extorquir from {1}',
+                                '{1} blocked with embaixador'
                             ]);
                         });
                     });
@@ -105,23 +105,23 @@ describe('History', function () {
                             return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                                 player1.command({
                                     command: 'reveal',
-                                    role: 'contessa'
+                                    role: 'condessa'
                                 });
                             });
                         });
                     });
 
-                    it('Then the history should record that player0 attempted to steal, and then that player1 failed to challenge and revealed', function () {
+                    it('Then the history should record that player0 attempted to extorquir, and then that player1 failed to challenge and revealed', function () {
                         return player0.getHistory().then(function (history) {
                             expect(history).to.eql([
-                                '{0} attempted to steal from {1}',
-                                '{1} incorrectly challenged {0}; {0} exchanged captain for a new role; {1} revealed contessa'
+                                '{0} attempted to extorquir from {1}',
+                                '{1} incorrectly challenged {0}; {0} trocard capitão for a new role; {1} revealed condessa'
                             ]);
                         });
                     });
 
-                    // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; A stole from B
-                    describe('When player1 allows the steal after a failed challenge', function () {
+                    // A attempted to extorquir from B; B incorrectly challenged A; B revealed condessa; A stole from B
+                    describe('When player1 allows the extorquir after a failed challenge', function () {
                         beforeEach(function () {
                             return testPlayers.consumeState(stateNames.FINAL_ACTION_RESPONSE).then(function (state) {
                                 player1.command({
@@ -130,24 +130,24 @@ describe('History', function () {
                             });
                         });
 
-                        it('Then the history should record the attempt, the incorrect challenge, and the final steal', function () {
+                        it('Then the history should record the attempt, the incorrect challenge, and the final extorquir', function () {
                             return player0.getHistory().then(function (history) {
                                 expect(history).to.eql([
-                                    '{0} attempted to steal from {1}',
-                                    '{1} incorrectly challenged {0}; {0} exchanged captain for a new role; {1} revealed contessa',
+                                    '{0} attempted to extorquir from {1}',
+                                    '{1} incorrectly challenged {0}; {0} trocard capitão for a new role; {1} revealed condessa',
                                     '{0} stole from {1}'
                                 ]);
                             });
                         });
                     });
 
-                    // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; B blocked with ambassador
-                    describe('When player1 blocks the steal after a failed challenge', function () {
+                    // A attempted to extorquir from B; B incorrectly challenged A; B revealed condessa; B blocked with embaixador
+                    describe('When player1 blocks the extorquir after a failed challenge', function () {
                         beforeEach(function () {
                             return testPlayers.consumeState(stateNames.FINAL_ACTION_RESPONSE).then(function (state) {
                                 player1.command({
                                     command: 'block',
-                                    blockingRole: 'ambassador'
+                                    blockingRole: 'embaixador'
                                 });
                             });
                         });
@@ -164,15 +164,15 @@ describe('History', function () {
                             it('Then the history should record the attempt, the incorrect challenge, and the final block', function () {
                                 return player0.getHistory().then(function (history) {
                                     expect(history).to.eql([
-                                        '{0} attempted to steal from {1}',
-                                        '{1} incorrectly challenged {0}; {0} exchanged captain for a new role; {1} revealed contessa',
-                                        '{1} blocked with ambassador'
+                                        '{0} attempted to extorquir from {1}',
+                                        '{1} incorrectly challenged {0}; {0} trocard capitão for a new role; {1} revealed condessa',
+                                        '{1} blocked with embaixador'
                                     ]);
                                 });
                             });
                         });
 
-                        // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; B attempted to block with ambassador; A incorrectly challenged B; A revealed contessa
+                        // A attempted to extorquir from B; B incorrectly challenged A; B revealed condessa; B attempted to block with embaixador; A incorrectly challenged B; A revealed condessa
                         describe('When player0 incorrectly challenges the block', function () {
                             beforeEach(function () {
                                 return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
@@ -182,7 +182,7 @@ describe('History', function () {
                                     return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                                         player0.command({
                                             command: 'reveal',
-                                            role: 'contessa'
+                                            role: 'condessa'
                                         });
                                     });
                                 });
@@ -191,10 +191,10 @@ describe('History', function () {
                             it('Then the history should record the attempt, the incorrect challenge, the block attempt, and the second incorrect challenge', function () {
                                 return player0.getHistory().then(function (history) {
                                     expect(history).to.eql([
-                                        '{0} attempted to steal from {1}',
-                                        '{1} incorrectly challenged {0}; {0} exchanged captain for a new role; {1} revealed contessa',
-                                        '{1} attempted to block with ambassador',
-                                        '{0} incorrectly challenged {1}; {1} exchanged ambassador for a new role; {0} revealed contessa'
+                                        '{0} attempted to extorquir from {1}',
+                                        '{1} incorrectly challenged {0}; {0} trocard capitão for a new role; {1} revealed condessa',
+                                        '{1} attempted to block with embaixador',
+                                        '{0} incorrectly challenged {1}; {1} trocard embaixador for a new role; {0} revealed condessa'
                                     ]);
                                 });
                             });
@@ -202,13 +202,13 @@ describe('History', function () {
                     });
                 });
 
-                // A attempted to steal from B; B attempted to block with ambassador; A incorrectly challenged B; A revealed contessa
+                // A attempted to extorquir from B; B attempted to block with embaixador; A incorrectly challenged B; A revealed condessa
                 describe('When player1 blocks and player0 incorrectly challenges the block', function () {
                     beforeEach(function () {
                         return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                             player1.command({
                                 command: 'block',
-                                blockingRole: 'ambassador'
+                                blockingRole: 'embaixador'
                             });
                         }).then(function () {
                             return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
@@ -220,18 +220,18 @@ describe('History', function () {
                             return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                                 player0.command({
                                     command: 'reveal',
-                                    role: 'contessa'
+                                    role: 'condessa'
                                 });
                             });
                         });
                     });
 
-                    it('Then the history should record the steal attempt, the block attempt, and the incorrect challenge', function () {
+                    it('Then the history should record the extorquir attempt, the block attempt, and the incorrect challenge', function () {
                         return player0.getHistory().then(function (history) {
                             expect(history).to.eql([
-                                '{0} attempted to steal from {1}',
-                                '{1} attempted to block with ambassador',
-                                '{0} incorrectly challenged {1}; {1} exchanged ambassador for a new role; {0} revealed contessa'
+                                '{0} attempted to extorquir from {1}',
+                                '{1} attempted to block with embaixador',
+                                '{0} incorrectly challenged {1}; {1} trocard embaixador for a new role; {0} revealed condessa'
                             ]);
                         });
                     });
@@ -239,10 +239,10 @@ describe('History', function () {
             });
         });
 
-        describe('Given player0 does not have a captain and player1 does not have an ambassador', function () {
+        describe('Given player0 does not have a capitão and player1 does not have an embaixador', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'contessa', 'contessa');
-                game._test_setInfluence(1, 'contessa', 'contessa');
+                game._test_setInfluence(0, 'condessa', 'condessa');
+                game._test_setInfluence(1, 'condessa', 'condessa');
 
                 game._test_setTurnState({
                     name: stateNames.START_OF_TURN,
@@ -252,16 +252,16 @@ describe('History', function () {
                 return player0.getHistory();
             });
 
-            describe('When player0 tries to steal from player1', function () {
+            describe('When player0 tries to extorquir from player1', function () {
                 beforeEach(function () {
                     player0.command({
                         command: 'play-action',
-                        action: 'steal',
+                        action: 'extorquir',
                         target: 1
                     });
                 });
 
-                // A attempted to steal from B; B successfully challenged A; A revealed contessa
+                // A attempted to extorquir from B; B successfully challenged A; A revealed condessa
                 describe('When player1 successfully challenges and player0 reveals', function () {
                     beforeEach(function () {
                         return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
@@ -272,7 +272,7 @@ describe('History', function () {
                             return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                                 player0.command({
                                     command: 'reveal',
-                                    role: 'contessa'
+                                    role: 'condessa'
                                 });
                             });
                         });
@@ -281,20 +281,20 @@ describe('History', function () {
                     it('Then the history should record the attempt and the challenge', function () {
                         player0.getHistory().then(function (history) {
                             expect(history).to.eql([
-                                '{0} attempted to steal from {1}',
-                                '{1} successfully challenged {0}; {0} revealed contessa'
+                                '{0} attempted to extorquir from {1}',
+                                '{1} successfully challenged {0}; {0} revealed condessa'
                             ]);
                         })
                     });
                 });
 
-                // A attempted to steal from B; B attempted to block with ambassador; A successfully challenged B; B revealed contessa; A stole from B
+                // A attempted to extorquir from B; B attempted to block with embaixador; A successfully challenged B; B revealed condessa; A stole from B
                 describe('When player1 blocks and player0 successfully challenges the block', function () {
                     beforeEach(function () {
                         return testPlayers.consumeState(stateNames.ACTION_RESPONSE).then(function () {
                             player1.command({
                                 command: 'block',
-                                blockingRole: 'ambassador'
+                                blockingRole: 'embaixador'
                             });
                         }).then(function () {
                             return testPlayers.consumeState(stateNames.BLOCK_RESPONSE).then(function () {
@@ -306,18 +306,18 @@ describe('History', function () {
                             return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                                 player1.command({
                                     command: 'reveal',
-                                    role: 'contessa'
+                                    role: 'condessa'
                                 });
                             });
                         });
                     });
 
-                    it('Then the history should record the attempt, the block, the challenge and the final steal', function () {
+                    it('Then the history should record the attempt, the block, the challenge and the final extorquir', function () {
                         player0.getHistory().then(function (history) {
                             expect(history).to.eql([
-                                '{0} attempted to steal from {1}',
-                                '{1} attempted to block with ambassador',
-                                '{0} successfully challenged {1}; {1} revealed contessa',
+                                '{0} attempted to extorquir from {1}',
+                                '{1} attempted to block with embaixador',
+                                '{0} successfully challenged {1}; {1} revealed condessa',
                                 '{0} stole from {1}'
                             ]);
                         })
@@ -326,16 +326,16 @@ describe('History', function () {
             });
         });
 
-        describe('Given player0 is assassinating player1 with a real assassin', function () {
+        describe('Given player0 is assassinoating player1 with a real assassino', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'assassin');
-                game._test_setInfluence(1, 'ambassador');
+                game._test_setInfluence(0, 'assassino');
+                game._test_setInfluence(1, 'embaixador');
 
                 game._test_setTurnState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: 0,
-                    action: 'assassinate',
-                    message: '{0} attempted to assassinate {1}',
+                    action: 'assassinar',
+                    message: '{0} attempted to assassinar {1}',
                     target: 1
                 });
 
@@ -349,11 +349,11 @@ describe('History', function () {
                     });
                 });
 
-                it('Then the history should record the attempted assassination, the failed challenge', function () {
+                it('Then the history should record the attempted assassinoation, the failed challenge', function () {
                     return player0.getHistory().then(function (history) {
                         expect(history).to.eql([
-                            '{0} attempted to assassinate {1}',
-                            '{1} incorrectly challenged {0}; {0} exchanged assassin for a new role; {1} revealed ambassador',
+                            '{0} attempted to assassinar {1}',
+                            '{1} incorrectly challenged {0}; {0} trocard assassino for a new role; {1} revealed embaixador',
                             '{1} suffered a humiliating defeat'
                         ]);
                     });
@@ -361,18 +361,18 @@ describe('History', function () {
             });
         });
 
-        describe('Given player1 is blocking an assassination with a bluffed contessa', function () {
+        describe('Given player1 is blocking an assassinoation with a bluffed condessa', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'assassin');
-                game._test_setInfluence(1, 'duke', 'duke');
+                game._test_setInfluence(0, 'assassino');
+                game._test_setInfluence(1, 'duque', 'duque');
 
                 game._test_setTurnState({
                     name: stateNames.BLOCK_RESPONSE,
                     playerIdx: 0,
-                    action: 'assassinate',
-                    message: '{1} attempted to block with contessa',
+                    action: 'assassinar',
+                    message: '{1} attempted to block with condessa',
                     target: 1,
-                    blockingRole: 'contessa'
+                    blockingRole: 'condessa'
                 });
 
                 return player0.getHistory();
@@ -385,12 +385,12 @@ describe('History', function () {
                     });
                 });
 
-                it('Then the history should record the attempted assassination, the failed challenge', function () {
+                it('Then the history should record the attempted assassinoation, the failed challenge', function () {
                     return player0.getHistory().then(function (history) {
                         expect(history).to.eql([
-                            '{1} attempted to block with contessa',
-                            '{0} successfully challenged {1}; {1} revealed duke',
-                            '{0} assassinated {1}; {1} revealed duke',
+                            '{1} attempted to block with condessa',
+                            '{0} successfully challenged {1}; {1} revealed duque',
+                            '{0} assassinard {1}; {1} revealed duque',
                             '{1} suffered a humiliating defeat'
                         ]);
                     });
@@ -398,18 +398,18 @@ describe('History', function () {
             });
         });
 
-        describe('Given player1 is blocking an assassination with a bluffed contessa and has only one influence left', function () {
+        describe('Given player1 is blocking an assassinoation with a bluffed condessa and has only one influence left', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'assassin');
-                game._test_setInfluence(1, 'duke');
+                game._test_setInfluence(0, 'assassino');
+                game._test_setInfluence(1, 'duque');
 
                 game._test_setTurnState({
                     name: stateNames.BLOCK_RESPONSE,
                     playerIdx: 0,
-                    action: 'assassinate',
-                    message: '{1} attempted to block with contessa',
+                    action: 'assassinar',
+                    message: '{1} attempted to block with condessa',
                     target: 1,
-                    blockingRole: 'contessa'
+                    blockingRole: 'condessa'
                 });
 
                 return player0.getHistory();
@@ -422,11 +422,11 @@ describe('History', function () {
                     });
                 });
 
-                it('Then the history should record the attempted assassination, the failed challenge', function () {
+                it('Then the history should record the attempted assassinoation, the failed challenge', function () {
                     return player0.getHistory().then(function (history) {
                         expect(history).to.eql([
-                            '{1} attempted to block with contessa',
-                            '{0} successfully challenged {1}; {1} revealed duke',
+                            '{1} attempted to block with condessa',
+                            '{0} successfully challenged {1}; {1} revealed duque',
                             '{1} suffered a humiliating defeat'
                         ]);
                     });
@@ -443,12 +443,12 @@ describe('History', function () {
             });
         });
 
-        // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; B attempted to block with ambassador; A successfully challenged B; B revealed contessa; A stole from B
-        describe('Given player0 has a captain and player1 does not have an ambassador', function () {
+        // A attempted to extorquir from B; B incorrectly challenged A; B revealed condessa; B attempted to block with embaixador; A successfully challenged B; B revealed condessa; A stole from B
+        describe('Given player0 has a capitão and player1 does not have an embaixador', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'captain', 'contessa');
-                game._test_setInfluence(1, 'contessa', 'contessa');
-                game._test_setInfluence(2, 'contessa', 'contessa');
+                game._test_setInfluence(0, 'capitão', 'condessa');
+                game._test_setInfluence(1, 'condessa', 'condessa');
+                game._test_setInfluence(2, 'condessa', 'condessa');
 
                 game._test_setTurnState({
                     name: stateNames.START_OF_TURN,
@@ -456,11 +456,11 @@ describe('History', function () {
                 });
             });
 
-            describe('When player0 tries to steal from player1', function () {
+            describe('When player0 tries to extorquir from player1', function () {
                 beforeEach(function () {
                     player0.command({
                         command: 'play-action',
-                        action: 'steal',
+                        action: 'extorquir',
                         target: 1
                     });
                 });
@@ -475,14 +475,14 @@ describe('History', function () {
                             return testPlayers.consumeState(stateNames.REVEAL_INFLUENCE).then(function () {
                                 player1.command({
                                     command: 'reveal',
-                                    role: 'contessa'
+                                    role: 'condessa'
                                 });
                             });
                         }).then(function () {
                             return testPlayers.consumeState(stateNames.FINAL_ACTION_RESPONSE).then(function () {
                                 player1.command({
                                     command: 'block',
-                                    blockingRole: 'ambassador'
+                                    blockingRole: 'embaixador'
                                 });
                             });
                         }).then(function () {
@@ -494,16 +494,16 @@ describe('History', function () {
                         });
                     });
 
-                    it('Then the history should record the attempt, the challenge, the block, the challenge and the final steal', function () {
+                    it('Then the history should record the attempt, the challenge, the block, the challenge and the final extorquir', function () {
                         player0.getHistory().then(function (history) {
                             expect(history).to.eql([
                                 'player0 joined the game',
                                 'player1 joined the game',
                                 'player2 joined the game',
-                                '{0} attempted to steal from {1}',
-                                '{1} incorrectly challenged {0}; {0} exchanged captain for a new role; {1} revealed contessa',
-                                '{1} attempted to block with ambassador',
-                                '{0} successfully challenged {1}; {1} revealed contessa',
+                                '{0} attempted to extorquir from {1}',
+                                '{1} incorrectly challenged {0}; {0} trocard capitão for a new role; {1} revealed condessa',
+                                '{1} attempted to block with embaixador',
+                                '{0} successfully challenged {1}; {1} revealed condessa',
                                 '{1} suffered a humiliating defeat',
                                 '{0} stole from {1}'
                             ]);

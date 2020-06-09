@@ -128,57 +128,57 @@ GameTracker.prototype.encodeInfluence = function (influence) {
 };
 
 GameTracker.prototype.encodeRole = function (role) {
-    if (role === 'duke') {
+    if (role === 'duque') {
         return 1;
     }
-    else if (role === 'captain') {
+    else if (role === 'capitão') {
         return 2;
     }
-    else if (role === 'assassin') {
+    else if (role === 'assassino') {
         return 3;
     }
-    else if (role === 'ambassador' || role === 'inquisitor') {
+    else if (role === 'embaixador' || role === 'inquisidor') {
         return 4;
     }
-    else if (role === 'contessa') {
+    else if (role === 'condessa') {
         return 5;
     }
 };
 
 GameTracker.prototype.encodeAction = function (action, target) {
-    if (action === 'tax') {
+    if (action === 'taxa') {
         return 1 << 4;
     }
-    else if (action === 'foreign-aid') {
-        // Secondary duke action.
+    else if (action === 'ajuda-externa') {
+        // Secondary duque action.
         return (8+1) << 4;
     }
-    else if (action === 'steal') {
+    else if (action === 'extorquir') {
         return (2 << 4) | (target & 0xf);
     }
-    else if (action === 'assassinate') {
+    else if (action === 'assassinar') {
         return (3 << 4) | (target & 0xf);
     }
-    else if (action === 'exchange') {
+    else if (action === 'trocar') {
         return 4 << 4;
     }
-    else if (action === 'interrogate') {
-        // Secondary inquisitor action.
+    else if (action === 'interrogar') {
+        // Secondary inquisidor action.
         return ((8+4) << 4) | (target & 0xf);
     }
-    else if (action === 'coup') {
+    else if (action === 'golpe') {
         return (5 << 4) | (target & 0xf);
     }
-    else if (action === 'income') {
+    else if (action === 'renda') {
         return (8+5) << 4;
     }
-    else if (action == 'change-team') {
+    else if (action == 'trocar-religiao') {
         return 6 << 4;
     }
-    else if (action == 'convert') {
+    else if (action == 'converter') {
         return 7 << 4 | (target & 0xf);
     }
-    else if (action == 'embezzle') {
+    else if (action == 'desviar') {
         return (8+6) << 4;
     }
 };
@@ -284,11 +284,11 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
                     // The blocking player will be the person who is being targeted.
                     event.blockingPlayer = lastAction.target;
                 } else {
-                    // Foreign aid. We will only know who blocked if they are challenged.
+                    // ajuda externa. We will only know who blocked if they are challenged.
                     event.blockingPlayer = -1;
                     if (!lastAction) {
                         throw new Error(`Block was not preceeded by action`);
-                    } else if (lastAction.action != 'foreign-aid') {
+                    } else if (lastAction.action != 'ajuda-externa') {
                         throw new Error(`Unexpected blocked action: ${lastAction && lastAction.action}`);
                     }
                 }
@@ -392,28 +392,28 @@ GameTracker.prototype._debugEventByte = function (offset, byte, showType) {
 
 GameTracker.prototype.validateActionEvent = function (event, playerStateCount) {
     const ACTION_INFO = {
-        'tax': {
+        'taxa': {
             targeted: false
         },
-        'foreign-aid': {
+        'ajuda-externa': {
             targeted: false
         },
-        'steal': {
+        'extorquir': {
             targeted: true
         },
-        'assassinate': {
+        'assassinar': {
             targeted: true
         },
-        'exchange': {
+        'trocar': {
             targeted: false
         },
-        'interrogate': {
+        'interrogar': {
             targeted: true
         },
-        'coup': {
+        'golpe': {
             targeted: true
         },
-        'income': {
+        'renda': {
             targeted: false
         }
     };
@@ -434,19 +434,19 @@ GameTracker.prototype.decodeInfluence = function (influenceCode) {
 
 GameTracker.prototype.decodeRole = function (roleCode) {
     if (roleCode === 1) {
-        return 'duke';
+        return 'duque';
     }
     else if (roleCode === 2) {
-        return 'captain';
+        return 'capitão';
     }
     else if (roleCode === 3) {
-        return 'assassin';
+        return 'assassino';
     }
     else if (roleCode === 4) {
-        return this.gameInfo.roles.indexOf('ambassador') >= 0 ? 'ambassador' : 'inquisitor';
+        return this.gameInfo.roles.indexOf('embaixador') >= 0 ? 'embaixador' : 'inquisidor';
     }
     else if (roleCode === 5) {
-        return 'contessa';
+        return 'condessa';
     }
 };
 
@@ -455,41 +455,41 @@ GameTracker.prototype.decodeActionEvent = function (actionCode) {
     var action;
     switch (actionCode >> 4) {
         case 1:
-            action = 'tax';
+            action = 'taxa';
             break;
         case 8+1:
-            action = 'foreign-aid';
+            action = 'ajuda-externa';
             break;
         case 2:
-            action = 'steal';
+            action = 'extorquir';
             target = actionCode & 0xf;
             break;
         case 3:
-            action = 'assassinate';
+            action = 'assassinar';
             target = actionCode & 0xf;
             break;
         case 4:
-            action = 'exchange';
+            action = 'trocar';
             break;
         case 8+4:
-            action = 'interrogate';
+            action = 'interrogar';
             target = actionCode & 0xf;
             break;
         case 5:
-            action = 'coup';
+            action = 'golpe';
             target = actionCode & 0xf;
             break;
         case 8+5:
-            action = 'income';
+            action = 'renda';
             break;
         case 6:
-            action = 'change-team';
+            action = 'trocar-religiao';
             break;
         case 7:
-            action = 'convert';
+            action = 'converter';
             break;
         case 8+6:
-            action = 'embezzle';
+            action = 'desviar';
             break;
     }
     var event = {
@@ -553,7 +553,7 @@ GameTracker.prototype.removeObservers = function (events, playerCount) {
                 break;
             case GameTracker.TYPE_BLOCK:
                 if (event.blockingPlayer == -1) {
-                    // We cannot determine who blocks foreign aid: ignore this.
+                    // We cannot determine who blocks ajuda externa: ignore this.
                 } else if (!(event.blockingPlayer in playerMap)) {
                     throw new Error(`Unknown blocking player ${event.blockingPlayer}`);
                 } else {

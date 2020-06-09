@@ -1,47 +1,47 @@
 'use strict';
 
 var hands = {
-    'assassin-duke': {
+    'assassino-duque': {
         earn: 3,
         kill: 3
     },
-    'assassin-captain': {
+    'assassino-capitão': {
         earn: 1,
-        steal: 2,
+        extorquir: 2,
         kill: 3
     },
-    'duke-captain': {
+    'duque-capitão': {
         earn: 3,
-        steal: 2,
+        extorquir: 2,
         kill: 7
     },
-    'assassin-foreignaid': {
+    'assassino-foreignaid': {
         earn: 2,
         kill: 3
     },
-    'assassin': {
+    'assassino': {
         earn: 1,
         kill: 3
     },
-    'duke': {
+    'duque': {
         earn: 3,
         kill: 7
     },
-    'captain': {
+    'capitão': {
         earn: 1,
-        steal: 2,
+        extorquir: 2,
         kill: 7
     },
     'foreignaid': {
         earn: 2,
         kill: 7
     },
-    'foreignaid-captain': {
+    'foreignaid-capitão': {
         earn: 2,
-        steal: 2,
+        extorquir: 2,
         kill: 7
     },
-    'income': {
+    'renda': {
         earn: 1,
         kill: 7
     }
@@ -89,32 +89,32 @@ function play(firstName, secondName, cash, log) {
     var start = new Date().getTime();
     var first = hands[firstName];
     var second = hands[secondName];
-    if (firstName.indexOf('foreignaid') >= 0 && secondName.indexOf('duke') >= 0) {
-        // can't draw foreign aid against duke
+    if (firstName.indexOf('foreignaid') >= 0 && secondName.indexOf('duque') >= 0) {
+        // can't draw ajuda externa against duque
         first = {
             earn: 1,
-            steal: first.steal,
+            extorquir: first.extorquir,
             kill: first.kill
         };
     }
-    if (firstName.indexOf('duke') >= 0 && secondName.indexOf('foreignaid') >= 0) {
-        // can't draw foreign aid against duke
+    if (firstName.indexOf('duque') >= 0 && secondName.indexOf('foreignaid') >= 0) {
+        // can't draw ajuda externa against duque
         second = {
             earn: 1,
-            steal: second.steal,
+            extorquir: second.extorquir,
             kill: second.kill
         };
     }
-    if (first.steal && second.steal) {
-        // captain vs captain - neither can steal
+    if (first.extorquir && second.extorquir) {
+        // capitão vs capitão - neither can extorquir
         first = {
             earn: first.earn,
-            steal: null,
+            extorquir: null,
             kill: first.kill
         };
         second = {
             earn: second.earn,
-            steal: null,
+            extorquir: null,
             kill: second.kill
         };
     }
@@ -136,16 +136,16 @@ function play(firstName, secondName, cash, log) {
             cashes[usIdx] -= us.kill;
             break;
         }
-        if (us.steal) {
+        if (us.extorquir) {
             if (cashes[themIdx] == 0) {
                 cashes[usIdx] += us.earn;
                 debug(us.name + ' earning ' + us.earn);
-            } else if (cashes[themIdx] >= us.steal) {
-                debug(us.name + ' stealing ' + us.steal);
-                cashes[usIdx] += us.steal;
-                cashes[themIdx] -= us.steal;
+            } else if (cashes[themIdx] >= us.extorquir) {
+                debug(us.name + ' extorquiring ' + us.extorquir);
+                cashes[usIdx] += us.extorquir;
+                cashes[themIdx] -= us.extorquir;
             } else {
-                debug(us.name + ' stealing ' + cashes[themIdx]);
+                debug(us.name + ' extorquiring ' + cashes[themIdx]);
                 cashes[usIdx] += cashes[themIdx];
                 cashes[themIdx] = 0;
             }

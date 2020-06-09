@@ -46,14 +46,14 @@ describe('Game', function () {
             });
         });
 
-        describe('Given a player is revealing an influence due to a failed ambassador challenge', function () {
+        describe('Given a player is revealing an influence due to a failed embaixador challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'ambassador', 'assassin');
-                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setInfluence(0, 'embaixador', 'assassino');
+                game._test_setInfluence(1, 'duque', 'capitão');
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
-                    action: 'exchange',
+                    action: 'trocar',
                     playerToReveal: 1,
                     reason: 'incorrect-challenge'
                 });
@@ -63,13 +63,13 @@ describe('Game', function () {
                 beforeEach(function () {
                     player1.command({
                         command: 'reveal',
-                        role: 'captain'
+                        role: 'capitão'
                     });
                 });
 
-                it('Then player0 should be in exchange state', function () {
+                it('Then player0 should be in trocar state', function () {
                     return player1.getNextState().then(function (state) {
-                        expect(state.state.name).to.be(stateNames.EXCHANGE);
+                        expect(state.state.name).to.be(stateNames.trocar);
                         expect(state.state.playerIdx).to.be(0);
                     });
                 });
@@ -82,14 +82,14 @@ describe('Game', function () {
             });
         });
 
-        describe('Given a player is revealing an influence due to a correct ambassador challenge', function () {
+        describe('Given a player is revealing an influence due to a correct embaixador challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'duke', 'captain');
-                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setInfluence(0, 'duque', 'capitão');
+                game._test_setInfluence(1, 'duque', 'capitão');
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
-                    action: 'exchange',
+                    action: 'trocar',
                     playerToReveal: 0,
                     reason: 'successful-challenge'
                 });
@@ -99,7 +99,7 @@ describe('Game', function () {
                 beforeEach(function () {
                     player0.command({
                         command: 'reveal',
-                        role: 'duke'
+                        role: 'duque'
                     });
                 });
 
@@ -118,15 +118,15 @@ describe('Game', function () {
             });
         });
 
-        describe('Given a player is revealing an influence due to a failed assassin challenge', function () {
+        describe('Given a player is revealing an influence due to a failed assassino challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'assassin', 'captain');
-                game._test_setInfluence(1, 'duke', 'ambassador');
-                game._test_setInfluence(2, 'duke', 'captain');
+                game._test_setInfluence(0, 'assassino', 'capitão');
+                game._test_setInfluence(1, 'duque', 'embaixador');
+                game._test_setInfluence(2, 'duque', 'capitão');
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
-                    action: 'assassinate',
+                    action: 'assassinar',
                     target: 1,
                     reason: 'incorrect-challenge',
                     playerToReveal: 2
@@ -137,7 +137,7 @@ describe('Game', function () {
                 beforeEach(function () {
                     player2.command({
                         command: 'reveal',
-                        role: 'captain'
+                        role: 'capitão'
                     });
                 });
 
@@ -147,7 +147,7 @@ describe('Game', function () {
                     });
                 });
 
-                it('Then player1 should have a final chance to block the assassination', function () {
+                it('Then player1 should have a final chance to block the assassinoation', function () {
                     return player1.getNextState().then(function (state) {
                         expect(state.state.name).to.be(stateNames.FINAL_ACTION_RESPONSE);
                         expect(state.state.playerIdx).to.be(0);
@@ -155,7 +155,7 @@ describe('Game', function () {
                     });
                 });
 
-                describe('When player1 allows the assassination', function () {
+                describe('When player1 allows the assassinoation', function () {
                     beforeEach(function () {
                         return testPlayers.consumeState(stateNames.FINAL_ACTION_RESPONSE).then(function () {
                             player1.command({
@@ -174,14 +174,14 @@ describe('Game', function () {
             });
         });
 
-        describe('Given a player is revealing an influence due to a correct assassin challenge', function () {
+        describe('Given a player is revealing an influence due to a correct assassino challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'duke', 'captain');
-                game._test_setInfluence(1, 'duke', 'captain');
+                game._test_setInfluence(0, 'duque', 'capitão');
+                game._test_setInfluence(1, 'duque', 'capitão');
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
-                    action: 'assassinate',
+                    action: 'assassinar',
                     target: 1,
                     playerToReveal: 0,
                     reason: 'successful-challenge'
@@ -192,7 +192,7 @@ describe('Game', function () {
                 beforeEach(function () {
                     player0.command({
                         command: 'reveal',
-                        role: 'duke'
+                        role: 'duque'
                     });
                 });
 
@@ -211,16 +211,16 @@ describe('Game', function () {
             });
         });
 
-        describe('Given a player is revealing an influence due to an incorrect duke challenge', function () {
+        describe('Given a player is revealing an influence due to an incorrect duque challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'duke', 'duke');
-                game._test_setInfluence(1, 'captain', 'captain');
+                game._test_setInfluence(0, 'duque', 'duque');
+                game._test_setInfluence(1, 'capitão', 'capitão');
                 game._test_setCash(0, 0);
                 game._test_setCash(1, 0);
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
-                    action: 'tax',
+                    action: 'taxa',
                     playerToReveal: 1,
                     reason: 'incorrect-challenge'
                 });
@@ -230,11 +230,11 @@ describe('Game', function () {
                 beforeEach(function () {
                     player1.command({
                         command: 'reveal',
-                        role: 'captain'
+                        role: 'capitão'
                     });
                 });
 
-                it('Then the tax should be applied', function () {
+                it('Then the taxa should be applied', function () {
                     return player0.getNextState().then(function (state) {
                         expect(state.players[0].cash).to.be(3);
                     });
@@ -255,16 +255,16 @@ describe('Game', function () {
             });
         });
 
-        describe('Given a player is revealing an influence due to an correct duke challenge', function () {
+        describe('Given a player is revealing an influence due to an correct duque challenge', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'contessa', 'contessa');
-                game._test_setInfluence(1, 'captain', 'captain');
+                game._test_setInfluence(0, 'condessa', 'condessa');
+                game._test_setInfluence(1, 'capitão', 'capitão');
                 game._test_setCash(0, 0);
                 game._test_setCash(1, 0);
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
-                    action: 'tax',
+                    action: 'taxa',
                     playerToReveal: 0,
                     reason: 'sucessful-challenge'
                 });
@@ -274,11 +274,11 @@ describe('Game', function () {
                 beforeEach(function () {
                     player0.command({
                         command: 'reveal',
-                        role: 'contessa'
+                        role: 'condessa'
                     });
                 });
 
-                it('Then the tax should not be applied', function () {
+                it('Then the taxa should not be applied', function () {
                     return player0.getNextState().then(function (state) {
                         expect(state.players[0].cash).to.be(0);
                     });
@@ -301,16 +301,16 @@ describe('Game', function () {
 
         describe('Given a player is revealing an influence due to an incorrect challenge of a block', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'captain', 'captain');
-                game._test_setInfluence(1, 'ambassador', 'ambassador');
+                game._test_setInfluence(0, 'capitão', 'capitão');
+                game._test_setInfluence(1, 'embaixador', 'embaixador');
                 game._test_setCash(0, 2);
                 game._test_setCash(1, 2);
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
-                    action: 'steal',
+                    action: 'extorquir',
                     target: 1,
-                    blockingRole: 'ambassador',
+                    blockingRole: 'embaixador',
                     playerToReveal: 0,
                     reason: 'incorrect-challenge'
                 });
@@ -320,11 +320,11 @@ describe('Game', function () {
                 beforeEach(function () {
                     player0.command({
                         command: 'reveal',
-                        role: 'captain'
+                        role: 'capitão'
                     });
                 });
 
-                it('Then the steal should not be applied', function () {
+                it('Then the extorquir should not be applied', function () {
                     return player0.getNextState().then(function (state) {
                         expect(state.players[0].cash).to.be(2);
                         expect(state.players[1].cash).to.be(2);
@@ -347,18 +347,18 @@ describe('Game', function () {
         });
     });
 
-    describe('Coup', function () {
-        describe('Given a player is revealing an influence due to a coup', function () {
+    describe('golpe', function () {
+        describe('Given a player is revealing an influence due to a golpe', function () {
             beforeEach(function () {
                 return testPlayers.startGame().then(function () {
-                    game._test_setInfluence(0, 'ambassador', 'assassin');
-                    game._test_setInfluence(1, 'duke', 'captain');
+                    game._test_setInfluence(0, 'embaixador', 'assassino');
+                    game._test_setInfluence(1, 'duque', 'capitão');
                     game._test_setTurnState({
                         name: stateNames.REVEAL_INFLUENCE,
                         playerIdx: 0,
-                        action: 'coup',
+                        action: 'golpe',
                         playerToReveal: 1,
-                        reason: 'coup'
+                        reason: 'golpe'
                     });
                 });
             });
@@ -367,7 +367,7 @@ describe('Game', function () {
                 beforeEach(function () {
                     player1.command({
                         command: 'reveal',
-                        role: 'captain'
+                        role: 'capitão'
                     });
                 });
 
@@ -395,17 +395,17 @@ describe('Game', function () {
             });
         });
 
-        describe('Given player1 is revealing an influence due to a coup', function () {
+        describe('Given player1 is revealing an influence due to a golpe', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'ambassador', 'assassin');
-                game._test_setInfluence(1, 'duke', 'captain');
-                game._test_setInfluence(2, 'ambassador', 'ambassador');
+                game._test_setInfluence(0, 'embaixador', 'assassino');
+                game._test_setInfluence(1, 'duque', 'capitão');
+                game._test_setInfluence(2, 'embaixador', 'embaixador');
                 game._test_setTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: 0,
-                    action: 'coup',
+                    action: 'golpe',
                     playerToReveal: 1,
-                    reason: 'coup'
+                    reason: 'golpe'
                 });
             });
 
@@ -423,15 +423,15 @@ describe('Game', function () {
             });
         });
 
-        describe('Given player0 is attempting to draw tax, and player2 has allowed', function () {
+        describe('Given player0 is attempting to draw taxa, and player2 has allowed', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'ambassador', 'assassin');
-                game._test_setInfluence(1, 'duke', 'captain');
-                game._test_setInfluence(2, 'ambassador', 'ambassador');
+                game._test_setInfluence(0, 'embaixador', 'assassino');
+                game._test_setInfluence(1, 'duque', 'capitão');
+                game._test_setInfluence(2, 'embaixador', 'embaixador');
                 game._test_setTurnState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: 0,
-                    action: 'tax'
+                    action: 'taxa'
                 });
                 game._test_resetAllows(0);
 
@@ -456,16 +456,16 @@ describe('Game', function () {
     });
 
     describe('Exchanging', function () {
-        describe('Given a game with ambassadors', function () {
+        describe('Given a game with embaixadors', function () {
             beforeEach(function () {
                 return testPlayers.startGame();
             });
 
-            describe('When player0 tries to exchange', function () {
+            describe('When player0 tries to trocar', function () {
                 beforeEach(function () {
                     player0.command({
                         command: 'play-action',
-                        action: 'exchange'
+                        action: 'trocar'
                     });
 
                     return testPlayers.consumeState(stateNames.ACTION_RESPONSE);
@@ -475,30 +475,30 @@ describe('Game', function () {
                     beforeEach(function () {
                         player1.command({
                             command: 'allow',
-                            action: 'exchange'
+                            action: 'trocar'
                         });
                     });
 
                     it('Then player0 should choose from four roles', function () {
                         return player0.getNextState().then(function (state) {
-                            expect(state.state.name).to.be(stateNames.EXCHANGE);
-                            expect(state.state.exchangeOptions.length).to.be(4);
+                            expect(state.state.name).to.be(stateNames.trocar);
+                            expect(state.state.trocarOptions.length).to.be(4);
                         });
                     });
                 });
             });
         });
 
-        describe('Given a game with inquisitors', function () {
+        describe('Given a game with inquisidores', function () {
             beforeEach(function () {
-                return testPlayers.startGame('inquisitors');
+                return testPlayers.startGame('inquisidores');
             });
 
-            describe('When player0 tries to exchange', function () {
+            describe('When player0 tries to trocar', function () {
                 beforeEach(function () {
                     player0.command({
                         command: 'play-action',
-                        action: 'exchange'
+                        action: 'trocar'
                     });
 
                     return testPlayers.consumeState(stateNames.ACTION_RESPONSE);
@@ -508,14 +508,14 @@ describe('Game', function () {
                     beforeEach(function () {
                         player1.command({
                             command: 'allow',
-                            action: 'exchange'
+                            action: 'trocar'
                         });
                     });
 
                     it('Then player0 should choose from three roles', function () {
                         return player0.getNextState().then(function (state) {
-                            expect(state.state.name).to.be(stateNames.EXCHANGE);
-                            expect(state.state.exchangeOptions.length).to.be(3);
+                            expect(state.state.name).to.be(stateNames.trocar);
+                            expect(state.state.trocarOptions.length).to.be(3);
                         });
                     });
                 });

@@ -1,7 +1,7 @@
 # Lives in /lib/systemd/system/treason-blue.service
 
 [Unit]
-Description=Treason Coup (Blue)
+Description=Treason golpe (Blue)
 
 [Service]
 ExecStart=/home/treason/deploy-blue/scripts/run-node /home/treason/deploy-blue/server.js --port 8082

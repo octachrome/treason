@@ -15,28 +15,28 @@ i {
     font-style: normal;
     vertical-align: middle;
 }
-i.coup:before {
+i.golpe:before {
     content: "\e601";
 }
-i.assassinate:before {
+i.assassinar:before {
     content: "\e602";
 }
-i.tax:before {
+i.taxa:before {
     content: "\e603";
 }
-i.steal:before {
+i.extorquir:before {
     content: "\e605";
 }
-i.exchange:before {
+i.trocar:before {
     content: "\e600";
 }
-i.interrogate:before {
+i.interrogar:before {
     content: "\e900";
 }
-i.income:before {
+i.renda:before {
     content: "\e606";
 }
-i.foreign-aid:before {
+i.ajuda-externa:before {
     content: "\e607";
 }
 i.successful-challenge:before {
@@ -117,52 +117,52 @@ div.chat {
 .btn-action:disabled:hover {
     color: #888;
 }
-.label-duke, .btn-duke, .btn-duke:focus, .btn-tax, .btn-tax:focus {
+.label-duque, .btn-duque, .btn-duque:focus, .btn-taxa, .btn-taxa:focus {
     background-color: hsl(280, 60%, 50%);
 }
-.label-assassin, .btn-assassin, .btn-assassin:focus, .btn-assassinate, .btn-assassinate:focus {
+.label-assassino, .btn-assassino, .btn-assassino:focus, .btn-assassinar, .btn-assassinar:focus {
     background-color: hsl(0, 0%, 20%);
 }
-.label-contessa, .btn-contessa, .btn-contessa:focus {
+.label-condessa, .btn-condessa, .btn-condessa:focus {
     background-color: hsl(359, 60%, 50%);
 }
-.label-ambassador, .btn-ambassador, .btn-ambassador:focus, .btn-exchange, .btn-exchange:focus {
+.label-embaixador, .btn-embaixador, .btn-embaixador:focus, .btn-trocar, .btn-trocar:focus {
     background-color: hsl(80, 60%, 45%);
 }
-.label-inquisitor, .btn-inquisitor, .btn-inquisitor:focus, .btn-interrogate, .btn-interrogate:focus {
+.label-inquisidor, .btn-inquisidor, .btn-inquisidor:focus, .btn-interrogar, .btn-interrogar:focus {
     background-color: hsl(55, 60%, 45%);
 }
-.label-captain, .btn-captain, .btn-captain:focus, .btn-steal, .btn-steal:focus {
+.label-capitão, .btn-capitão, .btn-capitão:focus, .btn-extorquir, .btn-extorquir:focus {
     background-color: hsl(195, 60%, 50%);
 }
 .btn-default, .btn-default:focus {
     background-color: white;
     color: #333;
 }
-.btn-duke, .btn-tax, .btn-assassin, .btn-assassinate, .btn-contessa, .btn-ambassador, .btn-exchange, .btn-inquisitor, .btn-interrogate, .btn-captain, .btn-steal {
+.btn-duque, .btn-taxa, .btn-assassino, .btn-assassinar, .btn-condessa, .btn-embaixador, .btn-trocar, .btn-inquisidor, .btn-interrogar, .btn-capitão, .btn-extorquir {
     color: white;
     opacity: 0.8;
 }
-.btn-duke:hover, .btn-tax:hover, .btn-assassin:hover, .btn-assassinate:hover, .btn-contessa:hover, .btn-ambassador:hover, .btn-exchange:hover, .btn-inquisitor:hover, .btn-interrogate:hover, .btn-captain:hover, .btn-steal:hover {
+.btn-duque:hover, .btn-taxa:hover, .btn-assassino:hover, .btn-assassinar:hover, .btn-condessa:hover, .btn-embaixador:hover, .btn-trocar:hover, .btn-inquisidor:hover, .btn-interrogar:hover, .btn-capitão:hover, .btn-extorquir:hover {
     opacity: 1.0;
     color: white;
 }
-.btn-duke:focus, .btn-tax:focus, .btn-assassin:focus, .btn-assassinate:focus, .btn-contessa:focus, .btn-ambassador:focus, .btn-exchange:focus, .btn-inquisitor:focus, .btn-interrogate:focus, .btn-captain:focus, .btn-steal:focus {
+.btn-duque:focus, .btn-taxa:focus, .btn-assassino:focus, .btn-assassinar:focus, .btn-condessa:focus, .btn-embaixador:focus, .btn-trocar:focus, .btn-inquisidor:focus, .btn-interrogar:focus, .btn-capitão:focus, .btn-extorquir:focus {
     color: white;
 }
-.hist-steal {
+.hist-extorquir {
     border-left: 5px solid hsl(195, 60%, 50%);
 }
-.hist-tax {
+.hist-taxa {
     border-left: 5px solid hsl(280, 60%, 50%);
 }
-.hist-assassinate {
+.hist-assassinar {
     border-left: 5px solid hsl(0, 0%, 20%);
 }
-.hist-exchange {
+.hist-trocar {
     border-left: 5px solid hsl(80, 60%, 45%);
 }
-.hist-interrogate {
+.hist-interrogar {
     border-left: 5px solid hsl(55, 60%, 45%);
 }
 .current-player {

@@ -1,9 +1,9 @@
-A database containing around 600,000 online games of Coup recorded from http://treason.thebrown.net is available here: https://s3-eu-west-1.amazonaws.com/treason.thebrown.net/games.json.gz. It is 150 MB compressed, 400 MB when uncompressed.
+A database containing around 600,000 online games of golpe recorded from http://treason.thebrown.net is available here: https://s3-eu-west-1.amazonaws.com/treason.thebrown.net/games.json.gz. It is 150 MB compressed, 400 MB when uncompressed.
 
 The database is a JSON array, where each entry in the array is an object representing a single game. Each game object has the following fields:
 
     gameId          string          a unique id for the game
-    gameType        string          the type of game ("original" or "inquisitors")
+    gameType        string          the type of game ("original" or "inquisidores")
     playerCount     number          the number of players in the game
     playerIds       Array<string>   the unique ids of the players in the game (AI players have the id "ai")
     winner          number          the player who won the game, as an index into the players array
@@ -24,11 +24,11 @@ Each event object has a `type` field which determines the other fields that will
           "influence": [
             {
               "revealed": false,    // initially false; true once the role has been revealed to the other players
-              "role": "ambassador"  // can be "duke", "captain", "assassin", "contessa", "ambassador", or "inquisitor"
+              "role": "embaixador"  // can be "duque", "capitão", "assassino", "condessa", "embaixador", or "inquisidor"
             },
             {
               "revealed": false,
-              "role": "assassin"
+              "role": "assassino"
             }
           ]
         },
@@ -38,14 +38,14 @@ Each event object has a `type` field which determines the other fields that will
 
     {
       "type": "ACTION",     // an event of this type occurs directly after the start of each turn
-      "action": "steal",    // can be "foreign-aid", "steal", "assassinate", "exchange", "interrogate", "coup", or "income"
+      "action": "extorquir",    // can be "ajuda-externa", "extorquir", "assassinar", "trocar", "interrogar", "golpe", or "renda"
       "target": 4           // the player who is targeted (not all actions have a target)
     }
 
     {
       "type": "BLOCK",              // an event of this type occurs when a player attempts to block an action
       "blockingPlayer": 2,          // the player who is doing the blocking
-      "blockingRole": "contessa"    // the role they claimed to block with; one of "contessa" (blocks assassination), "duke" (blocks foreign aid), "captain", "ambassador" or "inquisitor" (these three all block stealing)
+      "blockingRole": "condessa"    // the role they claimed to block with; one of "condessa" (blocks assassinoation), "duque" (blocks ajuda externa), "capitão", "embaixador" or "inquisidor" (these three all block extorquiring)
     }
 
     {
@@ -75,7 +75,7 @@ Notes:
 
 - In the `events` array, players are always identified using their numerical index into the playerIds array; never using their player id.
 - The first player is random; it is not always player 0.
-- Due to a bug, the player who blocked foreign aid is not always recorded. If unknown, `blockingPlayer` is set to `-1`.
+- Due to a bug, the player who blocked ajuda externa is not always recorded. If unknown, `blockingPlayer` is set to `-1`.
 
 I think the rules below summarise the possible sequences in which events can occur, where `*` means repeated zero or more times, `?` means may appear zero or one times, `A | B` means either A or B, and parentheses indicate where these operators are applied to sub-sequences of events.
 

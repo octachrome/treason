@@ -1,7 +1,7 @@
-Treason Coup
+Treason golpe
 ------------
 
-A clone of the card game Coup written in Node.js. Play online at http://treason.thebrown.net.
+A clone of the card game golpe written in Node.js. Play online at http://treason.thebrown.net.
 
 To run it, checkout the source code, install Node.js (version 6 or later), and run:
 
@@ -48,7 +48,7 @@ The game state object:
             action: "",             // The action which is being attempted in the current turn, or null
             target: 1,              // The index of the player who is targeted by the current action, or null
             blockingRole: "",       // The role being used to block the current action, or null
-            exchangeOptions: [],    // When exchanging, the roles you can choose from
+            trocarOptions: [],    // When exchanging, the roles you can choose from
             playerToReveal: 1       // When revealng an influence, the player who must reveal
         }
     }
@@ -63,20 +63,20 @@ After an action has been unsuccessfully challenged, the target of the action may
 
 In state `block-response`, the player in the `target` field is attempting to block the action using the role in the `blockingRole` field. Any player may challenge the block using the `challenge` command. Players who do not which to challenge should send the `allow` command.
 
-In state `reveal-influence`, the player in the `playerToReveal` field must reveal an influence using the `reveal` command. This occurs after a coup, a successful assassination, or a challenge.
+In state `reveal-influence`, the player in the `playerToReveal` field must reveal an influence using the `reveal` command. This occurs after a golpe, a successful assassinoation, or a challenge.
 
-The `exchange` state occurs after playing the exchange action; the player whose turn it is must choose which of their cards to exchange. The player chooses their roles from those in the `exchangeOptions` field, and then sends an `exchange` command with the `roles` field containing their choice in the form of an array.
+The `trocar` state occurs after playing the trocar action; the player whose turn it is must choose which of their cards to trocar. The player chooses their roles from those in the `trocarOptions` field, and then sends an `trocar` command with the `roles` field containing their choice in the form of an array.
 
 When a player wins, the game returns to `waiting-for-players`, and the `state.winnerIdx` field is set to the winner.
 
 Commands sent to the server look like this:
 
     {
-        command: "",        // The name of the command: play-action, block, challenge, allow, reveal, exchange
+        command: "",        // The name of the command: play-action, block, challenge, allow, reveal, trocar
         action: "",         // For the play-action command, the action to play
         target: 0,          // When playing an action which targets another player, the index of the player to target
         blockingRole: "",   // For the block command, the role to block with
         role: "",           // For the reveal command, the role to reveal
-        roles: [""],        // For the exchange command, the role(s) you wish to keep
+        roles: [""],        // For the trocar command, the role(s) you wish to keep
         stateId: 1          // Must match the stateId from the latest game state
     }

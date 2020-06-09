@@ -6,7 +6,7 @@
                 <span class="glyphicon glyphicon-eye-open observer" data-bind="visible: isReady() == 'observe'"></span>
             </div>
             <div class="col-xs-6">
-                <span class="badge" data-bind="text: (isReady() ? 'ready' : 'not ready')"></span>
+                <span class="badge" data-bind="text: (isReady() ? 'Pronto' : 'Ainda não estou pronto')"></span>
             </div>
         </div>
         <div class="row" data-bind="visible: !$root.waitingToPlay()">
@@ -30,31 +30,31 @@
         <a href="javascript: null" data-bind="event: {vclick: showChat}, visible: sidebar() != 'chat'">Chat</a>
         <div data-bind="visible: sidebar() == 'chat'">
             <div class="chat"></div>
-            <textarea class="form-control" rows="2" placeholder="Chat message"></textarea>
+            <textarea class="form-control" rows="2" placeholder="Mensagem"></textarea>
         </div>
     </li>
     <li class="list-group-item">
-        <a href="javascript: null" data-bind="event: {vclick: showCheatSheet}, visible: sidebar() != 'cheat'">Cheat sheet</a>
+        <a href="javascript: null" data-bind="event: {vclick: showCheatSheet}, visible: sidebar() != 'cheat'">Tabela de ações</a>
         <div data-bind="visible: sidebar() == 'cheat'">
             <!-- ko foreach: state.roles -->
                 <p><span class="label" data-bind="text: $data, css: labelClass($data)"></span> <span data-bind="text: roleDescription($data)"></span></p>
             <!-- /ko -->
             <!-- ko if: state.roles().length > 0 -->
-            <p>Foreign aid +$2; blocked by duke</p>
-            <p>Income +$1</p>
-            <!-- ko if: state.gameType() == 'reformation' -->
-            <p>Pay $7 to stage a coup, revealing another player's influence</p>
-            <p>Pay $1 to change teams</p>
-            <p>Pay $2 to convert another player to the other team</p>
-            <p>Embezzle from the treasury reserve $?; forbidden to duke</p>
+            <p>Ajuda externa +$2; bloqueado pelo duque</p>
+            <p>Renda +$1</p>
+            <p>Pague $7 para performar um golpe, obrigando outro jogador a revelar uma influencia</p>
+            <!-- ko if: state.gameType() == 'reforma' -->
+            <p>Pague $1 para trocar de religião</p>
+            <p>Pague $2 para converterer a religião de outro jogador</p>
+            <p>Pegue o dinheiro do banco $?; proibido pro duque</p>
             <!-- /ko -->
             <!-- /ko -->
             <!-- ko if: state.roles().length === 0 -->
-            <p>Not available until the game starts</p>
+            <p>Disponivel apenas depois do inicio do jogo</p>
             <!-- /ko -->
         </div>
     </li>
 </ul>
-<p><a href="rules.html" target="blank">How to play</a></p>
-<p><a href="" data-bind="click: leaveGame">Leave game</a></p>
+<p><a href="rules.html" target="blank">Como Jogar</a></p>
+<p><a href="" data-bind="click: leaveGame">Sair do jogo</a></p>
 <p><a href="javascript:;" data-bind="visible: notifsSupported, text: notifToggleText, click: toggleNotifs"></a></p>

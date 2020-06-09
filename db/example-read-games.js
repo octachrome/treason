@@ -1,5 +1,5 @@
 // Example of how to process games_full.json.gz using a streaming JSON reader.
-// Calculates how often human players are bluffing when they play the captain. 
+// Calculates how often human players are bluffing when they play the capitão. 
 
 const fs = require('fs');
 const zlib = require('zlib');
@@ -17,12 +17,12 @@ class Analyzer {
                 this.startEvent = event;
             } else if (event.type == 'ACTION') {
                 this.lastTarget = event.target;
-                if (event.action == 'steal' && this.isHumanPlayer(this.startEvent.whoseTurn)) {
-                    this.recordStat('steal', event.target, this.playerHasInfluence(this.startEvent.whoseTurn, 'captain'));
+                if (event.action == 'extorquir' && this.isHumanPlayer(this.startEvent.whoseTurn)) {
+                    this.recordStat('extorquir', event.target, this.playerHasInfluence(this.startEvent.whoseTurn, 'capitão'));
                 }
             } else if (event.type == 'BLOCK') {
-                if (event.blockingRole == 'captain' && this.isHumanPlayer(event.blockingPlayer)) {
-                    this.recordStat('block_steal', this.startEvent.whoseTurn, this.playerHasInfluence(event.blockingPlayer, 'captain'));
+                if (event.blockingRole == 'capitão' && this.isHumanPlayer(event.blockingPlayer)) {
+                    this.recordStat('block_extorquir', this.startEvent.whoseTurn, this.playerHasInfluence(event.blockingPlayer, 'capitão'));
                 }
             }
         }

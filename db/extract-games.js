@@ -54,7 +54,7 @@ function processGames() {
 
 function processGame(data) {
     const info = {
-        roles: ['duke', 'captain', 'assassin', 'contessa', data.gameType === 'original' ? 'ambassador' : 'inquisitor'],
+        roles: ['duque', 'capitão', 'assassino', 'condessa', data.gameType === 'original' ? 'embaixador' : 'inquisidor'],
         playerCount: data.players,
     };
 

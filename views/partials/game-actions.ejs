@@ -1,48 +1,48 @@
 <div class="action-bar">
     <!-- Start/end of game -->
     <div data-bind="visible: waitingToPlay">
-        <p>Waiting for players</p>
+        <p>Esperando jogadores</p>
         <p data-bind="visible: !wantToStart()">
-            <button class="btn btn-default" data-bind="enable: canAddAi(), event: {vclick: addAi}">Add AI</button>
-            <button class="btn btn-default" data-bind="enable: canRemoveAi(), event: {vclick: removeAi}">Remove AI</button>
+            <button class="btn btn-default" data-bind="enable: canAddAi(), event: {vclick: addAi}">Adicionar robo</button>
+            <button class="btn btn-default" data-bind="enable: canRemoveAi(), event: {vclick: removeAi}">Remover robo</button>
             <br/>
-            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'original')}, enable: canStartGame">Start normal game</button>
-            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'inquisitors')}, enable: canStartGame">Start inquisitor game</button>
-            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'reformation')}, enable: canStartGame">Start reformation game</button>
+            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'original')}, enable: canStartGame">Começar jogo normal</button>
+            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'inquisidores')}, enable: canStartGame">Começar jogo com inquisidor</button>
+            <button class="btn btn-default" data-bind="event: {vclick: start.bind(null, 'reforma')}, enable: canStartGame">Começar jogo com a reforma</button>
         </p>
         <p data-bind="visible: wantToStart()">
-            Not all players are ready. Start without them?<br/>
-            <button class="btn btn-default" data-bind="event: {vclick: confirmStart.bind(null, null)}">Start</button>
-            <button class="btn btn-default" data-bind="event: {vclick: cancelStart}">Back</button>
+            Nem todos os jogadores estão prontos. Começar sem eles?<br/>
+            <button class="btn btn-default" data-bind="event: {vclick: confirmStart.bind(null, null)}">Começar</button>
+            <button class="btn btn-default" data-bind="event: {vclick: cancelStart}">Voltar</button>
         </p>
     </div>
     <!-- ko if: !waitingToPlay() -->
     <div data-bind="visible: weHaveWon()">
-        You have won!<br/>
+        Voce ganhou<br/>
     </div>
     <div data-bind="visible: theyHaveWon()">
-        <span data-bind="text: winnerName()"></span> has won!<br/>
+        <span data-bind="text: winnerName()"></span> ganhou!<br/>
     </div>
     <div data-bind="visible: canPlayAgain()">
-        <button class="btn btn-default" data-bind="event: {vclick: playAgain}">Play again</button>
+        <button class="btn btn-default" data-bind="event: {vclick: playAgain}">Jogar novamente?</button>
     </div>
     <!-- /ko -->
 
     <!-- During game -->
     <div data-bind="visible: weAreInState('start-of-turn')">
         <!-- ko if: !targetedAction() -->
-            Your turn:<br/>
+            Sua vez:<br/>
             <!-- ko foreach: actionNames() -->
                 <!-- ko if: actionPresentInGame($data) -->
                     <button class="btn btn-action" data-bind="enable: canPlayAction($data), event: {vclick: playAction}, css: buttonActionClass($data)">
                         <i data-bind="css: $data"></i>
                         <span data-bind="text: $data.replace('-', ' ')"></span>
-                        <!-- ko if: $data == 'embezzle' -->
+                        <!-- ko if: $data == 'desviar' -->
                             <span class="badge" style="margin-top: 9px; margin-bottom: 8px;" data-bind="text: '+$' + $root.state.treasuryReserve()"></span>
                         <!-- /ko -->
                     </button>
                 <!-- /ko -->
-                <!-- ko if: $data == 'coup' -->
+                <!-- ko if: $data == 'golpe' -->
                     <br>
                 <!-- /ko -->
             <!-- /ko -->
@@ -59,87 +59,87 @@
         <!-- /ko -->
     </div>
     <div data-bind="visible: theyAreInState('start-of-turn')">
-        Waiting for <span data-bind="text: currentPlayerName()"></span> to play
+        Esperando <span data-bind="text: currentPlayerName()"></span> jogar
     </div>
-    <div data-bind="visible: theyAreInState('exchange')">
-        <i class="exchange"></i>
-        Waiting for <span data-bind="text: currentPlayerName()"></span> to exchange roles
+    <div data-bind="visible: theyAreInState('trocar')">
+        <i class="trocar"></i>
+        Esperando <span data-bind="text: currentPlayerName()"></span> trocar de papel
     </div>
-    <div data-bind="visible: weAreInState('exchange')">
-        <i class="exchange"></i>
-        Choose <span data-bind="text: ourInfluenceCount()"></span> roles to keep:<br/>
-        <!-- ko foreach: state.state.exchangeOptions -->
-            <button class="btn" data-bind="text: $data, css: exchangeOptionClass($index()), event: {vclick: function() {toggleExchangeOption($index());}}"></button>
+    <div data-bind="visible: weAreInState('trocar')">
+        <i class="trocar"></i>
+        Escolha <span data-bind="text: ourInfluenceCount()"></span> os papeis a serem mantidos:<br/>
+        <!-- ko foreach: state.state.trocarOptions -->
+            <button class="btn" data-bind="text: $data, css: trocarOptionClass($index()), event: {vclick: function() {toggletrocarOption($index());}}"></button>
         <!-- /ko -->
         <br/>
-        <button class="btn btn-action btn-ambassador" data-bind="enable: exchangeOptionsValid(), event: {vclick: exchange}">
-            <i class="exchange"></i>
-            <span>Exchange</span>
+        <button class="btn btn-action btn-embaixador" data-bind="enable: trocarOptionsValid(), event: {vclick: trocar}">
+            <i class="trocar"></i>
+            <span>Trocar</span>
         </button>
     </div>
-    <div data-bind="visible: theyAreInState('interrogate')">
-        <i class="interrogate"></i>
-        Waiting for <span data-bind="text: currentPlayerName()"></span> to interrogate <span data-bind="text: targetPlayerName()"></span>
+    <div data-bind="visible: theyAreInState('interrogar')">
+        <i class="interrogar"></i>
+        Esperando <span data-bind="text: currentPlayerName()"></span> interrogar <span data-bind="text: targetPlayerName()"></span>
     </div>
-    <div data-bind="visible: weAreInState('interrogate')">
-        <i class="interrogate"></i>
-        <span data-bind="text: targetPlayerName()"></span> has a
+    <div data-bind="visible: weAreInState('interrogar')">
+        <i class="interrogar"></i>
+        <span data-bind="text: targetPlayerName()"></span> é
         <span class="label" data-bind="text: state.state.confession(), css: labelClass(state.state.confession())"></span><br/>
 
-        Force <span data-bind="text: targetPlayerName()"></span> to exchange it for another role?<br/>
-        <button class="btn btn-default" data-bind="event: {vclick: interrogate.bind(null, true)}">Yes</button>
-        <button class="btn btn-default" data-bind="event: {vclick: interrogate.bind(null, false)}">No</button>
+        Forçar <span data-bind="text: targetPlayerName()"></span> a trocar personagem?<br/>
+        <button class="btn btn-default" data-bind="event: {vclick: interrogar.bind(null, true)}">Sim</button>
+        <button class="btn btn-default" data-bind="event: {vclick: interrogar.bind(null, false)}">Não</button>
     </div>
     <div data-bind="visible: weAreInState('action-response')">
         <i data-bind="css: state.state.action"></i>
         <span data-bind="text: stateMessage()"></span><br/><br/>
-        Waiting for blocks/challenges
+        Esperando Bloqueios/Contestação
     </div>
     <div data-bind="visible: theyAreInState('action-response')">
         <i data-bind="css: state.state.action"></i>
         <span data-bind="text: stateMessage()"></span><br/><br/>
         <!-- ko if: !weCanBlock() && !weCanChallenge() -->
-            Waiting for blocks/challenges
+            Esperando Bloqueios/Contestação
         <!-- /ko -->
         <!-- ko if: weCanBlock() || weCanChallenge() -->
             <p data-bind="text: ourTeamWarning()"></p>
             <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
                 <i class="allow"></i>
-                <span>Allow</span>
+                <span>Permitir</span>
             </button>
             <!-- ko if: weCanBlock() -->
                 <!-- ko foreach: blockingRoles() -->
                     <button class="btn btn-action" data-bind="event: {vclick: block}, css: buttonActionClass($data)">
                         <i class="block"></i>
-                        <span data-bind="text: 'Block with ' + $data"></span>
+                        <span data-bind="text: 'Bloquear com ' + $data"></span>
                     </button>
                 <!-- /ko -->
             <!-- /ko -->
             <button class="btn btn-action btn-default" data-bind="event: {vclick: challenge}, visible: weCanChallenge()">
                 <i class="challenge"></i>
-                <span>Challenge</span>
+                <span>Contestar</span>
             </button>
         <!-- /ko -->
     </div>
     <div data-bind="visible: weAreInState('final-action-response')">
         <i data-bind="css: state.state.action"></i>
-        Waiting for blocks
+        Esperando Bloqueio
     </div>
     <div data-bind="visible: theyAreInState('final-action-response')">
         <i data-bind="css: state.state.action"></i>
         <!-- ko if: !weCanBlock() -->
-            Waiting for blocks
+            Esperando Bloqueio
         <!-- /ko -->
         <!-- ko if: weCanBlock() -->
-            Last chance to block<br/>
+            Ultima chance de bloquear<br/>
             <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
                 <i class="allow"></i>
-                <span>Allow</span>
+                <span>Permitir</span>
             </button>
             <!-- ko foreach: blockingRoles() -->
                 <button class="btn btn-action" data-bind="event: {vclick: block}, css: buttonActionClass($data)">
                     <i class="block"></i>
-                    <span data-bind="text: 'Block with ' + $data"></span>
+                    <span data-bind="text: 'Bloquear com ' + $data"></span>
                 </button>
             <!-- /ko -->
         <!-- /ko -->
@@ -147,35 +147,35 @@
     <div data-bind="visible: weAreTargeted('block-response')">
         <i class="block"></i>
         <span data-bind="text: stateMessage()"></span><br/><br/>
-        Waiting for challenges
+        Esperando Contestação
     </div>
     <div data-bind="visible: theyAreTargeted('block-response') &amp;&amp; weAreAlive()">
         <i class="block"></i>
         <span data-bind="text: stateMessage()"></span><br/><br/>
         <!-- ko if: !weAreAlive() -->
-            Waiting for challenges
+            Esperando Contestação
         <!-- /ko -->
         <!-- ko if: weAreAlive() -->
             <p data-bind="text: ourTeamWarning()"></p>
             <button class="btn btn-action" data-bind="event: {vclick: allow}, css: { 'btn-success': weAllowed(), 'btn-default': !weAllowed() }">
                 <i class="allow"></i>
-                <span>Allow</span>
+                <span>Permitir</span>
             </button>
             <button class="btn btn-action btn-default" data-bind="event: {vclick: challenge}, visible: weCanChallenge()">
                 <i class="challenge"></i>
-                <span>Challenge</span>
+                <span>Contestar</span>
             </button>
         <!-- /ko -->
     </div>
     <div data-bind="visible: weMustReveal()">
         <span data-bind="text: stateMessage()"></span><br/><br/>
-        You must reveal an influence
+        Voce tem que revelar um personagem
         <!-- ko foreach: ourInfluence() -->
         <button class="btn" data-bind="text: role, css: buttonRoleClass(role()), visible: !revealed(), event: {vclick: reveal}"></button>
         <!-- /ko -->
     </div>
     <div data-bind="visible: theyMustReveal()">
         <span data-bind="text: stateMessage()"></span><br/><br/>
-        Waiting for <span data-bind="text: toRevealPlayerName()"></span> to reveal an influence
+        Esperando <span data-bind="text: toRevealPlayerName()"></span> revelar um personagem.
     </div>
 </div>

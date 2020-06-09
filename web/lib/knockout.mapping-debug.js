@@ -86,7 +86,7 @@
 	}
 
 	exports.fromJS = function (jsObject /*, inputOptions, target*/ ) {
-		if (arguments.length == 0) throw new Error("When calling ko.fromJS, pass the object you want to convert.");
+		if (arguments.length == 0) throw new Error("When calling ko.fromJS, pass the object you want to converter.");
 
 		try {
 			if (!mappingNesting++) {
@@ -161,7 +161,7 @@
 	exports.toJS = function (rootObject, options) {
 		if (!defaultOptions) exports.resetDefaultOptions();
 
-		if (arguments.length == 0) throw new Error("When calling ko.mapping.toJS, pass the object you want to convert.");
+		if (arguments.length == 0) throw new Error("When calling ko.mapping.toJS, pass the object you want to converter.");
 		if (exports.getType(defaultOptions.ignore) !== "array") throw new Error("ko.mapping.defaultOptions().ignore should be an array.");
 		if (exports.getType(defaultOptions.include) !== "array") throw new Error("ko.mapping.defaultOptions().include should be an array.");
 		if (exports.getType(defaultOptions.copy) !== "array") throw new Error("ko.mapping.defaultOptions().copy should be an array.");

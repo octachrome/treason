@@ -48,7 +48,7 @@ describe('Smoke test', function () {
             .waitUntil(function () {
                 return Promise.all([
                     this.isVisible('button*=Allow'),
-                    this.isVisible('button*=tax'),
+                    this.isVisible('button*=taxa'),
                 ]).then(function (results) {
                     return results[0] || results[1];
                 });

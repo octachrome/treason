@@ -20,6 +20,6 @@ Font
 -----
 Font is Xolonium; http://openfontlibrary.org/en/font/xolonium; SIL Open Font License.
 
-Coup
+golpe
 -----
-The Coup card game is Copyright Rikki Tahta, La Mame Games.
+The golpe card game is Copyright Rikki Tahta, La Mame Games.

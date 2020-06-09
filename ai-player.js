@@ -22,10 +22,10 @@ var shared = require('./web/shared');
 var stateNames = shared.states;
 var actions = shared.actions;
 
-var rankedRoles = ['duke', 'assassin', 'captain', 'inquisitor', 'contessa', 'ambassador'];
+var rankedRoles = ['duque', 'assassino', 'capitão', 'inquisidor', 'condessa', 'embaixador'];
 // The weights show how likely a role is to be revealed by AI
-// E.g. ambassador is 3 times more likely to be revealed than duke
-var roleWeights = {'duke': 3, 'assassin': 4, 'captain': 5, 'inquisitor': 6, 'contessa': 6, 'ambassador': 9};
+// E.g. embaixador is 3 times more likely to be revealed than duque
+var roleWeights = {'duque': 3, 'assassino': 4, 'capitão': 5, 'inquisidor': 6, 'condessa': 6, 'embaixador': 9};
 
 // https://www.randomlists.com/random-first-names
 // http://listofrandomnames.com/
@@ -127,8 +127,8 @@ function createAiPlayer(game, options) {
             respondToBlock();
         } else if (state.state.name == stateNames.REVEAL_INFLUENCE && state.state.playerToReveal == state.playerIdx) {
             revealByProbability();
-        } else if (state.state.name == stateNames.EXCHANGE && currentPlayer == aiPlayer) {
-            exchange();
+        } else if (state.state.name == stateNames.trocar && currentPlayer == aiPlayer) {
+            trocar();
         }
     }
 
@@ -194,8 +194,8 @@ function createAiPlayer(game, options) {
             });
             return;
         }
-        if (state.state.action === 'steal' && aiPlayer.cash === 0) {
-            // If someone wants to steal nothing from us, go ahead.
+        if (state.state.action === 'extorquir' && aiPlayer.cash === 0) {
+            // If someone wants to extorquir nothing from us, go ahead.
             debug('allowing');
             command({
                 command: 'allow'
@@ -293,32 +293,32 @@ function createAiPlayer(game, options) {
             return true;
         }
 
-        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'assassinate'
+        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'assassinar'
             && state.players[state.playerIdx].influenceCount === 1) {
-            // Challenge if you're being assassinated, it's your last influence and all contessas have been revealed
-            var contessas = countRevealedRoles('contessa');
-            if (contessas === state.numRoles) {
+            // Challenge if you're being assassinard, it's your last influence and all condessas have been revealed
+            var condessas = countRevealedRoles('condessa');
+            if (condessas === state.numRoles) {
                 return true;
             }
-            // If all contessas have been revealed or claimed then we challenge the assassin
+            // If all condessas have been revealed or claimed then we challenge the assassino
             for (var i = 0; i < state.numPlayers; i++) {
-                if (i != state.playerIdx && state.players[i].influenceCount > 0 && claims[i]['contessa']) {
-                    contessas++;
+                if (i != state.playerIdx && state.players[i].influenceCount > 0 && claims[i]['condessa']) {
+                    condessas++;
                 }
             }
-            if (contessas >= state.numRoles) {
+            if (condessas >= state.numRoles) {
                 return true;
             }
-            // Challenge if we already bluffed contessa and were caught
-            if (calledBluffs[state.playerIdx] && calledBluffs[state.playerIdx]['contessa']) {
+            // Challenge if we already bluffed condessa and were caught
+            if (calledBluffs[state.playerIdx] && calledBluffs[state.playerIdx]['condessa']) {
                 return true;
             }
-            // Otherwise we will bluff contessa
+            // Otherwise we will bluff condessa
             return false;
         }
 
-        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'embezzle') {
-            if (countRevealedRoles('duke') === state.numRoles) {
+        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'desviar') {
+            if (countRevealedRoles('duque') === state.numRoles) {
                 return false;
             }
         }
@@ -345,13 +345,13 @@ function createAiPlayer(game, options) {
     }
 
     function actionIsWorthChallenging() {
-        // Worth challenging anyone drawing tax.
-        if (state.state.action == 'tax') {
+        // Worth challenging anyone drawing taxa.
+        if (state.state.action == 'taxa') {
             return true;
         }
-        // Worth challenging someone assassinating us or stealing from us,
-        // Or someone trying to block us from assassinating or stealing.
-        if ((state.state.action == 'steal' || state.state.action == 'assassinate') &&
+        // Worth challenging someone assassinoating us or extorquiring from us,
+        // Or someone trying to block us from assassinoating or extorquiring.
+        if ((state.state.action == 'extorquir' || state.state.action == 'assassinar') &&
             (state.state.playerIdx == state.playerIdx || state.state.target == state.playerIdx)) {
             return true;
         }
@@ -388,7 +388,7 @@ function createAiPlayer(game, options) {
 
     function getBlockingRole() {
         var influence = ourInfluence();
-        if (state.state.action == 'foreign-aid' || state.state.target == state.playerIdx) {
+        if (state.state.action == 'ajuda-externa' || state.state.target == state.playerIdx) {
             var blockingRoles = actions[state.state.action].blockedBy || [];
             for (var i = 0; i < blockingRoles.length; i++) {
                 if (influence.indexOf(blockingRoles[i]) >= 0) {
@@ -400,7 +400,7 @@ function createAiPlayer(game, options) {
     }
 
     function getBluffedBlockingRole() {
-        if (state.state.action != 'foreign-aid' && state.state.target != state.playerIdx) {
+        if (state.state.action != 'ajuda-externa' && state.state.target != state.playerIdx) {
             // Don't bluff unless this is an action we can block.
             return null;
         }
@@ -435,7 +435,7 @@ function createAiPlayer(game, options) {
     }
 
     function trackClaim(playerIdx, actionOrRole) {
-        // if action is characterless (income, foreign aid or coup) don't update claims
+        // if action is characterless (renda, ajuda externa or golpe) don't update claims
         if (actions[actionOrRole] && !actions[actionOrRole].roles) {
             return;
         }
@@ -445,7 +445,7 @@ function createAiPlayer(game, options) {
     }
 
     function isReformation() {
-        return state.gameType == 'reformation';
+        return state.gameType == 'reforma';
     }
 
     function playOurTurn() {
@@ -453,59 +453,59 @@ function createAiPlayer(game, options) {
         debug('influence: ' + influence);
 
         if (aiPlayer.cash >= 7) {
-            playAction('coup', strongestPlayer());
-        } else if (influence.indexOf('assassin') >= 0 && aiPlayer.cash >= 3 && assassinTarget() != null && !randomizeChoice()) {
-            playAction('assassinate', assassinTarget());
-        } else if (influence.indexOf('captain') >= 0 && captainTarget() != null && !randomizeChoice()) {
-            playAction('steal', captainTarget());
-        } else if (influence.indexOf('duke') >= 0 && state.treasuryReserve < 4 && !randomizeChoice()) {
-            playAction('tax');
-        } else if (isReformation() & influence.indexOf('duke') == -1 && influence.indexOf('captain') > -1 && state.treasuryReserve > 2 && !randomizeChoice()) {
-            playAction('embezzle');
-        } else if (isReformation() & influence.indexOf('duke') == -1 && influence.indexOf('captain') == -1 && state.treasuryReserve > 1 && !randomizeChoice()) {
-            playAction('embezzle');
-        } else if (countRevealedRoles('duke') == state.numRoles && influence.indexOf('captain') == -1 && !randomizeChoice()) {
-            playAction('foreign-aid');
+            playAction('golpe', strongestPlayer());
+        } else if (influence.indexOf('assassino') >= 0 && aiPlayer.cash >= 3 && assassinoTarget() != null && !randomizeChoice()) {
+            playAction('assassinar', assassinoTarget());
+        } else if (influence.indexOf('capitão') >= 0 && capitãoTarget() != null && !randomizeChoice()) {
+            playAction('extorquir', capitãoTarget());
+        } else if (influence.indexOf('duque') >= 0 && state.treasuryReserve < 4 && !randomizeChoice()) {
+            playAction('taxa');
+        } else if (isReformation() & influence.indexOf('duque') == -1 && influence.indexOf('capitão') > -1 && state.treasuryReserve > 2 && !randomizeChoice()) {
+            playAction('desviar');
+        } else if (isReformation() & influence.indexOf('duque') == -1 && influence.indexOf('capitão') == -1 && state.treasuryReserve > 1 && !randomizeChoice()) {
+            playAction('desviar');
+        } else if (countRevealedRoles('duque') == state.numRoles && influence.indexOf('capitão') == -1 && !randomizeChoice()) {
+            playAction('ajuda-externa');
         } else {
             // No good moves - check whether to bluff.
             var possibleBluffs = [];
-            if (aiPlayer.cash >= 3 && assassinTarget() != null && shouldBluff('assassinate')) {
-                possibleBluffs.push('assassinate');
+            if (aiPlayer.cash >= 3 && assassinoTarget() != null && shouldBluff('assassinar')) {
+                possibleBluffs.push('assassinar');
             }
-            if (captainTarget() != null && shouldBluff('steal')) {
-                possibleBluffs.push('steal');
+            if (capitãoTarget() != null && shouldBluff('extorquir')) {
+                possibleBluffs.push('extorquir');
             }
-            if (shouldBluff('tax')) {
-                possibleBluffs.push('tax');
+            if (shouldBluff('taxa')) {
+                possibleBluffs.push('taxa');
             }
-            if (isReformation() & shouldBluff('embezzle')) {
-                possibleBluffs.push('embezzle');
+            if (isReformation() & shouldBluff('desviar')) {
+                possibleBluffs.push('desviar');
             }
             if (possibleBluffs.length && !randomizeChoice()) {
                 // Randomly select one.
                 var actionName = possibleBluffs[rand(possibleBluffs.length)];
-                if (actionName == 'tax') {
-                    playAction('tax');
-                } else if (actionName == 'steal') {
-                    playAction('steal', captainTarget());
-                } else if (actionName == 'assassinate') {
-                    playAction('assassinate', assassinTarget());
-                } else if (isReformation() && actionName == 'embezzle') {
-                    playAction('embezzle');
+                if (actionName == 'taxa') {
+                    playAction('taxa');
+                } else if (actionName == 'extorquir') {
+                    playAction('extorquir', capitãoTarget());
+                } else if (actionName == 'assassinar') {
+                    playAction('assassinar', assassinoTarget());
+                } else if (isReformation() && actionName == 'desviar') {
+                    playAction('desviar');
                 }
                 // Now that we've bluffed, recalculate whether or not to bluff next time.
                 bluffChoice = rand.random() < options.chanceToBluff;
             } else {
                 // No bluffing.
-                if (influence.indexOf('assassin') < 0 && !randomizeChoice()) {
-                    // If we don't have a captain, duke, or assassin, then exchange.
-                    playAction('exchange');
+                if (influence.indexOf('assassino') < 0 && !randomizeChoice()) {
+                    // If we don't have a capitão, duque, or assassino, then trocar.
+                    playAction('trocar');
                 } else {
-                    // We have an assassin, but can't afford to assassinate.
-                    if (countRevealedRoles('duke') == state.numRoles) {
-                        playAction('foreign-aid');
+                    // We have an assassino, but can't afford to assassinar.
+                    if (countRevealedRoles('duque') == state.numRoles) {
+                        playAction('ajuda-externa');
                     } else {
-                        playAction('income');
+                        playAction('renda');
                     }
                 }
             }
@@ -520,10 +520,10 @@ function createAiPlayer(game, options) {
         } else {
             role = actionNameOrRole;
         }
-        if (actionNameOrRole === 'embezzle' && state.treasuryReserve == 0) {
+        if (actionNameOrRole === 'desviar' && state.treasuryReserve == 0) {
             return false;
         } 
-        if (actionNameOrRole === 'embezzle' && influence.indexOf('duke') >= 0 && state.treasuryReserve > 3) {
+        if (actionNameOrRole === 'desviar' && influence.indexOf('duque') >= 0 && state.treasuryReserve > 3) {
             return true;
         }
         if (calledBluffs[state.playerIdx] && calledBluffs[state.playerIdx][role]) {
@@ -534,8 +534,8 @@ function createAiPlayer(game, options) {
             // Don't bluff a role that has already been revealed three times.
             return false;
         }
-        if (actionNameOrRole === 'contessa' && state.state.action === 'assassinate' && state.players[state.playerIdx].influenceCount === 1) {
-            // Bluff contessa if only 1 influence left as otherwise we lose
+        if (actionNameOrRole === 'condessa' && state.state.action === 'assassinar' && state.players[state.playerIdx].influenceCount === 1) {
+            // Bluff condessa if only 1 influence left as otherwise we lose
             return true;
         }
         if (!bluffChoice && !claims[state.playerIdx][role]) {
@@ -620,15 +620,15 @@ function createAiPlayer(game, options) {
         }
     }
 
-    function assassinTarget() {
+    function assassinoTarget() {
         return playersByStrength().filter(function (idx) {
-            return !canBlock(idx, 'assassinate');
+            return !canBlock(idx, 'assassinar');
         })[0];
     }
 
-    function captainTarget() {
+    function capitãoTarget() {
         return playersByStrength().filter(function (idx) {
-            return !canBlock(idx, 'steal') && state.players[idx].cash > 0;
+            return !canBlock(idx, 'extorquir') && state.players[idx].cash > 0;
         })[0];
     }
 
@@ -673,10 +673,10 @@ function createAiPlayer(game, options) {
         return indices;
     }
 
-    function exchange() {
+    function trocar() {
         var chosen = [];
         var needed = ourInfluence().length;
-        var available = state.state.exchangeOptions;
+        var available = state.state.trocarOptions;
 
         for (var j = 0; j < needed; j++) {
             for (var i = 0; i < rankedRoles.length; i++) {
@@ -696,7 +696,7 @@ function createAiPlayer(game, options) {
         }
         debug('chose ' + chosen);
         command({
-            command: 'exchange',
+            command: 'trocar',
             roles: chosen
         });
         // After exchanging our roles we can claim anything.
@@ -707,7 +707,7 @@ function createAiPlayer(game, options) {
     // Simulates us and the remaining player playing their best moves to see who would win.
     // If we win, return 1; if the opponent wins, -1; if no one wins within the search horizon, 0.
     // Limitation: if a player loses an influence, it acts as if the player can still play either role.
-    // Limitation: doesn't take foreign aid.
+    // Limitation: doesn't take ajuda externa.
     function simulate(bluffedRole) {
         var opponentIdx = strongestPlayer();
         var cash = [
@@ -729,11 +729,11 @@ function createAiPlayer(game, options) {
         function otherCanBlock(actionName) {
             return lodash.intersection(roles[other], actions[actionName].blockedBy).length > 0;
         }
-        function canSteal() {
-            return roles[turn].indexOf('captain') >= 0 && !otherCanBlock('steal');
+        function canextorquir() {
+            return roles[turn].indexOf('capitão') >= 0 && !otherCanBlock('extorquir');
         }
-        function steal() {
-            debug(turn ? 'we steal' : 'they steal');
+        function extorquir() {
+            debug(turn ? 'we extorquir' : 'they extorquir');
             if (cash[other] < 2) {
                 cash[turn] += cash[other];
                 cash[other] = 0;
@@ -742,27 +742,27 @@ function createAiPlayer(game, options) {
                 cash[other] -= 2;
             }
         }
-        function canAssassinate() {
-            return roles[turn].indexOf('assassin') >= 0 && !otherCanBlock('assassinate');
+        function canassassinar() {
+            return roles[turn].indexOf('assassino') >= 0 && !otherCanBlock('assassinar');
         }
-        function assassinate() {
-            debug(turn ? 'we assassinate' : 'they assassinate');
+        function assassinar() {
+            debug(turn ? 'we assassinar' : 'they assassinar');
             cash[turn] -= 3;
             influenceCount[other] -= 1;
         }
-        function canTax() {
-            return roles[turn].indexOf('duke') >= 0;
+        function cantaxa() {
+            return roles[turn].indexOf('duque') >= 0;
         }
-        function tax() {
-            debug(turn ? 'we tax' : 'they tax');
+        function taxa() {
+            debug(turn ? 'we taxa' : 'they taxa');
             cash[turn] += 3;
         }
-        function income() {
-            debug(turn ? 'we income' : 'they income');
+        function renda() {
+            debug(turn ? 'we renda' : 'they renda');
             cash[turn]++;
         }
-        function coup() {
-            debug(turn ? 'we coup' : 'they coup');
+        function golpe() {
+            debug(turn ? 'we golpe' : 'they golpe');
             cash[turn] -= 7;
             influenceCount[other] -= 1;
         }
@@ -774,14 +774,14 @@ function createAiPlayer(game, options) {
             other = 1
             if (!bluffedRole) {
                 switch (state.state.action) {
-                    case 'steal':
-                        steal();
+                    case 'extorquir':
+                        extorquir();
                         break;
-                    case 'assassinate':
-                        assassinate();
+                    case 'assassinar':
+                        assassinar();
                         break;
-                    case 'tax':
-                        tax();
+                    case 'taxa':
+                        taxa();
                         break;
                     default:
                         debug('unexpected initial action: ' + state.state.action);
@@ -808,17 +808,17 @@ function createAiPlayer(game, options) {
                 debug('they win simulation');
                 return -1;
             }
-            if (canAssassinate() && cash[turn] >= 3) {
-                assassinate();
+            if (canassassinar() && cash[turn] >= 3) {
+                assassinar();
             } else if (cash[turn] >= 7) {
-                coup();
-            } else if (canSteal() && cash[other] > 0) {
-                // To do: only steal if cash >= 2, e.g., if they also have the duke?
-                steal();
-            } else if (canTax()) {
-                tax();
+                golpe();
+            } else if (canextorquir() && cash[other] > 0) {
+                // To do: only extorquir if cash >= 2, e.g., if they also have the duque?
+                extorquir();
+            } else if (cantaxa()) {
+                taxa();
             } else {
-                income();
+                renda();
             }
             debug('their cash: ' + cash[0]);
             debug('our cash: ' + cash[1]);
