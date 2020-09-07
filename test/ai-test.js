@@ -35,12 +35,12 @@ describe('AI', function () {
 
     describe('Given an AI with a duke vs an opponent with a captain', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'duke');
-            game._test_setInfluence(OPPONENT_IDX, 'captain');
-            game._test_setCash(AI_IDX, 6);
-            game._test_setCash(OPPONENT_IDX, 2);
+            game.testSetInfluence(AI_IDX, 'duke');
+            game.testSetInfluence(OPPONENT_IDX, 'captain');
+            game.testSetCash(AI_IDX, 6);
+            game.testSetCash(OPPONENT_IDX, 2);
 
-            game._test_setTurnState({
+            game.testSetTurnState({
                 name: stateNames.START_OF_TURN,
                 playerIdx: OPPONENT_IDX
             });
@@ -70,12 +70,12 @@ describe('AI', function () {
 
     describe('Given an AI with a contessa vs an opponent with a captain, and the endgame is a long way off', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'contessa', 'contessa');
-            game._test_setInfluence(OPPONENT_IDX, 'captain', 'captain');
-            game._test_setCash(AI_IDX, 6);
-            game._test_setCash(OPPONENT_IDX, 2);
+            game.testSetInfluence(AI_IDX, 'contessa', 'contessa');
+            game.testSetInfluence(OPPONENT_IDX, 'captain', 'captain');
+            game.testSetCash(AI_IDX, 6);
+            game.testSetCash(OPPONENT_IDX, 2);
 
-            game._test_setTurnState({
+            game.testSetTurnState({
                 name: stateNames.START_OF_TURN,
                 playerIdx: OPPONENT_IDX
             });
@@ -128,12 +128,12 @@ describe('AI', function () {
 
     describe('Given an AI attempts a steal that will win the game', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'captain');
-            game._test_setInfluence(OPPONENT_IDX, 'contessa');
-            game._test_setCash(AI_IDX, 6);
-            game._test_setCash(OPPONENT_IDX, 6);
+            game.testSetInfluence(AI_IDX, 'captain');
+            game.testSetInfluence(OPPONENT_IDX, 'contessa');
+            game.testSetCash(AI_IDX, 6);
+            game.testSetCash(OPPONENT_IDX, 6);
 
-            game._test_setTurnState({
+            game.testSetTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: AI_IDX,
                 action: 'steal',
@@ -164,12 +164,12 @@ describe('AI', function () {
 
     describe('Given the AI attempts a steal, and the endgame is some way off', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'captain');
-            game._test_setInfluence(OPPONENT_IDX, 'contessa');
-            game._test_setCash(AI_IDX, 2);
-            game._test_setCash(OPPONENT_IDX, 2);
+            game.testSetInfluence(AI_IDX, 'captain');
+            game.testSetInfluence(OPPONENT_IDX, 'contessa');
+            game.testSetCash(AI_IDX, 2);
+            game.testSetCash(OPPONENT_IDX, 2);
 
-            game._test_setTurnState({
+            game.testSetTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: AI_IDX,
                 action: 'steal',
@@ -200,16 +200,16 @@ describe('AI', function () {
 
     describe('Given the AI has no good roles, and the endgame is some way off', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'contessa', 'contessa');
-            game._test_setInfluence(OPPONENT_IDX, 'ambassador', 'ambassador');
-            game._test_setCash(AI_IDX, 2);
-            game._test_setCash(OPPONENT_IDX, 2);
-            game._test_setTreasuryReserve(0);
+            game.testSetInfluence(AI_IDX, 'contessa', 'contessa');
+            game.testSetInfluence(OPPONENT_IDX, 'ambassador', 'ambassador');
+            game.testSetCash(AI_IDX, 2);
+            game.testSetCash(OPPONENT_IDX, 2);
+            game.testSetTreasuryReserve(0);
         });
 
         describe('When it is the AI turn', function () {
             beforeEach(function () {
-                game._test_setTurnState({
+                game.testSetTurnState({
                     name: stateNames.START_OF_TURN,
                     playerIdx: AI_IDX
                 }, true);
@@ -230,7 +230,7 @@ describe('AI', function () {
 
         describe('When our captain bluff has previously been called', function () {
             beforeEach(function () {
-                game._test_setTurnState({
+                game.testSetTurnState({
                     name: stateNames.REVEAL_INFLUENCE,
                     playerIdx: AI_IDX,
                     action: 'steal',
@@ -250,7 +250,7 @@ describe('AI', function () {
 
             describe('When it is the AI turn', function () {
                 beforeEach(function () {
-                    game._test_setTurnState({
+                    game.testSetTurnState({
                         name: stateNames.START_OF_TURN,
                         playerIdx: AI_IDX
                     }, true);
@@ -273,16 +273,16 @@ describe('AI', function () {
 
     describe('Given the AI has no good roles, and a bluff would win us the game', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'contessa');
-            game._test_setInfluence(OPPONENT_IDX, 'ambassador');
-            game._test_setCash(AI_IDX, 5);
-            game._test_setCash(OPPONENT_IDX, 5);
-            game._test_setTreasuryReserve(0);
+            game.testSetInfluence(AI_IDX, 'contessa');
+            game.testSetInfluence(OPPONENT_IDX, 'ambassador');
+            game.testSetCash(AI_IDX, 5);
+            game.testSetCash(OPPONENT_IDX, 5);
+            game.testSetTreasuryReserve(0);
         });
 
         describe('When it is the AI turn', function () {
             beforeEach(function () {
-                game._test_setTurnState({
+                game.testSetTurnState({
                     name: stateNames.START_OF_TURN,
                     playerIdx: AI_IDX
                 }, true);
@@ -304,12 +304,12 @@ describe('AI', function () {
 
     describe('Given the AI has no cash and an ambassador', function () {
         beforeEach(function () {
-            game._test_setInfluence(AI_IDX, 'ambassador');
-            game._test_setInfluence(OPPONENT_IDX, 'captain');
-            game._test_setCash(AI_IDX, 0);
-            game._test_setCash(OPPONENT_IDX, 0);
+            game.testSetInfluence(AI_IDX, 'ambassador');
+            game.testSetInfluence(OPPONENT_IDX, 'captain');
+            game.testSetCash(AI_IDX, 0);
+            game.testSetCash(OPPONENT_IDX, 0);
 
-            game._test_setTurnState({
+            game.testSetTurnState({
                 name: stateNames.START_OF_TURN,
                 playerIdx: OPPONENT_IDX
             });

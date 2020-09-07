@@ -10,6 +10,7 @@
  *     CA 94042
  *     USA
  */
+
 'use strict';
 
 var extend = require('extend');
@@ -17,28 +18,49 @@ var randomGen = require('random-seed');
 var fs = require('fs');
 var lodash = require('lodash');
 var md5 = require('md5');
+var path = require('path');
 
 var shared = require('./web/shared');
 var stateNames = shared.states;
 var actions = shared.actions;
 
-var rankedRoles = ['duke', 'assassin', 'captain', 'inquisitor', 'contessa', 'ambassador'];
+var rankedRoles = [
+    'duke',
+    'assassin',
+    'captain',
+    'inquisitor',
+    'contessa',
+    'ambassador'
+];
 // The weights show how likely a role is to be revealed by AI
 // E.g. ambassador is 3 times more likely to be revealed than duke
-var roleWeights = {'duke': 3, 'assassin': 4, 'captain': 5, 'inquisitor': 6, 'contessa': 6, 'ambassador': 9};
+var roleWeights = {
+    duke: 3,
+    assassin: 4,
+    captain: 5,
+    inquisitor: 6,
+    contessa: 6,
+    ambassador: 9
+};
 
 // https://www.randomlists.com/random-first-names
 // http://listofrandomnames.com/
 // http://random-name-generator.info/
-var aiPlayerNames = fs.readFileSync(__dirname + '/names.txt', 'utf8').split(/\r?\n/);
+// eslint-disable-next-line no-undef
+var aiPlayerNames = fs.readFileSync(path.join(__dirname, 'names.txt'), 'utf8').split(/\r?\n/);
 
 function createAiPlayer(game, options) {
     options = extend({
-        moveDelay: 0,           // How long the AI will "think" for before playing its move (ms)
-        moveDelaySpread: 0,     // How much randomness to apply to moveDelay (ms)
-        searchHorizon: 7,       // How many moves the AI will search ahead for an end-game
-        chanceToBluff: 0.5,     // Fraction of games in which the AI will bluff
-        chanceToChallenge: 0.1  // Fraction of turns in which the AI will challenge (not in the end-game)
+        // How long the AI will "think" for before playing its move (ms)
+        moveDelay: 0,
+        // How much randomness to apply to moveDelay (ms)
+        moveDelaySpread: 0,
+        // How many moves the AI will search ahead for an end-game
+        searchHorizon: 7,
+        // Fraction of games in which the AI will bluff
+        chanceToBluff: 0.5,
+        // Fraction of turns in which the AI will challenge (not in the end-game)
+        chanceToChallenge: 0.1
     }, options);
 
     var rand = randomGen.create(options.randomSeed);
@@ -47,14 +69,15 @@ function createAiPlayer(game, options) {
         name: aiPlayerNames[rand(aiPlayerNames.length)],
         onStateChange: onStateChange,
         onHistoryEvent: onHistoryEvent,
-        onChatMessage: function() {},
+        onChatMessage: function() { /* empty */ },
         ai: true,
         playerId: 'ai'
     };
 
+    var gameProxy;
     try {
-        var gameProxy = game.playerJoined(player);
-    } catch(e) {
+        gameProxy = game.playerJoined(player);
+    } catch (e) {
         handleError(e);
         return;
     }
@@ -80,8 +103,7 @@ function createAiPlayer(game, options) {
         }
         if (state.state.name === stateNames.WAITING_FOR_PLAYERS) {
             needReset = true;
-        }
-        else {
+        } else {
             // Reset when the game actually starts: the first state after WAITING_FOR_PLAYERS.
             if (needReset) {
                 reset();
@@ -274,7 +296,7 @@ function createAiPlayer(game, options) {
         // Challenge if somebody claims to have role that was revealed 3 times or we have the rest of them
         var claimedRole = state.state.name == stateNames.ACTION_RESPONSE ? getRoleForAction(state.state.action) : state.state.blockingRole;
         var usedRoles = countRevealedRoles(claimedRole);
-        for (var i = 0; i < aiPlayer.influence.length; i++) {
+        for (let i = 0; i < aiPlayer.influence.length; i++) {
             if (!aiPlayer.influence[i].revealed && aiPlayer.influence[i].role === claimedRole) {
                 usedRoles++;
             }
@@ -293,8 +315,8 @@ function createAiPlayer(game, options) {
             return true;
         }
 
-        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'assassinate'
-            && state.players[state.playerIdx].influenceCount === 1) {
+        if (state.state.name == stateNames.ACTION_RESPONSE && state.state.action === 'assassinate' &&
+            state.players[state.playerIdx].influenceCount === 1) {
             // Challenge if you're being assassinated, it's your last influence and all contessas have been revealed
             var contessas = countRevealedRoles('contessa');
             if (contessas === state.numRoles) {
@@ -302,7 +324,7 @@ function createAiPlayer(game, options) {
             }
             // If all contessas have been revealed or claimed then we challenge the assassin
             for (var i = 0; i < state.numPlayers; i++) {
-                if (i != state.playerIdx && state.players[i].influenceCount > 0 && claims[i]['contessa']) {
+                if (i != state.playerIdx && state.players[i].influenceCount > 0 && claims[i].contessa) {
                     contessas++;
                 }
             }
@@ -310,7 +332,7 @@ function createAiPlayer(game, options) {
                 return true;
             }
             // Challenge if we already bluffed contessa and were caught
-            if (calledBluffs[state.playerIdx] && calledBluffs[state.playerIdx]['contessa']) {
+            if (calledBluffs[state.playerIdx] && calledBluffs[state.playerIdx].contessa) {
                 return true;
             }
             // Otherwise we will bluff contessa
@@ -412,7 +434,6 @@ function createAiPlayer(game, options) {
         }
         blockingRoles = shuffle(blockingRoles.slice());
 
-        var choice = null;
         for (var i = 0; i < blockingRoles.length; i++) {
             if (shouldBluff(blockingRoles[i])) {
                 // Now that we've bluffed, recalculate whether or not to bluff next time.
@@ -495,19 +516,14 @@ function createAiPlayer(game, options) {
                 }
                 // Now that we've bluffed, recalculate whether or not to bluff next time.
                 bluffChoice = rand.random() < options.chanceToBluff;
+            } else if (influence.indexOf('assassin') < 0 && !randomizeChoice()) {
+                // If we don't have a captain, duke, or assassin, then exchange.
+                playAction('exchange');
+            } else if (countRevealedRoles('duke') == state.numRoles) {
+                // We have an assassin, but can't afford to assassinate.
+                playAction('foreign-aid');
             } else {
-                // No bluffing.
-                if (influence.indexOf('assassin') < 0 && !randomizeChoice()) {
-                    // If we don't have a captain, duke, or assassin, then exchange.
-                    playAction('exchange');
-                } else {
-                    // We have an assassin, but can't afford to assassinate.
-                    if (countRevealedRoles('duke') == state.numRoles) {
-                        playAction('foreign-aid');
-                    } else {
-                        playAction('income');
-                    }
-                }
+                playAction('income');
             }
         }
     }
@@ -522,7 +538,7 @@ function createAiPlayer(game, options) {
         }
         if (actionNameOrRole === 'embezzle' && state.treasuryReserve == 0) {
             return false;
-        } 
+        }
         if (actionNameOrRole === 'embezzle' && influence.indexOf('duke') >= 0 && state.treasuryReserve > 3) {
             return true;
         }
@@ -550,10 +566,10 @@ function createAiPlayer(game, options) {
         if (isEndGame() && simulate(role) > 0) {
             // If bluffing would win us the game, we will probably be challenged, so don't bluff.
             return false;
-        } else {
-            // We will bluff.
-            return true;
         }
+
+        // We will bluff.
+        return true;
     }
 
     function playAction(action, target) {
@@ -571,7 +587,7 @@ function createAiPlayer(game, options) {
 
         try {
             gameProxy.command(command);
-        } catch(e) {
+        } catch (e) {
             console.error(e);
             console.error(e.stack);
         }
@@ -608,7 +624,7 @@ function createAiPlayer(game, options) {
                     influenceProbability.push(i);
                 }
             }
-            chosenInfluence = influenceProbability[rand.intBetween(0, influenceProbability.length-1)];
+            chosenInfluence = influenceProbability[rand.intBetween(0, influenceProbability.length - 1)];
         }
         command({
             command: 'reveal',
@@ -665,12 +681,12 @@ function createAiPlayer(game, options) {
                 return infb - infa;
             } else if (state.players[b].cash != state.players[a].cash) {
                 return state.players[b].cash - state.players[a].cash;
-            } else { // if both players have the same amount of influences and cash then choose one by random
-                // player names are used so that MD5 hashes are different for each player
-                return md5(randomNumber + state.players[a].name) < md5(randomNumber + state.players[b].name) ? -1 : 1;
             }
+
+            // If both players have the same amount of influences and cash then choose one by random
+            // player names are used so that MD5 hashes are different for each player
+            return md5(randomNumber + state.players[a].name) < md5(randomNumber + state.players[b].name) ? -1 : 1;
         });
-        return indices;
     }
 
     function exchange() {
@@ -725,7 +741,7 @@ function createAiPlayer(game, options) {
         debug('simulating with ' + roles[0] + ' and ' + roles[1]);
         debug('their cash: ' + cash[0]);
         debug('our cash: ' + cash[1]);
-        var i, turn, other;
+        var i, other, turn;
         function otherCanBlock(actionName) {
             return lodash.intersection(roles[other], actions[actionName].blockedBy).length > 0;
         }
@@ -771,7 +787,7 @@ function createAiPlayer(game, options) {
             // The opponent is playing an action; simulate it (unless we are blocking), then run from our turn
             i = 0;
             turn = 0;
-            other = 1
+            other = 1;
             if (!bluffedRole) {
                 switch (state.state.action) {
                     case 'steal':
@@ -823,13 +839,15 @@ function createAiPlayer(game, options) {
             debug('their cash: ' + cash[0]);
             debug('our cash: ' + cash[1]);
         }
-        debug('search horizon exceeded while simulating endgame')
+        debug('search horizon exceeded while simulating endgame');
         // We don't know if we would win, but don't do anything rash
         return 0;
     }
 
     function debug(msg) {
-        options.debug && console.log(JSON.stringify(msg, null, 4));
+        if (options.debug) {
+            console.log(JSON.stringify(msg, null, 4));
+        }
     }
 
     function handleError(e) {
