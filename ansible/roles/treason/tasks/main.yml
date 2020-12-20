@@ -1,0 +1,30 @@
+- name: Install Git
+  apt:
+    name: git
+    state: present
+    update_cache: true
+
+- name: Update {{color}} service
+  template:
+    src: treason.service.j2
+    dest: /lib/systemd/system/treason-{{color}}.service
+    owner: root
+    group: root
+  notify:
+    - Install {{color}} service
+    - Restart {{color}} service
+    - Verify {{color}} service
+
+- name: Update {{color}} repo
+  become: true
+  become_user: "{{treason_user}}"
+  git:
+    repo: https://github.com/octachrome/treason.git
+    dest: /home/{{treason_user}}/treason-{{color}}
+    version: live-{{color}}
+  notify:
+    - Npm install {{color}}
+    - Detect {{color}} version.js
+    - Update {{color}} version.js
+    - Restart {{color}} service
+    - Verify {{color}} service

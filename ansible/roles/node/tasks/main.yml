@@ -1,0 +1,16 @@
+- name: Create treason user
+  user:
+    name: "{{treason_user}}"
+
+- name: Install nodeenv
+  apt:
+    name: nodeenv
+    state: present
+    update_cache: true
+
+- name: Install Node.js
+  become: true
+  become_user: "{{treason_user}}"
+  shell:
+    creates: "{{node_home}}"
+    cmd: "nodeenv --node={{node_version}} --prebuilt {{node_home}}"

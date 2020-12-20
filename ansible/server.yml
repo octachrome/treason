@@ -1,0 +1,19 @@
+- hosts: local
+  roles:
+    - nginx
+    - node
+    - role: treason
+      color: green
+      node_port: 8081
+    - role: treason
+      color: blue
+      node_port: 8082
+  vars_files:
+    - local_vars.yml
+  vars:
+    # Config vars
+    treason_user: treason
+    node_version: "14.15.3"
+    # Computed vars
+    node_home: "/home/{{treason_user}}/node-{{node_version}}"
+    passive_color: "{{'blue' if active_color == 'green' else 'green'}}"

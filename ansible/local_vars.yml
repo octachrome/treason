@@ -1,0 +1,3 @@
+nginx_passwd: changeme
+active_color: blue
+#letsencrypt_dir: /etc/letsencrypt

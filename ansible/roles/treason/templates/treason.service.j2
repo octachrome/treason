@@ -1,0 +1,10 @@
+[Unit]
+Description=Treason Coup ({{color}})
+
+[Service]
+ExecStart={{node_home}}/bin/node /home/{{treason_user}}/treason-{{color}}/server.js --port {{node_port}}
+User=treason
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

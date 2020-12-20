@@ -1,0 +1,31 @@
+- name: Npm install {{color}}
+  become: true
+  become_user: "{{treason_user}}"
+  shell:
+    chdir: /home/{{treason_user}}/treason-{{color}}
+    cmd: ". {{node_home}}/bin/activate && npm install --production"
+
+- name: Detect {{color}} version.js
+  shell:
+    chdir: /home/{{treason_user}}/treason-{{color}}
+    cmd: git describe --tags --long
+  register: treason_version
+
+- name: Update {{color}} version.js
+  template:
+    src: version.js.j2
+    dest: /home/{{treason_user}}/treason-{{color}}/web/version.js
+
+- name: Install {{color}} service
+  systemd:
+    name: treason-{{color}}
+    daemon_reload: true
+    enabled: true
+
+- name: Restart {{color}} service
+  systemd:
+    name: treason-{{color}}
+    state: restarted
+
+- name: Verify {{color}} service
+  command: systemctl is-active treason-{{color}}
