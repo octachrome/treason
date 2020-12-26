@@ -1,14 +1,8 @@
-- name: Install Nginx
+- name: Install Nginx and setcap/getcap tools
   apt:
-    name: nginx
-    state: present
-    update_cache: true
-
-- name: Install setcap/getcap tools
-  apt:
-    name: libcap2-bin
-    state: present
-    update_cache: true
+    name:
+      - nginx
+      - libcap2-bin
 
 - name: Allow nginx to bind to privileged ports
   community.general.capabilities:
@@ -32,6 +26,11 @@
     mode: 0640
   notify:
     - Reload Nginx
+
+- name: Stat letsencrypt directory
+  stat:
+    path: /etc/letsencrypt/live/coup.thebrown.net
+  register: letsencrypt_dir
 
 - name: Add nginx.conf
   template:

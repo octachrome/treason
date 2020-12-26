@@ -1,0 +1,9 @@
+- name: Install certbot
+  apt:
+    name: certbot
+
+- name: Enable certbot timer
+  systemd:
+    name: certbot.timer
+    enabled: true
+    state: started

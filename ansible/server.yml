@@ -1,6 +1,8 @@
 - hosts: local
   roles:
+    - common
     - network
+    - letsencrypt
     - nginx
     - node
     - role: treason
@@ -18,3 +20,4 @@
     # Computed vars
     node_home: "/home/{{treason_user}}/node-{{node_version}}"
     passive_color: "{{'blue' if active_color == 'green' else 'green'}}"
+    ansible_python_interpreter: /usr/bin/python3

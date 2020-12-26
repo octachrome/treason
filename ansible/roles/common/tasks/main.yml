@@ -1,18 +1,15 @@
+- name: Install common packages
+  apt:
+    update_cache: yes
+    name:
+      - cron
+      - sudo
+      - python3
+      - python3-pip
+
 - name: Check installed packages
   package_facts:
     manager: apt
-
-- name: Install sudo
-  apt:
-    name: sudo
-    state: present
-    update_cache: true
-
-- name: Install pip
-  apt:
-    name: python3-pip
-    state: present
-    update_cache: true
 
 - name: Install passlib
   pip:

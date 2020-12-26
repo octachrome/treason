@@ -48,7 +48,7 @@ http {
       proxy_set_header Authorization "";
     }
 
-    {% if letsencrypt_dir is defined %}
+    {% if letsencrypt_dir.stat.exists %}
     listen 443 ssl; # managed by Certbot
     ssl_certificate /etc/letsencrypt/live/coup.thebrown.net/fullchain.pem; # managed by Certbot
     ssl_certificate_key /etc/letsencrypt/live/coup.thebrown.net/privkey.pem; # managed by Certbot

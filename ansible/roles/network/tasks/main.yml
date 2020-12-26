@@ -1,9 +1,8 @@
-- name: Install iptables (testing only)
+- name: Install iptables
   apt:
     name:
       - iptables
       - iptables-persistent
-  when: docker_testing is defined
 
 - name: Iptables rules
   iptables_raw:
@@ -13,6 +12,7 @@
       -P FORWARD ACCEPT
       -P OUTPUT ACCEPT
       -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+      -A INPUT -s localhost -j ACCEPT
       -A INPUT -p tcp -m tcp --dport ssh -j ACCEPT
       -A INPUT -p tcp -m tcp --dport http -j ACCEPT
       -A INPUT -p tcp -m tcp --dport https -j ACCEPT

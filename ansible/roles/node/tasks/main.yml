@@ -5,8 +5,6 @@
 - name: Install nodeenv
   apt:
     name: nodeenv
-    state: present
-    update_cache: true
 
 - name: Install Node.js
   become: true

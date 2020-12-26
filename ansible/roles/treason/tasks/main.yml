@@ -1,8 +1,6 @@
 - name: Install Git
   apt:
     name: git
-    state: present
-    update_cache: true
 
 - name: Update {{color}} service
   template:
