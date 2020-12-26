@@ -1,3 +1,7 @@
+- name: Check installed packages
+  package_facts:
+    manager: apt
+
 - name: Install sudo
   apt:
     name: sudo

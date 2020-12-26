@@ -5,10 +5,6 @@
       - iptables-persistent
   when: docker_testing is defined
 
-- name: Check installed packages
-  package_facts:
-    manager: apt
-
 - name: Iptables rules
   iptables_raw:
     name: treason_rules
