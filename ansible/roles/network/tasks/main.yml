@@ -1,0 +1,26 @@
+- name: Install iptables (testing only)
+  apt:
+    name:
+      - iptables
+      - iptables-persistent
+  when: docker_testing is defined
+
+- name: Check installed packages
+  package_facts:
+    manager: apt
+
+- name: Iptables rules
+  iptables_raw:
+    name: treason_rules
+    rules: |
+      -P INPUT ACCEPT
+      -P FORWARD ACCEPT
+      -P OUTPUT ACCEPT
+      -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+      -A INPUT -p tcp -m tcp --dport ssh -j ACCEPT
+      -A INPUT -p tcp -m tcp --dport http -j ACCEPT
+      -A INPUT -p tcp -m tcp --dport https -j ACCEPT
+      -A INPUT -p tcp -m tcp --dport 8999 -j ACCEPT
+      -A INPUT -j DROP
+      -A FORWARD -j DROP
+  when: "'iptables' in ansible_facts.packages"
