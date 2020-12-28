@@ -1,0 +1,14 @@
+- name: Install atop
+  apt:
+    name: atop
+
+- name: Increase atop collection frequency
+  patch:
+    src: atop.daily.patch
+    dest: /usr/share/atop/atop.daily
+
+- name: Start atop service
+  systemd:
+    name: atop
+    enabled: true
+    state: started

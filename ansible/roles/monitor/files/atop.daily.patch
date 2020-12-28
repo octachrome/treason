@@ -1,0 +1,11 @@
+--- /usr/share/atop/atop.daily	2017-12-30 15:36:37.000000000 +0000
++++ atop.daily	2020-12-28 10:42:14.480533995 +0000
+@@ -6,7 +6,7 @@
+ LOGPATH=/var/log/atop
+ BINPATH=/usr/bin
+ PIDFILE=/run/atop.pid
+-INTERVAL=600				# interval 10 minutes
++INTERVAL=60				# interval 1 minute
+ 
+ # verify if atop still runs for daily logging
+ #

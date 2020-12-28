@@ -11,6 +11,7 @@
     - role: treason
       color: blue
       node_port: 8082
+    - monitor
   vars_files:
     - local_vars.yml
   vars:
