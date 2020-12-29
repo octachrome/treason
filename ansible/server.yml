@@ -1,4 +1,4 @@
-- hosts: local
+- hosts: "{{host_pattern}}"
   roles:
     - common
     - network

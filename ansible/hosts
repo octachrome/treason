@@ -1,2 +1,5 @@
 [local]
 localhost ansible_port=1122 ansible_user=root
+
+[coup2]
+coup2.thebrown.net ansible_user=root
