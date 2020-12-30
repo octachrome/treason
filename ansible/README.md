@@ -1,6 +1,12 @@
 How to upgrade the server
 =========================
 
+Make sure `local_vars.yml` contains the following keys:
+
+- `nginx_passwd`
+- `active_color` (`green` or `blue`)
+- `host_pattern` (see `hosts` file)
+
 Check which deployment is active:
 
     ./get-active-deployment.sh
