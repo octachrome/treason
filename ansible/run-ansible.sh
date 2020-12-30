@@ -8,4 +8,4 @@ if [ ! -d env ]; then
 else
     . env/bin/activate
 fi
-ansible-playbook -i ./hosts server.yml
+ansible-playbook -i ./hosts server.yml $*

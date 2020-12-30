@@ -1,6 +1,12 @@
 How to upgrade the server
 =========================
 
+This information is out of date. See `../ansible/README.md` instead.
+
+
+Old upgrade process
+-------------------
+
 Check which deployment is active:
 
     ssh treason@vpscheap /home/treason/deploy-blue/scripts/get-active-deployment

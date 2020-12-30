@@ -31,6 +31,7 @@
   stat:
     path: /etc/letsencrypt/live/coup.thebrown.net
   register: letsencrypt_dir
+  tags: nginx-conf
 
 - name: Add nginx.conf
   template:
@@ -40,4 +41,4 @@
     group: root
   notify:
     - Reload Nginx
- 
+  tags: nginx-conf

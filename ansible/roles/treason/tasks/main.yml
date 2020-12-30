@@ -26,3 +26,4 @@
     - Update {{color}} version.js
     - Restart {{color}} service
     - Verify {{color}} service
+  tags: upgrade-treason
