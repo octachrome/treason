@@ -1,6 +1,8 @@
 - name: Install certbot
   apt:
-    name: certbot
+    name:
+      - certbot
+      - python3-certbot-nginx
 
 - name: Enable certbot timer
   systemd:
