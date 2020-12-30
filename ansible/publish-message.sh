@@ -5,4 +5,4 @@ if [ \( "$PORT" != 80 -a "$PORT" != 8999 \) -o "$MSG" = "" ]; then
     exit 1
 fi
 NGINX_PASSWD=$(grep nginx_passwd local_vars.yml | cut -d' ' -f2)
-echo curl http://coup.thebrown.net:$PORT/alert -d "msg=$MSG" -u "treason:$NGINX_PASSWD"
+curl http://coup.thebrown.net:$PORT/alert -d "msg=$MSG" -u "treason:$NGINX_PASSWD"
