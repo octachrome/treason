@@ -10,6 +10,7 @@
  *     CA 94042
  *     USA
  */
+
 'use strict';
 
 function createNetPlayer(game, socket, playerName) {
@@ -22,9 +23,10 @@ function createNetPlayer(game, socket, playerName) {
         playerId: socket.playerId
     };
 
+    var gameProxy;
     try {
-        var gameProxy = game.playerJoined(player);
-    } catch(e) {
+        gameProxy = game.playerJoined(player);
+    } catch (e) {
         handleError(e);
         return;
     }
@@ -53,7 +55,7 @@ function createNetPlayer(game, socket, playerName) {
             if (gameProxy != null) {
                 gameProxy.command(data);
             }
-        } catch(e) {
+        } catch (e) {
             handleError(e);
         }
     }

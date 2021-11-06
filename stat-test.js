@@ -1,4 +1,5 @@
 'use strict';
+
 var crypto = require('crypto');
 var cradle = require('cradle');
 var pr = require('promise-ring');
@@ -33,15 +34,21 @@ function queryRandomPlayers() {
     console.log('Calculating individual stats');
     var results = [];
     for (var i = 0; i < argv.queries; i++) {
-        var somePlayerId = playerIds[rand(playerIds.length)];
+        const somePlayerId = playerIds[rand(playerIds.length)];
         results.push(Promise.all([
-            db.view('games/by_winner', {reduce: true, key: somePlayerId}),
-            db.view('games/by_player', {reduce: true, key: somePlayerId})
-        ]).then(function (results) {
+            db.view('games/by_winner', {
+                reduce: true,
+                key: somePlayerId
+            }),
+            db.view('games/by_player', {
+                reduce: true,
+                key: somePlayerId
+            })
+        ]).then((results) => {
             var wins = results[0][0].value;
             var games = results[1][0].value;
             var percent = Math.floor(100 * wins / games);
-            console.log('Player ' + somePlayerId + ' won ' + percent + '% (' + wins + '/' + games + ')');
+            console.log(`Player ${somePlayerId} won ${percent}% (${wins}/${games})`);
         }));
     }
     return Promise.all(results);
@@ -51,7 +58,7 @@ function countOverallGames() {
     console.log('Counting total games won');
     return db.view('games/by_winner', {reduce: true}).then(function (results) {
         var wins = results[0].value;
-        console.log('Overall games won ' + wins);
+        console.log(`Overall games won ${wins}`);
     });
 }
 
@@ -59,8 +66,14 @@ function calculateAllStats() {
     console.log('Calculating stats for every player');
     stats = {};
     return Promise.all([
-        db.view('games/by_winner', {reduce: true, group: true}),
-        db.view('games/by_player', {reduce: true, group: true})
+        db.view('games/by_winner', {
+            reduce: true,
+            group: true
+        }),
+        db.view('games/by_player', {
+            reduce: true,
+            group: true
+        })
     ]).then(function (results) {
         var games = results[1];
         games.forEach(function (playerId, gameCount) {
@@ -86,7 +99,7 @@ function calculateTopTwenty() {
     console.log('Top twenty:');
     for (var i = 0; i < 20; i++) {
         var id = sortedPlayerIds[i];
-        console.log('Player ' + id + ' won ' + stats[id].percent + '% (' + stats[id].wins + '/' + stats[id].games + ')');
+        console.log(`Player ${id} won ${stats[id].percent}% (${stats[id].wins}/${stats[id].games})`);
     }
 }
 
@@ -115,7 +128,7 @@ function createGames() {
     var gamePromises = [];
     for (var g = 0; g < argv.games; g++) {
         var playerRank = [];
-        for (var p = 0, len = 2+rand(2); p < len; p++) {
+        for (var i = 0, len = 2 + rand(2); i < len; i++) {
             playerRank.push(playerIds[rand(playerIds.length)]);
         }
         gamePromises.push(db.save({
@@ -129,36 +142,40 @@ function createGames() {
 function createViews() {
     console.log('Creating views');
     return db.save('_design/games', {
+        // eslint-disable-next-line camelcase
         by_winner: {
             map: function (doc) {
                 if (doc.type === 'game' && doc.playerRank) {
+                    // eslint-disable-next-line no-undef
                     emit(doc.playerRank[0]);
                 }
             },
             reduce: function (keys, values, rereduce) {
                 if (rereduce) {
+                    // eslint-disable-next-line no-undef
                     return sum(values);
                 }
-                else {
-                    return values.length;
-                }
+
+                return values.length;
             }
         },
+        // eslint-disable-next-line camelcase
         by_player: {
             map: function (doc) {
                 if (doc.type === 'game' && doc.playerRank) {
                     doc.playerRank.forEach(function (player) {
+                        // eslint-disable-next-line no-undef
                         emit(player);
                     });
                 }
             },
             reduce: function (keys, values, rereduce) {
                 if (rereduce) {
+                    // eslint-disable-next-line no-undef
                     return sum(values);
                 }
-                else {
-                    return values.length;
-                }
+
+                return values.length;
             }
         }
     });

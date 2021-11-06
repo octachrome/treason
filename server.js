@@ -10,8 +10,10 @@
  *     CA 94042
  *     USA
  */
+
 'use strict';
 
+const path = require('path');
 var dataAccess = require('./dataaccess-fake');
 
 var argv = require('optimist')
@@ -29,7 +31,7 @@ dataAccess.init(argv.db, {
 var winston = require('winston');
 winston.add(winston.transports.File, {
     filename: argv.log,
-    maxsize: 5*1024*1024,
+    maxsize: 5 * 1024 * 1024,
     zippedArchive: true,
     json: false
 });
@@ -38,8 +40,10 @@ winston.info('server started');
 
 var express = require('express');
 var app = express();
-app.set('views', __dirname + '/views');
-app.use(express.static(__dirname + '/web'));
+// eslint-disable-next-line no-undef
+app.set('views', path.join(__dirname, 'views'));
+// eslint-disable-next-line no-undef
+app.use(express.static(path.join(__dirname, 'web')));
 
 var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({extended: false}));
@@ -64,7 +68,7 @@ var rankings = [];
 
 dataAccess.getPlayerRankings().then(function (result) {
     rankings = result;
-    //This will submit the rankings to everyone
+    // This will submit the rankings to everyone
     io.sockets.emit('rankings', result);
 });
 
@@ -80,12 +84,12 @@ app.post('/alert', function (req, res) {
 });
 
 io.on('connection', function (socket) {
-    //Emit the global rankings upon connect
+    // Emit the global rankings upon connect
     socket.emit('rankings', rankings);
 
     socket.on('registerplayer', function (data) {
         if (isInvalidPlayerName(data.playerName)) {
-            //Do not even attempt to register invalid player names
+            // Do not even attempt to register invalid player names
             return;
         }
 
@@ -100,15 +104,15 @@ io.on('connection', function (socket) {
                 playerId: playerId,
                 games: filterGames(),
                 players: currentOnlinePlayers
-            }, function (data) {
-                //Once the client acknowledged it received the handshake, it will invoke the function passed and let us
-                //know it was logged in. We will ignore that message and add the player to the list of logged in players.
+            }, function () {
+                // Once the client acknowledged it received the handshake, it will invoke the function passed and let us
+                // know it was logged in. We will ignore that message and add the player to the list of logged in players.
                 players[playerId] = {
                     playerName: playerName
                 };
 
                 broadcastPlayers();
-                socket.broadcast.emit('globalchatmessage', playerName + ' has joined the lobby.');
+                socket.broadcast.emit('globalchatmessage', `${playerName} has joined the lobby.`);
             });
         });
     });
@@ -157,7 +161,7 @@ io.on('connection', function (socket) {
         var timeStamp = '[' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2) + '] ';
         var playerName = players[socket.playerId].playerName;
 
-        var globalMessage =  timeStamp + playerName + ': ' + data;
+        var globalMessage = timeStamp + playerName + ': ' + data;
         var localMessage = timeStamp + ' You: ' + data;
 
         socket.emit('globalchatmessage', localMessage);
@@ -166,10 +170,10 @@ io.on('connection', function (socket) {
 
     socket.on('disconnect', function () {
         if (socket.playerId) {
-            //If a client never registered but only connected, it would not have a player property
+            // If a client never registered but only connected, it would not have a player property
             var player = players[socket.playerId];
             if (player) {
-                socket.broadcast.emit('globalchatmessage', player.playerName + ' has left the lobby.');
+                socket.broadcast.emit('globalchatmessage', `${player.playerName} has left the lobby.`);
                 delete players[socket.playerId];
             }
         }
@@ -196,7 +200,7 @@ function joinGame(socket, gameName, playerName, password) {
 }
 
 function quickJoin(socket, playerName) {
-    //Discover a game to join. This should prefer the older games in the list
+    // Discover a game to join. This should prefer the older games in the list
     for (var gameName in games) {
         if (games.hasOwnProperty(gameName)) {
             var game = games[gameName];
@@ -207,7 +211,7 @@ function quickJoin(socket, playerName) {
         }
     }
 
-    //Failed to find a game, make a new one instead
+    // Failed to find a game, make a new one instead
     createNewGame(socket);
 }
 
@@ -222,13 +226,13 @@ function playerJoinsGame(game, socket, playerName, gameName) {
 }
 
 function createNewGame(socket, password) {
-    var gameName = '' + gameId++;
+    var gameName = `${gameId++}`;
 
     var game = createGame({
         debug: argv.debug,
         logger: winston,
         moveDelay: 1000,
-        gameName: gameName,
+        gameName,
         created: new Date(),
         password: password || '',
         dataAccess: dataAccess
@@ -301,7 +305,7 @@ function filterGames() {
                     gameName: gameName,
                     status: game.currentState(),
                     type: game.gameType(),
-                    passwordRequired: game.password() ? true : false,
+                    passwordRequired: !!game.password(),
                     players: game.playersInGame()
                 };
 

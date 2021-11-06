@@ -31,10 +31,10 @@ describe('History', function () {
 
         describe('Given player0 has a captain and player1 has an ambassador', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'captain', 'contessa');
-                game._test_setInfluence(1, 'ambassador', 'contessa');
+                game.testSetInfluence(0, 'captain', 'contessa');
+                game.testSetInfluence(1, 'ambassador', 'contessa');
 
-                game._test_setTurnState({
+                game.testSetTurnState({
                     name: stateNames.START_OF_TURN,
                     playerIdx: 0
                 });
@@ -241,10 +241,10 @@ describe('History', function () {
 
         describe('Given player0 does not have a captain and player1 does not have an ambassador', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'contessa', 'contessa');
-                game._test_setInfluence(1, 'contessa', 'contessa');
+                game.testSetInfluence(0, 'contessa', 'contessa');
+                game.testSetInfluence(1, 'contessa', 'contessa');
 
-                game._test_setTurnState({
+                game.testSetTurnState({
                     name: stateNames.START_OF_TURN,
                     playerIdx: 0
                 });
@@ -328,10 +328,10 @@ describe('History', function () {
 
         describe('Given player0 is assassinating player1 with a real assassin', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'assassin');
-                game._test_setInfluence(1, 'ambassador');
+                game.testSetInfluence(0, 'assassin');
+                game.testSetInfluence(1, 'ambassador');
 
-                game._test_setTurnState({
+                game.testSetTurnState({
                     name: stateNames.ACTION_RESPONSE,
                     playerIdx: 0,
                     action: 'assassinate',
@@ -363,10 +363,10 @@ describe('History', function () {
 
         describe('Given player1 is blocking an assassination with a bluffed contessa', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'assassin');
-                game._test_setInfluence(1, 'duke', 'duke');
+                game.testSetInfluence(0, 'assassin');
+                game.testSetInfluence(1, 'duke', 'duke');
 
-                game._test_setTurnState({
+                game.testSetTurnState({
                     name: stateNames.BLOCK_RESPONSE,
                     playerIdx: 0,
                     action: 'assassinate',
@@ -400,10 +400,10 @@ describe('History', function () {
 
         describe('Given player1 is blocking an assassination with a bluffed contessa and has only one influence left', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'assassin');
-                game._test_setInfluence(1, 'duke');
+                game.testSetInfluence(0, 'assassin');
+                game.testSetInfluence(1, 'duke');
 
-                game._test_setTurnState({
+                game.testSetTurnState({
                     name: stateNames.BLOCK_RESPONSE,
                     playerIdx: 0,
                     action: 'assassinate',
@@ -446,11 +446,11 @@ describe('History', function () {
         // A attempted to steal from B; B incorrectly challenged A; B revealed contessa; B attempted to block with ambassador; A successfully challenged B; B revealed contessa; A stole from B
         describe('Given player0 has a captain and player1 does not have an ambassador', function () {
             beforeEach(function () {
-                game._test_setInfluence(0, 'captain', 'contessa');
-                game._test_setInfluence(1, 'contessa', 'contessa');
-                game._test_setInfluence(2, 'contessa', 'contessa');
+                game.testSetInfluence(0, 'captain', 'contessa');
+                game.testSetInfluence(1, 'contessa', 'contessa');
+                game.testSetInfluence(2, 'contessa', 'contessa');
 
-                game._test_setTurnState({
+                game.testSetTurnState({
                     name: stateNames.START_OF_TURN,
                     playerIdx: 0
                 });

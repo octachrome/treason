@@ -16,7 +16,7 @@ GameTracker.TYPE_GAME_OVER = 7;
 
 GameTracker.EventTypes = {};
 Object.keys(GameTracker).forEach(key => {
-    if (/^TYPE_/.test(key)) {
+    if ((/^TYPE_/).test(key)) {
         GameTracker.EventTypes[GameTracker[key]] = key.substr('TYPE_'.length);
     }
 });
@@ -85,6 +85,7 @@ GameTracker.prototype.toJson = function () {
 GameTracker.prototype.pack = function () {
     var bytes = [];
     var offset = 0;
+    // eslint-disable-next-line consistent-this
     var tracker = this;
     this.events.forEach(function (event) {
         switch (event.type) {
@@ -113,8 +114,10 @@ GameTracker.prototype.pack = function () {
             case GameTracker.TYPE_PLAYER_LEFT:
                 bytes[offset++] = (event.type << 4) | (event.player & 0xf);
                 break;
+            default: break;
         }
     });
+    // eslint-disable-next-line no-undef
     return Buffer.from(bytes);
 };
 
@@ -122,25 +125,20 @@ GameTracker.prototype.encodeInfluence = function (influence) {
     if (influence) {
         return (influence.revealed ? 8 : 0) | this.encodeRole(influence.role);
     }
-    else {
-        return 0;
-    }
+
+    return 0;
 };
 
 GameTracker.prototype.encodeRole = function (role) {
     if (role === 'duke') {
         return 1;
-    }
-    else if (role === 'captain') {
+    } else if (role === 'captain') {
         return 2;
-    }
-    else if (role === 'assassin') {
+    } else if (role === 'assassin') {
         return 3;
-    }
-    else if (role === 'ambassador' || role === 'inquisitor') {
+    } else if (role === 'ambassador' || role === 'inquisitor') {
         return 4;
-    }
-    else if (role === 'contessa') {
+    } else if (role === 'contessa') {
         return 5;
     }
 };
@@ -148,38 +146,22 @@ GameTracker.prototype.encodeRole = function (role) {
 GameTracker.prototype.encodeAction = function (action, target) {
     if (action === 'tax') {
         return 1 << 4;
-    }
-    else if (action === 'foreign-aid') {
+    } else if (action === 'foreign-aid') {
         // Secondary duke action.
-        return (8+1) << 4;
-    }
-    else if (action === 'steal') {
+        return (8 + 1) << 4;
+    } else if (action === 'steal') {
         return (2 << 4) | (target & 0xf);
-    }
-    else if (action === 'assassinate') {
+    } else if (action === 'assassinate') {
         return (3 << 4) | (target & 0xf);
-    }
-    else if (action === 'exchange') {
+    } else if (action === 'exchange') {
         return 4 << 4;
-    }
-    else if (action === 'interrogate') {
+    } else if (action === 'interrogate') {
         // Secondary inquisitor action.
-        return ((8+4) << 4) | (target & 0xf);
-    }
-    else if (action === 'coup') {
+        return ((8 + 4) << 4) | (target & 0xf);
+    } else if (action === 'coup') {
         return (5 << 4) | (target & 0xf);
-    }
-    else if (action === 'income') {
-        return (8+5) << 4;
-    }
-    else if (action == 'change-team') {
-        return 6 << 4;
-    }
-    else if (action == 'convert') {
-        return 7 << 4 | (target & 0xf);
-    }
-    else if (action == 'embezzle') {
-        return (8+6) << 4;
+    } else if (action === 'income') {
+        return (8 + 5) << 4;
     }
 };
 
@@ -205,7 +187,8 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
                 if (offset < events.length) {
                     throw new Error('Unexpected game over event');
                 }
-            case GameTracker.TYPE_START_OF_TURN:
+            // Expect fall through
+            case GameTracker.TYPE_START_OF_TURN: {
                 lastStart = event;
                 lastAction = null;
                 lastBlock = null;
@@ -218,7 +201,7 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
                     throw new Error('Unknown current player');
                 }
                 // Skip past any additional observers at the end.
-                while (offset + 1 < buffer.length && buffer[offset] == 0 && buffer[offset+1] == 0) {
+                while (offset + 1 < buffer.length && buffer[offset] == 0 && buffer[offset + 1] == 0) {
                     statesFound++;
                     offset += 2;
                 }
@@ -242,18 +225,24 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
                         const type2 = buffer[offset - 1] >> 4;
                         const player2 = buffer[offset - 1] & 0xf;
                         this._debugEventByte(offset - 1, buffer[offset - 1], true);
+                        // eslint-disable-next-line max-depth
                         if (type2 == GameTracker.TYPE_PLAYER_LEFT) {
                             // Cannot validate player2, because an observer can join after the start of turn and leave before the action!
                             debug(`>   player ${player2} left`);
-                            events.push({type: type2, player: player2});
+                            events.push({
+                                type: type2,
+                                player: player2
+                            });
                             gameInfo.disconnects++;
                             // After a player leaves, it might become someone else's turn, or the game might end.
                             // Both of these can be mis-interpreted as actions, so check more carefully for them.
+                            // eslint-disable-next-line max-depth
                             if (this.looksLikePlayerStateEvent(buffer, offset, lastStart, gameInfo.playerCount)) {
                                 // Break out and parse this event properly.
                                 break;
                             }
                         } else {
+                            // eslint-disable-next-line max-depth
                             for (let i = 0; i < 5 && offset + i < buffer.length; i++) {
                                 this._debugEventByte(offset + i, buffer[offset + i]);
                             }
@@ -262,6 +251,8 @@ GameTracker.prototype.unpack = function (buffer, gameInfo) {
                     }
                 }
                 break;
+            }
+
             case GameTracker.TYPE_CHALLENGE_SUCCESS:
             case GameTracker.TYPE_CHALLENGE_FAIL:
                 event.challenger = first & 0xf;
@@ -327,10 +318,13 @@ GameTracker.prototype.readPlayerStates = function (buffer, offset, event, player
         this._debugEventByte(offset, buffer[offset]);
         const cash = buffer[offset++];
         this._debugEventByte(offset, buffer[offset]);
-        const influence = buffer[offset++]
+        const influence = buffer[offset++];
         event.playerStates.push({
             cash: cash,
-            influence: [this.decodeInfluence(influence >> 4), this.decodeInfluence(influence & 0xf)]
+            influence: [
+                this.decodeInfluence(influence >> 4),
+                this.decodeInfluence(influence & 0xf)
+            ]
         });
         if (influence != 0 || cash != 0) {
             playersFound++;
@@ -385,7 +379,7 @@ GameTracker.prototype._debugEventByte = function (offset, byte, showType) {
         hw.push(x & 0xf);
         qw.push((x & 0x8) ? 1 : 0);
         qw.push(x & 0x7);
-        x = x >> 4;
+        x >>= 4;
     }
     debug(offset, showType ? GameTracker.EventTypes[hw[1]] : '', byte, hw.reverse(), qw.reverse());
 };
@@ -435,17 +429,13 @@ GameTracker.prototype.decodeInfluence = function (influenceCode) {
 GameTracker.prototype.decodeRole = function (roleCode) {
     if (roleCode === 1) {
         return 'duke';
-    }
-    else if (roleCode === 2) {
+    } else if (roleCode === 2) {
         return 'captain';
-    }
-    else if (roleCode === 3) {
+    } else if (roleCode === 3) {
         return 'assassin';
-    }
-    else if (roleCode === 4) {
+    } else if (roleCode === 4) {
         return this.gameInfo.roles.indexOf('ambassador') >= 0 ? 'ambassador' : 'inquisitor';
-    }
-    else if (roleCode === 5) {
+    } else if (roleCode === 5) {
         return 'contessa';
     }
 };
@@ -457,7 +447,7 @@ GameTracker.prototype.decodeActionEvent = function (actionCode) {
         case 1:
             action = 'tax';
             break;
-        case 8+1:
+        case 8 + 1:
             action = 'foreign-aid';
             break;
         case 2:
@@ -471,7 +461,7 @@ GameTracker.prototype.decodeActionEvent = function (actionCode) {
         case 4:
             action = 'exchange';
             break;
-        case 8+4:
+        case 8 + 4:
             action = 'interrogate';
             target = actionCode & 0xf;
             break;
@@ -479,18 +469,10 @@ GameTracker.prototype.decodeActionEvent = function (actionCode) {
             action = 'coup';
             target = actionCode & 0xf;
             break;
-        case 8+5:
+        case 8 + 5:
             action = 'income';
             break;
-        case 6:
-            action = 'change-team';
-            break;
-        case 7:
-            action = 'convert';
-            break;
-        case 8+6:
-            action = 'embezzle';
-            break;
+        default: break;
     }
     var event = {
         type: GameTracker.TYPE_ACTION,
@@ -513,7 +495,7 @@ GameTracker.prototype.removeObservers = function (events, playerCount) {
         }
     }
     if (Object.keys(playerMap).length != playerCount) {
-        throw new Error('Incorrect number of players')
+        throw new Error('Incorrect number of players');
     }
     for (let i = 0; i < events.length; i++) {
         const event = events[i];
@@ -569,6 +551,7 @@ GameTracker.prototype.removeObservers = function (events, playerCount) {
                     i--;
                 }
                 break;
+            default: break;
         }
     }
 };
@@ -590,8 +573,11 @@ GameTracker.prototype.identifyPlayers = function (events, game) {
     });
 
     if (playerDeaths.length !== game.players - 1) {
-        console.log(`wrong number of deaths: ${playerDeaths.length}, for players: ${game.players}`)
-        return {playerIds: null, winners: null};
+        console.log(`wrong number of deaths: ${playerDeaths.length}, for players: ${game.players}`);
+        return {
+            playerIds: null,
+            winners: null
+        };
     }
 
     // Add the winning player index.
@@ -602,13 +588,19 @@ GameTracker.prototype.identifyPlayers = function (events, game) {
         }
     }
     if (game.players !== playerDeaths.length) {
-        console.log(`wrong number of winners: ${playerDeaths.length}, for players: ${game.players}`)
-        return {playerIds: null, winners: null};
+        console.log(`wrong number of winners: ${playerDeaths.length}, for players: ${game.players}`);
+        return {
+            playerIds: null,
+            winners: null
+        };
     }
     const winners = playerDeaths.reverse();
     const playerIds = [];
     game.playerRank.forEach((id, idx) => {
         playerIds[winners[idx]] = id;
     });
-    return {playerIds, winners};
+    return {
+        playerIds,
+        winners
+    };
 };

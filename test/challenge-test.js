@@ -28,9 +28,9 @@ describe('Challenges', function () {
 
     describe('Given player0 assassinates player1 with a real assassin', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'captain');
-            game._test_setTurnState({
+            game.testSetInfluence(0, 'duke', 'assassin');
+            game.testSetInfluence(1, 'duke', 'captain');
+            game.testSetTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
                 action: 'assassinate',
@@ -63,9 +63,9 @@ describe('Challenges', function () {
 
     describe('Given player0 assassinates player1 with a real assassin', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'captain');
-            game._test_setTurnState({
+            game.testSetInfluence(0, 'duke', 'assassin');
+            game.testSetInfluence(1, 'duke', 'captain');
+            game.testSetTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
                 action: 'assassinate',
@@ -98,10 +98,10 @@ describe('Challenges', function () {
 
     describe('Given player0 assassinates player1 with a real assassin, and player2 has only one influence', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'captain');
-            game._test_setInfluence(2, 'duke');
-            game._test_setTurnState({
+            game.testSetInfluence(0, 'duke', 'assassin');
+            game.testSetInfluence(1, 'duke', 'captain');
+            game.testSetInfluence(2, 'duke');
+            game.testSetTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
                 action: 'assassinate',
@@ -139,9 +139,9 @@ describe('Challenges', function () {
 
     describe('Given player0 assassinates player1 with a bluffed assassin', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'captain');
-            game._test_setInfluence(1, 'duke', 'captain');
-            game._test_setTurnState({
+            game.testSetInfluence(0, 'duke', 'captain');
+            game.testSetInfluence(1, 'duke', 'captain');
+            game.testSetTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
                 action: 'assassinate',
@@ -168,9 +168,9 @@ describe('Challenges', function () {
 
     describe('Given player1 blocks player0\'s assassination with a bluffed contessa', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'captain');
-            game._test_setTurnState({
+            game.testSetInfluence(0, 'duke', 'assassin');
+            game.testSetInfluence(1, 'duke', 'captain');
+            game.testSetTurnState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: 0,
                 action: 'assassinate',
@@ -203,9 +203,9 @@ describe('Challenges', function () {
 
     describe('Given player1 blocks player0\'s assassination with a real contessa', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'assassin');
-            game._test_setInfluence(1, 'duke', 'contessa');
-            game._test_setTurnState({
+            game.testSetInfluence(0, 'duke', 'assassin');
+            game.testSetInfluence(1, 'duke', 'contessa');
+            game.testSetTurnState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: 0,
                 action: 'assassinate',
@@ -261,9 +261,9 @@ describe('Challenges', function () {
 
     describe('Given player1 blocks player0\'s assassination with a real contessa, and player0 has only one influence', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'assassin');
-            game._test_setInfluence(1, 'duke', 'contessa');
-            game._test_setTurnState({
+            game.testSetInfluence(0, 'assassin');
+            game.testSetInfluence(1, 'duke', 'contessa');
+            game.testSetTurnState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: 0,
                 action: 'assassinate',
@@ -302,9 +302,9 @@ describe('Challenges', function () {
 
     describe('Given a player0 exchanges using a real ambassador', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'ambassador', 'assassin');
-            game._test_setInfluence(1, 'duke');
-            game._test_setTurnState({
+            game.testSetInfluence(0, 'ambassador', 'assassin');
+            game.testSetInfluence(1, 'duke');
+            game.testSetTurnState({
                 name: stateNames.ACTION_RESPONSE,
                 playerIdx: 0,
                 action: 'exchange'
@@ -335,11 +335,11 @@ describe('Challenges', function () {
 
     describe('Given player1 blocks a steal with a bluffed ambassador', function () {
         beforeEach(function () {
-            game._test_setInfluence(0, 'duke', 'captain');
-            game._test_setInfluence(1, 'duke', 'contessa');
-            game._test_setCash(0, 4);
-            game._test_setCash(1, 4);
-            game._test_setTurnState({
+            game.testSetInfluence(0, 'duke', 'captain');
+            game.testSetInfluence(1, 'duke', 'contessa');
+            game.testSetCash(0, 4);
+            game.testSetCash(1, 4);
+            game.testSetTurnState({
                 name: stateNames.BLOCK_RESPONSE,
                 playerIdx: 0,
                 action: 'steal',
