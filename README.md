@@ -12,6 +12,13 @@ Then open `http://localhost:8080` in one or more browser windows. For an explana
 
 I use BrowserStack for testing - thanks for the free account guys!
 
+Docker
+--
+You could also use docker compose to run the server. Just run:
+
+    docker compose -f docker/docker-compose.yml up
+
+
 AI
 --
 
