@@ -7,20 +7,20 @@ RUN apk add --no-cache git
 WORKDIR /app
 
 # Copy package.json
-COPY package*.json ./
+COPY ../package*.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy the source code
-COPY . .
+COPY ../ .
 
 # Prune to production dependencies
 RUN npm prune --production
 
 
 # Final image
-FROM node:lts-alpine
+FROM node:lts-alpine as server
 
 WORKDIR /app
 
